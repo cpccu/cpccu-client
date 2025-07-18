@@ -10,6 +10,8 @@ import { Link } from "react-router-dom";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear()
+
   return (
     <>
       <main className="bg-count text-white padding grid justify-between gap-y-8 md:gap-y-12 md:gap-x-6 grid-cols-2 lg:grid-cols-11 py-10 md:py-16 lg:py-24">
@@ -21,7 +23,8 @@ export default function Footer() {
 
       {/* rights section start */}
       <footer className="bg-header text-white/90 h-16 flex items-center justify-center text-center">
-        &copy;{InstituteInfo?.rights}
+
+        {currentYear} &copy;{InstituteInfo?.rights}
       </footer>
       {/* rights section end */}
     </>
