@@ -15,6 +15,7 @@ import Login from "./components/LOGINSIGNUP/Login";
 import Signup from "./components/LOGINSIGNUP/Signup";
 import Alumni from "./components/Layout/AboutLayout/Alumni";
 import Member from "./components/Layout/AboutLayout/Member";
+import JobPipeline from "./components/Layout/JobPipeline";
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="blog" element={<Blog />} />
           <Route path="contact" element={<Contact />} />
           <Route path="profile/:id" element={<ComingSoon />} />
+          <Route path="job-pipeline" element={<JobPipeline />} />
         </Route>
         <Route path="*" element={<NotFound />}></Route>
         <Route path="login" element={<Login />} />

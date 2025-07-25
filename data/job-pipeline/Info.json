@@ -1,0 +1,118 @@
+[
+  {
+    "id": 1,
+    "img": "https://i.ibb.co/FqJsk9KG/T8BCl1AC.jpg",
+    "name": "Ariana Patel",
+    "tag": "Frontend Developer",
+    "email": "ariana.patel@example.com",
+    "phone": "+14155550101",
+    "socials": {
+      "github": "#",
+      "linkedin": "#"
+    },
+    "skills": [
+      {
+        "skillName": "Vue.js",
+        "experience": "Worked on 3 full-stack Vue apps with Vuex and Vue Router."
+      },
+      {
+        "skillName": "HTML & CSS",
+        "experience": "4+ years crafting responsive, accessible layouts."
+      },
+      {
+        "skillName": "Figma",
+        "experience": "Used regularly for prototyping and design handoff."
+      },
+      {
+        "skillName": "TypeScript",
+        "experience": "Integrated into Vue and React projects for type safety."
+      }
+    ],
+    "createdAt": "2024-03-04T09:18:27.410Z"
+  },
+  {
+    "id": 2,
+    "img": "https://i.ibb.co/Jjq1fp9D/LGaedLyG.jpg",
+    "name": "Liam O'Connor",
+    "tag": "Full Stack Engineer",
+    "email": "liam.oconnor@example.com",
+    "phone": "+442032960124",
+    "socials": {
+      "github": "#",
+      "linkedin": "#"
+    },
+    "skills": [
+      {
+        "skillName": "Node.js",
+        "experience": "Built RESTful APIs and background jobs for SaaS apps."
+      },
+      {
+        "skillName": "React",
+        "experience": "Developed reusable component libraries and dynamic UIs."
+      }
+    ],
+    "createdAt": "2024-07-01T17:45:02.781Z"
+  },
+  {
+    "id": 3,
+    "img": "https://i.ibb.co/kgSTvkvC/kw6xofoB.jpg",
+    "name": "Chen Wei",
+    "tag": "Backend Developer",
+    "email": "chen.wei@example.com",
+    "phone": "+8613800138000",
+    "socials": {
+      "github": "#",
+      "linkedin": "#"
+    },
+    "skills": [
+      {
+        "skillName": "Python",
+        "experience": "5 years writing production code for data and web backends."
+      },
+      {
+        "skillName": "Django",
+        "experience": "Built and maintained APIs and admin panels with DRF."
+      },
+      {
+        "skillName": "PostgreSQL",
+        "experience": "Designed normalized schemas and optimized queries."
+      },
+      {
+        "skillName": "Redis",
+        "experience": "Used for caching and background task queues."
+      },
+      {
+        "skillName": "Docker",
+        "experience": "Containerized services and managed dev/prod environments."
+      }
+    ],
+    "createdAt": "2023-11-22T12:06:14.604Z"
+  },
+  {
+    "id": 4,
+    "img": "https://i.ibb.co/4ZH6DcN4/3uPKIO8H.jpg",
+    "name": "Sophia Martinez",
+    "tag": "Mobile App Developer",
+    "email": "sophia.martinez@example.com",
+    "phone": "+12135554444",
+    "socials": {
+      "github": "#",
+      "linkedin": "#"
+    },
+    "skills": [
+      {
+        "skillName": "Flutter",
+        "experience": "3 years building cross-platform apps with responsive UI."
+      },
+      {
+        "skillName": "Dart",
+        "experience": "Used daily for state management and API integration."
+      },
+      {
+        "skillName": "Firebase",
+        "experience": "Implemented authentication, Firestore DB, and analytics."
+      }
+    ],
+    "createdAt": "2024-05-17T08:52:39.998Z"
+  }
+]

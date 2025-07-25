@@ -46,5 +46,13 @@
     "page": "Contact",
     "path": "/contact",
     "level": 0
+  },
+
+  {
+    "page": "Job Pipeline",
+    "path": "/job-pipeline",
+    "level": 0,
+    "requireLogin": true
   }
+
 ]

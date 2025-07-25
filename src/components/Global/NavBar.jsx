@@ -9,6 +9,8 @@ import { faSignInAlt } from "@fortawesome/free-solid-svg-icons";
 
 import Data from "../../../data/global/navBar.json";
 import GoToTop from "./GoToTop";
+import { data } from "autoprefixer";
+
 export default function NavBar() {
   const navigate = useNavigate();
   const [fixed, setFixed] = useState(false);
