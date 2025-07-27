@@ -54,7 +54,7 @@ export default function JobPipelineCard({ data }) {
           Skills
         </h2>
 
-        <ul className="flex flex-col text-gray-600 gap-3 overflow-y-scroll px-5">
+        <ul className="flex flex-col text-gray-600 gap-3 overflow-y-auto px-5">
           {skills.map((skill) => {
             return <JobPipelineCardSkill skill={skill} />;
           })}
