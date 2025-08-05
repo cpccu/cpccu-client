@@ -1,11 +1,11 @@
 [
   {
     "id": 1,
-    "img": "https://i.ibb.co/FqJsk9KG/T8BCl1AC.jpg",
-    "name": "Jomila Akter",
+    "img": "data/job-pipeline/img/Alok.jpg",
+    "name": "Mohaiminul Hoque Alok",
     "tag": "Frontend Developer",
-    "email": "jomila.akter@example.com",
-    "phone": "+14155550101",
+    "email": "mohaimenulhoquealok@gmail.com",
+    "phone": "+880 1947151532",
     "socials": {
       "github": "#",
       "linkedin": "#"
@@ -32,11 +32,11 @@
   },
   {
     "id": 2,
-    "img": "https://i.ibb.co/Jjq1fp9D/LGaedLyG.jpg",
-    "name": "Rakibul Hassan",
+    "img": "data/job-pipeline/img/tishad.jpg",
+    "name": "Hasib Al Tishad",
     "tag": "Full Stack Engineer",
-    "email": "rakibul.hassan@example.com",
-    "phone": "+442032960124",
+    "email": "hasibaltishad01339@gmail.com",
+    "phone": "+880 1624098592",
     "socials": {
       "github": "#",
       "linkedin": "#"
