@@ -9,7 +9,7 @@ export default function JobPipelineCard({ data }) {
   const formatted = format(date, " dd MMMM, yyyy");
 
   return (
-    <div className="flex text-gray-600 shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] rounded-2xl overflow-hidden text-sm lg:text-[1rem] hover:-translate-y-2 duration-[250ms] ease-in-out group max-h-[26rem]">
+    <div className="flex text-gray-600 shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] rounded-2xl overflow-hidden text-sm lg:text-[1rem] hover:-translate-y-2 duration-[250ms] ease-in-out group max-h-[26rem] bg-[#adcef891]">
       <div className="flex flex-col flex-1 py-6 px-3 md:px-8 lg:px-3 xl:px-8 border-[1px] border-r-[#3b61c957] group-hover:border-r-[#3b60c9] duration-[250ms]">
         <figure className="rounded-md overflow-hidden self-center mb-2 md:mb-4">
           <img
