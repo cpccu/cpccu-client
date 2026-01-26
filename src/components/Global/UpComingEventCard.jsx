@@ -144,7 +144,7 @@ function TimeBox({ date }) {
   return (
     <main className="flex gap-5">
       {(!days && !hours && !minutes && !seconds) ? <section className="flex flex-col items-center font-bold gap-1">
-        <div className="border text-center px-3 py-1 font-bold text-xl rounded-xl bg-black/70 trans">
+        <div className="border text-center px-5 py-2 font-bold text-2xl rounded-xl bg-black/70 trans">
           Ended.
         </div>
       </section> : (
