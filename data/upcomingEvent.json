@@ -1,6 +1,24 @@
 [
   {
     "img": "https://i.ibb.co.com/ZpFXWqJM/CODE-CLASH-9.jpg",
+    "alt": "Code Breeze and Freeze - 4 - Programming Contest",
+    "eventHeadLine1": "Code Breeze and Freeze - 4 - Programming Contest",
+    "textContext": "A programming contest where participants compete to solve challenging problems and showcase their coding skills.",
+    "eventHeadLine2": "Reward",
+    "reward": "Winners will get a University authorized certificate",
+    "eventHeadLine3": "Rules",
+    "rules1": "If someone cheats, they will be disqualified of the challenge.",
+    "rules2": "Cheating = Copying other's code, Copy pasting from online search.",
+    "rules3": "Try not to copy others code.",
+    "rules4": "Try to think out the solution yourself.",
+    "btnText": "Join Vjudge Group",
+    "btnLink": "https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD",
+    "btnText1": "Contest Link",
+    "btnLink1": "https://vjudge.net/contest/780017",
+    "date": "2026-01-30"
+  },
+  {
+    "img": "https://i.ibb.co.com/ZpFXWqJM/CODE-CLASH-9.jpg",
     "alt": "Code Breeze and Freeze - 3 - Programming Contest",
     "eventHeadLine1": "Code Breeze and Freeze - 3 - Programming Contest",
     "textContext": "A programming contest where participants compete to solve challenging problems and showcase their coding skills.",
