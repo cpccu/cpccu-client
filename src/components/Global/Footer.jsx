@@ -20,10 +20,8 @@ export default function Footer() {
         <UsefullLink />
         <OrgLink />
       </main>
-
       {/* rights section start */}
       <footer className="bg-header text-white/90 h-16 flex items-center justify-center text-center">
-
         {currentYear} &copy;{InstituteInfo?.rights}
       </footer>
       {/* rights section end */}
