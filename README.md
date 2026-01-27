@@ -26,15 +26,19 @@ https://i.ibb.co.com/pWCpvsr/Artboard-1new.png
 https://i.ibb.co.com/6BFjFf7/Artboard-1new.png
 
 ## project work init commands for newbies
+
 `npm install`
-
-`npm install -D tailwindcss postcss autoprefixer`
-
-`npx tailwindcss init -p`
 
 `npm run dev`
 
+## Configure github
+
+git config --global user.email "you@example.com"
+
+git config --global user.name "Your Name"
+
 ## git commands for newbies
+
 Add you all changes:
 
 `git add .`
