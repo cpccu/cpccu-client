@@ -144,8 +144,10 @@
     "batch": "",
     "technology": "",
     "job": {
-      "Software Engineer II": "Brotecs Technologies Ltd.",
-      "Software Engineer II": "Stitel Networks LLC.",
+      "Software Engineer II": [
+        "Brotecs Technologies Ltd.",
+        "Stitel Networks LLC."
+      ],
       "Founder": "Zerodevs LTD."
     },
     "email": "badhonmdabdullah@gmail.com",
