@@ -143,35 +143,38 @@ function TimeBox({ date }) {
 
   return (
     <main className="flex gap-5">
-      <section className="flex flex-col items-center font-bold gap-1">
-        <div>Days</div>
-        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70 trans">
-          {days || "00"}
+      {(!days && !hours && !minutes && !seconds) ? <section className="flex flex-col items-center font-bold gap-1">
+        <div className="border text-center px-5 py-2 font-bold text-2xl rounded-xl bg-black/70 trans">
+          Ended
         </div>
-      </section>
+      </section> : (
+        <>
+          <section className="flex flex-col items-center font-bold gap-1">
+            <div>Days</div>
+            <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70 trans">
+              {days || "00"}
+            </div>
+          </section><section className="flex flex-col items-center font-bold gap-1">
+            <div>Hr</div>
+            <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
+              {hours || "00"}
+            </div>
+          </section><section className="flex flex-col items-center font-bold gap-1">
+            <div>Min</div>
+            <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
+              {minutes || "00"}
+            </div>
+          </section><section className="flex flex-col items-center font-bold gap-1">
+            <div>Sec</div>
+            <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
+              {seconds || "00"}
+            </div>
+          </section>
+        </>
+      )}
 
-      <section className="flex flex-col items-center font-bold gap-1">
-        <div>Hr</div>
-        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
-          {hours || "00"}
-        </div>
-      </section>
 
-      <section className="flex flex-col items-center font-bold gap-1">
-        <div>Min</div>
-        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
-          {minutes || "00"}
-        </div>
-      </section>
-
-      <section className="flex flex-col items-center font-bold gap-1">
-        <div>Sec</div>
-        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
-          {seconds || "00"}
-        </div>
-      </section>
-
-      <p className="self-end font-bold text-xl hidden lg:block">Remaining</p>
+      {(!days && !hours && !minutes && !seconds) ? null : <p className="self-end font-bold text-xl hidden lg:block">Remaining</p>}
     </main>
   );
 }
