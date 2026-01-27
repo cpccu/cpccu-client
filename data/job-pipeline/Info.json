@@ -57,17 +57,17 @@
     "id": 3,
     "img": "https://i.ibb.co.com/Xk6bt77V/pic.jpg",
     "name": "Anisur Rahman Farazi",
-    "tag": "Backend Developer",
+    "tag": "Full Stack Engineer",
     "email": "anisurrahmanfarazi@gmail.com",
     "phone": "+8801641088544",
     "socials": {
-      "github": "#",
-      "linkedin": "#"
+      "github": "https://github.com/anisurrahmanfarazi17",
+      "linkedin": "https://www.linkedin.com/in/anisurrahmanfarazi17/"
     },
     "skills": [
       {
-        "skillName": "Python",
-        "experience": "5 years writing production code for data and web backends."
+        "skillName": "HTML & CSS",
+        "experience": "2+ years crafting responsive, accessible layouts."
       },
       {
         "skillName": "Django",
