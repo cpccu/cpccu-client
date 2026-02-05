@@ -18,14 +18,14 @@ export default function Header() {
             <span>{InstitudeInfo?.email}</span>
           </Link>
         </p>
-        <p>
+        {/* <p>
           <Link
             className="flex items-center justify-center gap-2"
             to={`tel:${InstitudeInfo?.phone}`}
           >
             <MdOutlineCall size={25} /> <span>{InstitudeInfo?.phone}</span>
           </Link>
-        </p>
+        </p> */}
       </div>
       <div className="flex gap-3 items-center font-semibold text-sm">
         <Link to="/login">
