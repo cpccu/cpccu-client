@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import JoditEditor from "jodit-react";
+// import JoditEditor from "jodit-react";
 import InputBox from "@/components/LOGINSIGNUP/InputBox";
 
 export default function ProfileBlogModal() {
@@ -26,11 +26,11 @@ export default function ProfileBlogModal() {
           className="px-3 py-2 rounded border"
           placeholder="write your short description"
         ></textarea>
-        <JoditEditor
+        {/* <JoditEditor
           ref={editor}
           value={content}
           onChange={(newContent) => setContent(newContent)}
-        />
+        /> */}
 
         <button className="h-10 px-5 bg-header text-white  border self-start mx-auto">
           Post

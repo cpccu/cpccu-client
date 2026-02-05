@@ -14,7 +14,6 @@
         "@gpfunk/tailwindcss-clsx": "^1.0.0",
         "clsx": "^2.1.1",
         "date-fns": "^4.1.0",
-        "jodit-react": "^5.3.21",
         "next": "^16.1.6",
         "prop-types": "^15.8.1",
         "react": "^19.2.4",
@@ -641,10 +640,6 @@
     "iterator.prototype": ["iterator.prototype@1.1.5", "", { "dependencies": { "define-data-property": "^1.1.4", "es-object-atoms": "^1.0.0", "get-intrinsic": "^1.2.6", "get-proto": "^1.0.0", "has-symbols": "^1.1.0", "set-function-name": "^2.0.2" } }, "sha512-H0dkQoCa3b2VEeKQBOxFph+JAbcrQdE7KC0UkqwpLmv2EC4P41QXP+rqo9wYodACiG5/WM5s9oDApTU8utwj9g=="],
 
     "jiti": ["jiti@2.6.1", "", { "bin": "lib/jiti-cli.mjs" }, "sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ=="],
-
-    "jodit": ["jodit@4.9.4", "", {}, "sha512-vrC7JqxMfUALL0Q10pq1x1RbECqENegOyAPhYbic5MiNZ+KKJRtBM+S1y6uEH2eYq4iYrp/nNVlfPWVO7OFG3A=="],
-
-    "jodit-react": ["jodit-react@5.3.21", "", { "dependencies": { "jodit": "^4.9.4" }, "peerDependencies": { "react": "~0.14 || ^15 || ^16 || ^17 || ^18 || ^19", "react-dom": "~0.14 || ^15 || ^16 || ^17 || ^18 || ^19" } }, "sha512-dSFVKkrDVbhVwKDjuFMJ3HhPdqeEz/Yz5MhJf9v9B3Gg29CnelKCZ00h6MxXzlhglF3qvtvUTc2HSKrSB15khw=="],
 
     "js-tokens": ["js-tokens@4.0.0", "", {}, "sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ=="],
 
