@@ -1,6 +1,8 @@
-import GalleryCard from "../Global/GalleryCard";
-import tabBtn from "../../../data/home/GallerySection.json";
-import res from "../../../data/GallaryCard.json";
+"use client";
+
+import GalleryCard from "@/components/Global/GalleryCard";
+import tabBtn from "@/data/home/GallerySection.json";
+import res from "@/data/GallaryCard.json";
 import { useCallback, useEffect, useState } from "react";
 
 export default function GallerySection() {

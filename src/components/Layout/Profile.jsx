@@ -1,8 +1,10 @@
-import { useParams } from "react-router-dom";
+"use client";
+
+import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import info from "./../../../data/Committee.json";
-import ProfileNotFound from "../PROFILE/ProfileNotFound";
-import ProfileCard from "../PROFILE/ProfileCard";
+import info from "@/data/Committee.json";
+import ProfileNotFound from "@/components/PROFILE/ProfileNotFound";
+import ProfileCard from "@/components/PROFILE/ProfileCard";
 
 export default function Profile() {
   const [Data, setData] = useState(null);

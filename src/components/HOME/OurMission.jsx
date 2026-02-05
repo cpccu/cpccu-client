@@ -1,14 +1,16 @@
+"use client";
+
 import { useContext, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import OurMissionScroll from "../../Context/OurMessionScroll/OurMessionScroll";
-import Data from "./../../../data/home/OurMission.json";
+import { useRouter } from "next/navigation";
+import OurMissionScroll from "@/Context/OurMessionScroll/OurMessionScroll";
+import Data from "@/data/home/OurMission.json";
 
 export default function OurMission() {
   const { setTarget } = useContext(OurMissionScroll);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const goToAbout = () => {
-    navigate("/history");
+    router.push("/history");
   };
 
   useEffect(() => {

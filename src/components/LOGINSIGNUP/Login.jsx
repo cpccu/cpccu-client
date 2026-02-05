@@ -1,10 +1,12 @@
-import Logo from "./../../assets/logo/cpccu.png";
-import { Link } from "react-router-dom";
+"use client";
+
+import Image from "next/image";
+import Logo from "@/assets/logo/cpccu.png";
+import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
-import InputBox from "./InputBox";
-import { useCallback, useEffect, useState } from "react";
-import bgimg from "./../../assets/img/abc.jpg";
+import InputBox from "@/components/LOGINSIGNUP/InputBox";
+import bgimg from "@/assets/img/abc.jpg";
 export default function Login() {
   const btn = `uppercase font-semibold h-12 px-1 rounded-full w-full text-sm`;
 
@@ -19,8 +21,8 @@ export default function Login() {
 
   return (
     <div>
-      <Link to="/">
-        <button className="bg-header absolute z-50 right-[2rem] mdd:right-[6rem] mt-[5rem] flex items-center justify-center h-10 rounded-lg lg:w-[10rem] gap-3 px-3 py-2 hover:bg-headerHover trans">
+      <Link href="/">
+        <button className="bg-header absolute z-50 right-[2rem] mdd:right-[6rem] mt-[5rem] flex items-center justify-center h-10 rounded-lg lg:w-[10rem] gap-3 px-3 py-2 hover:bg-header-hover trans">
           <FontAwesomeIcon
             className=" text-white font-extrabold text-2xl"
             icon={faArrowLeftLong}
@@ -54,14 +56,14 @@ export default function Login() {
 
             <section className="flex items-center justify-center gap-5 mt-5">
               <button
-                className={`${btn} bg-gradient-to-r from-headerHover to-fuchsia-700 text-white hover:ring trans`}
+                className={`${btn} bg-gradient-to-r from-header-hover to-fuchsia-700 text-white hover:ring trans`}
               >
                 login
               </button>
               <button
-                className={`${btn} bg-gradient-to-r from-headerHover to-fuchsia-700 text-header hover:ring trans`}
+                className={`${btn} bg-gradient-to-r from-header-hover to-fuchsia-700 text-header hover:ring trans`}
               >
-                <Link to="/signup">
+                <Link href="/signup">
                   <div className="bg-white rounded-full h-10 flex items-center justify-center">
                     create account
                   </div>

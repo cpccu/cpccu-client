@@ -1,6 +1,8 @@
+"use client";
+
 import { useRef, useState } from "react";
 import JoditEditor from "jodit-react";
-import InputBox from "../LOGINSIGNUP/InputBox";
+import InputBox from "@/components/LOGINSIGNUP/InputBox";
 
 export default function ProfileBlogModal() {
   const editor = useRef(null);

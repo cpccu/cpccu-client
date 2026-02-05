@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import ContactScroll from "./ContactScroll";
+import ContactScroll from "@/Context/ContactScroll/ContactScroll";
 
 export default function ContactScrollProvider({ children }) {
   const [target, setTarget] = useState(null);

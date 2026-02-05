@@ -116,7 +116,7 @@
     "createdAt": "2024-05-17T08:52:39.998Z"
   },
   {
-    "id": 1,
+    "id": 5,
     "img": "https://i.ibb.co/FqJsk9KG/T8BCl1AC.jpg",
     "name": "Jomila Akter",
     "tag": "Frontend Developer",
@@ -147,7 +147,7 @@
     "createdAt": "2024-03-04T09:18:27.410Z"
   },
   {
-    "id": 2,
+    "id": 6,
     "img": "https://i.ibb.co/Jjq1fp9D/LGaedLyG.jpg",
     "name": "Rakibul Hassan",
     "tag": "Full Stack Engineer",
@@ -170,7 +170,7 @@
     "createdAt": "2024-07-01T17:45:02.781Z"
   },
   {
-    "id": 3,
+    "id": 7,
     "img": "https://i.ibb.co/kgSTvkvC/kw6xofoB.jpg",
     "name": "Sumit Chakma",
     "tag": "Backend Developer",
@@ -205,7 +205,7 @@
     "createdAt": "2023-11-22T12:06:14.604Z"
   },
   {
-    "id": 4,
+    "id": 8,
     "img": "https://i.ibb.co/4ZH6DcN4/3uPKIO8H.jpg",
     "name": "Antipa Islam",
     "tag": "Mobile App Developer",
@@ -232,7 +232,7 @@
     "createdAt": "2024-05-17T08:52:39.998Z"
   },
   {
-    "id": 1,
+    "id": 9,
     "img": "https://i.ibb.co/FqJsk9KG/T8BCl1AC.jpg",
     "name": "Jomila Akter",
     "tag": "Frontend Developer",
@@ -263,7 +263,7 @@
     "createdAt": "2024-03-04T09:18:27.410Z"
   },
   {
-    "id": 2,
+    "id": 10,
     "img": "https://i.ibb.co/Jjq1fp9D/LGaedLyG.jpg",
     "name": "Rakibul Hassan",
     "tag": "Full Stack Engineer",
@@ -286,7 +286,7 @@
     "createdAt": "2024-07-01T17:45:02.781Z"
   },
   {
-    "id": 3,
+    "id": 11,
     "img": "https://i.ibb.co/kgSTvkvC/kw6xofoB.jpg",
     "name": "Sumit Chakma",
     "tag": "Backend Developer",
@@ -321,7 +321,7 @@
     "createdAt": "2023-11-22T12:06:14.604Z"
   },
   {
-    "id": 4,
+    "id": 12,
     "img": "https://i.ibb.co/4ZH6DcN4/3uPKIO8H.jpg",
     "name": "Antipa Islam",
     "tag": "Mobile App Developer",
@@ -348,7 +348,7 @@
     "createdAt": "2024-05-17T08:52:39.998Z"
   },
   {
-    "id": 1,
+    "id": 13,
     "img": "https://i.ibb.co/FqJsk9KG/T8BCl1AC.jpg",
     "name": "Jomila Akter",
     "tag": "Frontend Developer",
@@ -379,7 +379,7 @@
     "createdAt": "2024-03-04T09:18:27.410Z"
   },
   {
-    "id": 2,
+    "id": 14,
     "img": "https://i.ibb.co/Jjq1fp9D/LGaedLyG.jpg",
     "name": "Rakibul Hassan",
     "tag": "Full Stack Engineer",
@@ -402,7 +402,7 @@
     "createdAt": "2024-07-01T17:45:02.781Z"
   },
   {
-    "id": 3,
+    "id": 15,
     "img": "https://i.ibb.co/kgSTvkvC/kw6xofoB.jpg",
     "name": "Sumit Chakma",
     "tag": "Backend Developer",
@@ -413,46 +413,6 @@
       "linkedin": "#"
     },
     "skills": [
-      {
-        "skillName": "Python",
-        "experience": "5 years writing production code for data and web backends."
-      },
-      {
-        "skillName": "Django",
-        "experience": "Built and maintained APIs and admin panels with DRF."
-      },
-      {
-        "skillName": "PostgreSQL",
-        "experience": "Designed normalized schemas and optimized queries."
-      },
-      {
-        "skillName": "Redis",
-        "experience": "Used for caching and background task queues."
-      },
-      {
-        "skillName": "Docker",
-        "experience": "Containerized services and managed dev/prod environments."
-      },
-      {
-        "skillName": "Python",
-        "experience": "5 years writing production code for data and web backends."
-      },
-      {
-        "skillName": "Django",
-        "experience": "Built and maintained APIs and admin panels with DRF."
-      },
-      {
-        "skillName": "PostgreSQL",
-        "experience": "Designed normalized schemas and optimized queries."
-      },
-      {
-        "skillName": "Redis",
-        "experience": "Used for caching and background task queues."
-      },
-      {
-        "skillName": "Docker",
-        "experience": "Containerized services and managed dev/prod environments."
-      },
       {
         "skillName": "Python",
         "experience": "5 years writing production code for data and web backends."

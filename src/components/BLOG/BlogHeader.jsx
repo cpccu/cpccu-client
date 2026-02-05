@@ -1,6 +1,8 @@
+"use client";
+
 import { useContext } from "react";
-import Data from "./../../../data/blog/blog.json";
-import BlogScroll from "../../Context/BlogScroll/BlogScroll";
+import Data from "@/data/blog/blog.json";
+import BlogScroll from "@/Context/BlogScroll/BlogScroll";
 import { Link as ScrollBlog } from "react-scroll";
 
 export default function BlogHeader() {

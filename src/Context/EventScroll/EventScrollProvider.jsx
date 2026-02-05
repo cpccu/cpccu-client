@@ -1,5 +1,7 @@
+"use client";
+
 import React, { useRef, useState } from "react";
-import EventScroll from "./EventScroll";
+import EventScroll from "@/Context/EventScroll/EventScroll";
 
 export default function EventScrollProvider({ children }) {
   const [scrollTarget, setScrollTarget] = useState(null);

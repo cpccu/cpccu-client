@@ -1,10 +1,10 @@
-import OurMissionScrollProvider from "../../Context/OurMessionScroll/OurMessonScrollProvider";
-import HeroSection from "../HOME/HeroSection";
-import EventLayout from "./../HOME/eventUpcoming/EventLayout";
-import OurMission from "./../HOME/OurMission";
-import OurResponsibility from "../HOME/OurResponsibility";
-import Count from "../HOME/Count";
-import GallerySection from "../HOME/GallerySection";
+import OurMissionScrollProvider from "@/Context/OurMessionScroll/OurMessonScrollProvider";
+import HeroSection from "@/components/HOME/HeroSection";
+import EventLayout from "@/components/HOME/eventUpcoming/EventLayout";
+import OurMission from "@/components/HOME/OurMission";
+import OurResponsibility from "@/components/HOME/OurResponsibility";
+import Count from "@/components/HOME/Count";
+import GallerySection from "@/components/HOME/GallerySection";
 
 export default function Home() {
   return (

@@ -1,9 +1,11 @@
+"use client";
+
 import React, { useContext, useEffect, useState, useCallback } from "react";
-import BlogMainCard from "./BlogMainCard";
-import BlogScroll from "../../Context/BlogScroll/BlogScroll";
-import FilterBtn from "./../../../data/blog/blogFilter.json";
-import res from "./../../../data/BlogPost.json";
-import Pagination from "./../Global/Pagination";
+import BlogMainCard from "@/components/BLOG/BlogMainCard";
+import BlogScroll from "@/Context/BlogScroll/BlogScroll";
+import FilterBtn from "@/data/blog/blogFilter.json";
+import res from "@/data/BlogPost.json";
+import Pagination from "@/components/Global/Pagination";
 
 export default function BlogPostLayout() {
   const { setBlogTarget } = useContext(BlogScroll);

@@ -1,20 +1,23 @@
-import { useNavigate } from "react-router-dom";
-import IMG404 from "./../assets/img/404.jpg";
+"use client";
+
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import IMG404 from "@/assets/img/404.jpg";
 
 export default function NotFound() {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const GoToHome = () => {
-    navigate("/");
+    router.push("/");
   };
 
   return (
     <section className="flex items-center justify-center">
       <main className="flex flex-col items-center justify-center h-screen py-32">
-        <img className="max-h-full" src={IMG404} alt="404" />
+        <Image className="max-h-full w-auto" src={IMG404} alt="404" width={800} height={600} />
         <button
           onClick={GoToHome}
-          className="border px-3 py-2 mt-4 font-semibold bg-headerHover hover:bg-header trans text-white"
+          className="border px-3 py-2 mt-4 font-semibold bg-header-hover hover:bg-header trans text-white"
         >
           Go Home
         </button>

@@ -1,6 +1,8 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import cn from "../../../lib/cn.js";
+import Link from "next/link";
+import cn from "@/lib/cn.js";
 
 const UpComingEventCard = ({ data, clName }) => {
   return (
@@ -57,7 +59,7 @@ const UpComingEventCard = ({ data, clName }) => {
         </p>
 
         {data?.btnLink ? (
-          <Link to={data?.btnLink} target="_blank" rel="noopener noreferrer">
+          <Link href={data?.btnLink} target="_blank" rel="noopener noreferrer">
             <button
               className="bg-black/30 text-white font-bold uppercase px-5 py-2 
           hover:text-gray-600 hover:bg-white border-[3px] border-white trans"
@@ -68,7 +70,7 @@ const UpComingEventCard = ({ data, clName }) => {
         ) : null}
 
         {data?.btnLink1 ? (
-          <Link to={data?.btnLink1} target="_blank" rel="noopener noreferrer">
+          <Link href={data?.btnLink1} target="_blank" rel="noopener noreferrer">
             <button
               className="bg-black/30 text-white font-bold uppercase px-5 py-2 
           hover:text-gray-600 hover:bg-white border-[3px] border-white trans"

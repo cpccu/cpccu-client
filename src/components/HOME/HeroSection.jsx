@@ -1,17 +1,19 @@
+"use client";
+
 import { useContext } from "react";
-import Hero from "../../../data/home/Hero.json";
-import OurMissionScroll from "../../Context/OurMessionScroll/OurMessionScroll";
+import Hero from "@/data/home/Hero.json";
+import OurMissionScroll from "@/Context/OurMessionScroll/OurMessionScroll";
 import { Link as ScrollMission } from "react-scroll";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 export default function HeroSection() {
   const { target } = useContext(OurMissionScroll);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const heroContext = Hero?.context;
 
   const goToAbout = () => {
-    navigate("/history");
+    router.push("/history");
   };
 
   return (
