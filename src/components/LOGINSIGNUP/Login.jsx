@@ -7,8 +7,20 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
 import InputBox from "@/components/LOGINSIGNUP/InputBox";
 import bgimg from "@/assets/img/abc.jpg";
+import { useState, useEffect, use } from "react";
+import { useLoginMutation } from "@/features/auth/authApi";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/features/auth/authSlice";
+import SuccessAlert from "../ALERT/SuccessAlert";
+import ErrorAlert from "../ALERT/ErrorAlert";
+
+
 export default function Login() {
   const btn = `uppercase font-semibold h-12 px-1 rounded-full w-full text-sm`;
+  const dispatch = useDispatch();
+  const [login, { isLoading, isError, isSuccess,reset }] = useLoginMutation();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // const [logValue, setLog] = useState(false);
   // const log = useCallback(() => {
@@ -18,6 +30,30 @@ export default function Login() {
   // useEffect(() => {
   //   log();
   // });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const userData = {
+        email,
+        password,
+      };
+      const response = await login(userData).unwrap();
+      console.log("response => ", response)
+      dispatch(setCredentials(response));
+    } catch (err) {
+      console.error("Login failed:", err);
+    }
+  }
+
+  useEffect(() => {
+    if (isSuccess || isError) {
+      const timer = setTimeout(() => {
+        reset();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, isError, reset]);
 
   return (
     <div>
@@ -44,21 +80,21 @@ export default function Login() {
           </section>
           {/* logo section end */}
           <form
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handleSubmit}
             className="flex flex-col gap-6 w-full"
           >
             {/* input username start */}
-            <InputBox type={"email"} title={"email"} id={"userMail"} />
+            <InputBox type={"email"} title={"email"} id={"userMail"} setData={setEmail} />
             {/* input username end */}
             {/* input password start */}
-            <InputBox type={"password"} title={"password"} id={"userPass"} />
+            <InputBox type={"password"} title={"password"} id={"userPass"} setData={setPassword} />
             {/* input password end */}
 
             <section className="flex items-center justify-center gap-5 mt-5">
-              <button
+              <button 
                 className={`${btn} bg-gradient-to-r from-header-hover to-fuchsia-700 text-white hover:ring trans`}
               >
-                login
+              {isLoading ? "Logging in..." : "Login"}
               </button>
               <button
                 className={`${btn} bg-gradient-to-r from-header-hover to-fuchsia-700 text-header hover:ring trans`}
@@ -90,6 +126,8 @@ export default function Login() {
             Login to Access Dashboard
           </h1>
         </section>
+        {isError && <ErrorAlert message={"Login failed. Please check your credentials."} />}
+        {isSuccess && <SuccessAlert message={"Login successful!"} />}
       </div>
     </div>
   );

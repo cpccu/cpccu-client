@@ -17,6 +17,7 @@
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.1",
     "@gpfunk/tailwindcss-clsx": "^1.0.0",
+    "@reduxjs/toolkit": "^2.11.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "next": "^16.1.6",
@@ -25,8 +26,10 @@
     "react-countup": "^6.5.3",
     "react-dom": "^19.2.4",
     "react-icons": "^5.5.0",
+    "react-redux": "^9.2.0",
     "react-scroll": "^1.9.3",
     "react-scroll-trigger": "^0.6.14",
+    "sweetalert2": "^11.26.20",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18",
     "upload-js": "^2.24.3"
