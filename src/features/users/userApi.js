@@ -3,7 +3,7 @@ import { baseApi } from "@/services/baseApi";
 export const userApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     fetchUsers: builder.query({
-        query: () => '/users',
+        query: () => '/users/user',
         providesTags: ['Users'],
     }),
     fetchUserById: builder.query({
@@ -12,16 +12,16 @@ export const userApi = baseApi.injectEndpoints({
     }),
     createUser: builder.mutation({
         query: (userData) => ({
-            url: '/users',
+            url: '/users/user',
             method: 'POST',
             body: userData,
         }),
         invalidatesTags: ['Users'],
     }),
     updateUser: builder.mutation({
-        query: ({ id, ...userData }) => ({
-            url: `/users/${id}`,
-            method: 'PUT',
+        query: (userData) => ({
+            url: `users/userInfo-update`,
+            method: 'PATCH',
             body: userData,
         }),
         invalidatesTags: (result, error, { id }) => [{ type: 'Users', id }],

@@ -18,7 +18,7 @@ import ErrorAlert from "../ALERT/ErrorAlert";
 export default function Login() {
   const btn = `uppercase font-semibold h-12 px-1 rounded-full w-full text-sm`;
   const dispatch = useDispatch();
-  const [login, { isLoading, isError, isSuccess,reset }] = useLoginMutation();
+  const [login, { data, isLoading, isError, isSuccess, error, reset }] = useLoginMutation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -126,8 +126,8 @@ export default function Login() {
             Login to Access Dashboard
           </h1>
         </section>
-        {isError && <ErrorAlert message={"Login failed. Please check your credentials."} />}
-        {isSuccess && <SuccessAlert message={"Login successful!"} />}
+        {isError && <ErrorAlert title="Login failed!" text={error?.data?.message || "Please check your credentials and try again."} />}
+        {isSuccess && <SuccessAlert title={data?.message || "Login successful!" } />}
       </div>
     </div>
   );

@@ -12,11 +12,12 @@ import { useDispatch } from "react-redux";
 import { setCredentials } from "@/features/auth/authSlice";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
+import OtpPopup from "../ALERT/OtpVerifyPopup";
 
 export default function Signup() {
 
   const dispatch = useDispatch();
-  const [register, {data, isLoading, isError, isSuccess, reset }] = useRegisterMutation();
+  const [register, { data, isLoading, isError, isSuccess, error, reset }] = useRegisterMutation();
 
   const labelCSS = `uppercase font-semibold text-sm text-gray-800 font-custom`;
   const inputCSS = `outline-none border-b border-gray-300 py-2 focus:border-black`;
@@ -28,12 +29,13 @@ export default function Signup() {
   const [fullName, setFullName] = useState("");
   const [uniID, setUniID] = useState("");
   const [batch, setBatch] = useState("");
+  const [showOtpPopup, setShowOtpPopup] = useState(false);
 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPass) {
-      
+
       return <ErrorAlert title="Password Mismatch!" text="Please make sure your passwords match and try again." />;
     }
     try {
@@ -48,12 +50,13 @@ export default function Signup() {
       const response = await register(userData).unwrap();
       console.log("response => ", response)
       dispatch(setCredentials(response));
+      setShowOtpPopup(true);
     } catch (err) {
       console.error("Registration failed:", err);
     }
   };
 
-    useEffect(() => {
+  useEffect(() => {
     if (isSuccess || isError) {
       const timer = setTimeout(() => {
         reset();
@@ -157,8 +160,9 @@ export default function Signup() {
                   {isLoading ? "Signing Up..." : "Sign Up"}
                 </div>
               </button>
-              {isError && <ErrorAlert title="Registration failed!" text={data?.message || "Please check your details and try again."} />}
-            {isSuccess && <SuccessAlert title={data?.message || "Registration successful!"} />}
+              {isError && <ErrorAlert title="Registration failed!" text={error?.data?.message || "Please check your details and try again."} />}
+              {/* {isSuccess && <SuccessAlert title={data?.message || "Registration successful!"} />} */}
+              {showOtpPopup && <OtpVerifyPopup email={email} onVerified={() => setShowOtpPopup(false)} />}
             </section>
           </form>
           <section>
