@@ -62,9 +62,9 @@ export function FooterInfo() {
         <Link href={`mailto:${InstituteInfo?.email}`}>
           <button>Email: {InstituteInfo?.email}</button>
         </Link>
-        <Link href={`tel:${InstituteInfo?.phone}`}>
+        {/* <Link href={`tel:${InstituteInfo?.phone}`}>
           <button>Hotline: {InstituteInfo?.phone}</button>
-        </Link>
+        </Link> */}
       </section>
     </main>
   );
