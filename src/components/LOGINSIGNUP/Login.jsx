@@ -7,15 +7,17 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
 import InputBox from "@/components/LOGINSIGNUP/InputBox";
 import bgimg from "@/assets/img/abc.jpg";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect} from "react";
 import { useLoginMutation } from "@/features/auth/authApi";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/features/auth/authSlice";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
+import { useRouter } from "next/navigation";
 
 
 export default function Login() {
+  const router = useRouter();
   const btn = `uppercase font-semibold h-12 px-1 rounded-full w-full text-sm`;
   const dispatch = useDispatch();
   const [login, { data, isLoading, isError, isSuccess, error, reset }] = useLoginMutation();
@@ -41,6 +43,7 @@ export default function Login() {
       const response = await login(userData).unwrap();
       console.log("response => ", response)
       dispatch(setCredentials(response));
+      router.push(`/profile/${response.data._id}`);
     } catch (err) {
       console.error("Login failed:", err);
     }
