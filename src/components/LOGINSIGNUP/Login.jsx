@@ -42,7 +42,12 @@ export default function Login() {
       };
       const response = await login(userData).unwrap();
       console.log("response => ", response)
-      dispatch(setCredentials(response));
+      dispatch(setCredentials({
+        user: response.data,
+        token: response.token || response.data.token ||  null,
+      }));
+      localStorage.setItem("user", JSON.stringify(response.data));
+      localStorage.setItem("token", response.token || response.data.token || null);
       router.push(`/profile/${response.data._id}`);
     } catch (err) {
       console.error("Login failed:", err);

@@ -7,7 +7,7 @@ export const userApi = baseApi.injectEndpoints({
         providesTags: ['Users'],
     }),
     fetchUserById: builder.query({
-        query: (id) => `/users/${id}`,
+        query: (id) => `/users/user/${id}`,
         providesTags: (result, error, id) => [{ type: 'Users', id }],
     }),
     createUser: builder.mutation({
@@ -26,6 +26,13 @@ export const userApi = baseApi.injectEndpoints({
         }),
         invalidatesTags: (result, error, { id }) => [{ type: 'Users', id }],
     }),
+    userImageUpload: builder.mutation({
+        query: ({ key, imageData }) => ({
+            url: `users/user/upload-image/${key}`,
+            method: 'PATCH',
+            body: imageData,
+        }),
+    }),
     deleteUser: builder.mutation({
         query: (id) => ({
             url: `/users/${id}`,
@@ -42,5 +49,6 @@ export const {
   useFetchUserByIdQuery,
     useCreateUserMutation,
     useUpdateUserMutation,
+    useUserImageUploadMutation,
     useDeleteUserMutation,
 } = userApi;

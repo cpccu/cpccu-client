@@ -1,16 +1,19 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect} from "react";
 import Image from "next/image";
-import defaultAvatar from "@/assets/avatar/default.png";
+import defaultAvatar from "@/assets/avatar/default-avatar.avif";
 import { useUpdateUserMutation } from "@/features/users/userApi";
+import { useUserImageUploadMutation } from "@/features/users/userApi";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
 
-export default function ProfilePage({ user }) {
+export default function ProfilePage({ user, isOwnProfile }) {
+  console.log("Profile data => ", user);
   const [updateUser , { isLoading, isSuccess , isError, reset }] = useUpdateUserMutation();
+  const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageUploadSuccess, isError: isImageUploadError, reset: resetImageUpload }] = useUserImageUploadMutation();
   const [profile, setProfile] = useState({
-    picture: user?.picture || "",
+    avatar: user?.avatar || "",
     fullName: user?.fullName || "",
     email: user?.email || "",
     phone: user?.phone || "",
@@ -24,6 +27,7 @@ export default function ProfilePage({ user }) {
 
   const [editMode, setEditMode] = useState(false);
   const [newSkill, setNewSkill] = useState("");
+  const [imageFile, setImageFile] = useState(null);
 
   // Calculate profile completion %
   const fields = ["fullName","email","phone","github","linkedin","skills","studentId","batch","section"];
@@ -33,6 +37,22 @@ export default function ProfilePage({ user }) {
 
   // Handle change
   const handleChange = (field, value) => setProfile({ ...profile, [field]: value });
+
+  // Handle image upload
+  const handleImageUpload = async () => {
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append("image", imageFile);
+      try {
+        await userImageUpload({
+           key:"avatar", 
+           imageData: formData 
+          }).unwrap();
+      } catch (error) {
+        console.error("Image upload failed:", error);
+      }
+    }
+  };
 
   // Add skill
   const addSkill = () => {
@@ -54,11 +74,12 @@ export default function ProfilePage({ user }) {
     }
   }, [isSuccess, isError, reset]);
 
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">My Profile</h1>
-        <button
+        {isOwnProfile && (<button
           onClick={() => {
             if (editMode) {
               updateUser(profile);
@@ -70,10 +91,10 @@ export default function ProfilePage({ user }) {
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
         >
           {editMode ? (isLoading ? "Saving..." : "Save") : "Edit"}
-        </button>
+        </button>)}
       </div>
-      {isSuccess && <SuccessAlert message="Profile updated successfully!" />}
-      {isError && <ErrorAlert message="Failed to update profile. Please try again." />}
+      {isSuccess && <SuccessAlert title="Profile updated successfully!" />}
+      {isError && <ErrorAlert title="Failed to update profile!" text="Please try again." />}
 
       {/* Profile Progress */}
       <div className="mb-4">
@@ -92,7 +113,7 @@ export default function ProfilePage({ user }) {
         <div className="flex flex-col items-center gap-4 md:w-1/3">
           <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-gray-200">
             <Image
-              src={profile.picture || defaultAvatar}
+              src={profile.avatar || defaultAvatar}
               alt="Profile Picture"
               width={160}
               height={160}
@@ -100,13 +121,21 @@ export default function ProfilePage({ user }) {
             />
           </div>
           {editMode && (
-            <input
-              type="text"
-              placeholder="Profile Picture URL"
-              value={profile.picture}
-              onChange={(e) => handleChange("picture", e.target.value)}
+            <>
+              <input
+              type="file"
+              placeholder="Profile Picture"
+              onChange={(e) => setImageFile(e.target.files[0])}
               className="border px-2 py-1 rounded-md w-full text-sm"
             />
+            <button
+              onClick={handleImageUpload}
+              disabled={isImageUploading}
+              className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition w-full"
+            >
+              {isImageUploading ? "Uploading..." : "Upload Picture"}
+            </button>
+            </>
           )}
         </div>
 
