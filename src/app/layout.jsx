@@ -1,4 +1,5 @@
 import "@/app/globals.css";
+import ProviderWrapper from "./redux/ProviderWrapper";
 
 export const metadata = {
   title: "CPCCU Portal",
@@ -17,7 +18,9 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <ProviderWrapper>{children}</ProviderWrapper>
+      </body>
     </html>
   );
 }

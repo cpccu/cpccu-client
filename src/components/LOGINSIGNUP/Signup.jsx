@@ -5,10 +5,20 @@ import Logo from "@/assets/logo/cpccu.png";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import InputBox from "@/components/LOGINSIGNUP/InputBox";
+import { useRegisterMutation } from "@/features/auth/authApi";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/features/auth/authSlice";
+import SuccessAlert from "../ALERT/SuccessAlert";
+import ErrorAlert from "../ALERT/ErrorAlert";
+import OtpPopup from "../ALERT/OtpVerifyPopup";
 
 export default function Signup() {
+
+  const dispatch = useDispatch();
+  const [register, { data, isLoading, isError, isSuccess, error, reset }] = useRegisterMutation();
+
   const labelCSS = `uppercase font-semibold text-sm text-gray-800 font-custom`;
   const inputCSS = `outline-none border-b border-gray-300 py-2 focus:border-black`;
   const btn = `uppercase font-semibold h-12 px-1 rounded-full w-full text-sm`;
@@ -19,6 +29,41 @@ export default function Signup() {
   const [fullName, setFullName] = useState("");
   const [uniID, setUniID] = useState("");
   const [batch, setBatch] = useState("");
+  const [showOtpPopup, setShowOtpPopup] = useState(false);
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (password !== confirmPass) {
+
+      return <ErrorAlert title="Password Mismatch!" text="Please make sure your passwords match and try again." />;
+    }
+    try {
+      const userData = {
+        email,
+        password,
+        confirm_password: confirmPass,
+        fullName,
+        uniID,
+        batch,
+      };
+      const response = await register(userData).unwrap();
+      console.log("response => ", response)
+      dispatch(setCredentials(response));
+      setShowOtpPopup(true);
+    } catch (err) {
+      console.error("Registration failed:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (isSuccess || isError) {
+      const timer = setTimeout(() => {
+        reset();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, isError, reset]);
 
   return (
     <>
@@ -54,7 +99,7 @@ export default function Signup() {
             </h2>
           </section>
           <form
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handleSubmit}
             className="flex flex-col gap-4 w-full"
           >
             <section className="grid grid-cols-12 gap-5">
@@ -112,9 +157,12 @@ export default function Signup() {
                 className={`${btn} bg-gradient-to-r from-header-hover to-fuchsia-700 text-header hover:ring trans`}
               >
                 <div className="bg-white rounded-full h-10 flex items-center justify-center">
-                  create account
+                  {isLoading ? "Signing Up..." : "Sign Up"}
                 </div>
               </button>
+              {isError && <ErrorAlert title="Registration failed!" text={error?.data?.message || "Please check your details and try again."} />}
+              {/* {isSuccess && <SuccessAlert title={data?.message || "Registration successful!"} />} */}
+              {showOtpPopup && <OtpVerifyPopup email={email} onVerified={() => setShowOtpPopup(false)} />}
             </section>
           </form>
           <section>
