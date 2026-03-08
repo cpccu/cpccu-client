@@ -20,3 +20,8 @@ body {
 .conText {
   @apply md:text-lg lg:text-[1.1rem] leading-7;
 }
+
+/* make all buttons soft rounded rectangles */
+button {
+  @apply rounded-lg;
+}
