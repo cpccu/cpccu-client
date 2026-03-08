@@ -1,35 +1,51 @@
 import { baseApi } from "@/services/baseApi";
 
 export const authApi = baseApi.injectEndpoints({
-  endpoints: (builder) => ({
-    login: builder.mutation({
-        query: (credentials) => ({
-            url: '/auth/login',
-            method: 'POST',
-            body: credentials,
+    endpoints: (builder) => ({
+        login: builder.mutation({
+            query: (credentials) => ({
+                url: '/auth/login',
+                method: 'POST',
+                body: credentials,
+            }),
+            invalidatesTags: ['Auth'],
         }),
-        invalidatesTags: ['Auth'],
-    }),
-    register: builder.mutation({
-        query: (userData) => ({
-            url: '/auth/register',
-            method: 'POST',
-            body: userData,
+        register: builder.mutation({
+            query: (userData) => ({
+                url: '/auth/register',
+                method: 'POST',
+                body: userData,
+            }),
+            invalidatesTags: ['Auth'],
         }),
-        invalidatesTags: ['Auth'],
-    }),
-    logout: builder.mutation({
-        query: () => ({
-            url: '/auth/logout',
-            method: 'POST',
+        sendOtp: builder.mutation({
+            query: ({ email }) => ({
+                url: '/auth/send-otp',
+                method: 'POST',
+                body: { email },
+            }),
         }),
-        invalidatesTags: ['Auth'],
+        otpVerify: builder.mutation({
+            query: ({ email, otp }) => ({
+                url: '/auth/verify-registration',
+                method: 'POST',
+                body: { email, otp },
+            }),
+        }),
+        logout: builder.mutation({
+            query: () => ({
+                url: '/auth/logout',
+                method: 'POST',
+            }),
+            invalidatesTags: ['Auth'],
+        }),
     }),
-  }),
 });
 
 export const {
-  useLoginMutation,
-  useRegisterMutation,
-  useLogoutMutation,
+    useLoginMutation,
+    useRegisterMutation,
+    useSendOtpMutation,
+    useOtpVerifyMutation,
+    useLogoutMutation,
 } = authApi;

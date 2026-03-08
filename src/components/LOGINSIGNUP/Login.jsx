@@ -20,7 +20,7 @@ export default function Login() {
   const router = useRouter();
   const btn = `uppercase font-semibold h-12 px-1 rounded-full w-full text-sm`;
   const dispatch = useDispatch();
-  const [login, { isLoading, isError, isSuccess,reset }] = useLoginMutation();
+  const [login, { data, isLoading, isError, isSuccess, error, reset }] = useLoginMutation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -43,9 +43,11 @@ export default function Login() {
       const response = await login(userData).unwrap();
       console.log("response => ", response)
       dispatch(setCredentials({
-        data: response.data,
-        token: response.token || response.data.token || null,
+        user: response.data,
+        token: response.token || response.data.token ||  null,
       }));
+      localStorage.setItem("user", JSON.stringify(response.data));
+      localStorage.setItem("token", response.token || response.data.token || null);
       router.push(`/profile/${response.data._id}`);
     } catch (err) {
       console.error("Login failed:", err);
@@ -132,8 +134,8 @@ export default function Login() {
             Login to Access Dashboard
           </h1>
         </section>
-        {isError && <ErrorAlert message={"Login failed. Please check your credentials."} />}
-        {isSuccess && <SuccessAlert title={"Login successful!"} />}
+        {isError && <ErrorAlert title="Login failed!" text={error?.data?.message || "Please check your credentials and try again."} />}
+        {isSuccess && <SuccessAlert title={data?.message || "Login successful!" } />}
       </div>
     </div>
   );

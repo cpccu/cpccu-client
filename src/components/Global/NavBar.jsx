@@ -11,8 +11,10 @@ import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { faSignInAlt } from "@fortawesome/free-solid-svg-icons";
 import Data from "@/data/global/navBar.json";
 import GoToTop from "@/components/Global/GoToTop";
+import { useFetchUsersQuery } from "@/features/users/userApi";
 
 export default function NavBar() {
+  const { data: user, isLoading, isError } = useFetchUsersQuery();
   const router = useRouter();
   const [fixed, setFixed] = useState(false);
   const [open, setOpen] = useState(false);
