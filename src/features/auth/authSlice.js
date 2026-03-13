@@ -1,6 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
-const userFromStorage = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
-const tokenFromStorage = localStorage.getItem("token") ? localStorage.getItem("token") : null;
+
+// Check if we're on the client side before accessing localStorage
+const getFromLocalStorage = (key) => {
+  if (typeof window !== "undefined" && window.localStorage) {
+    return localStorage.getItem(key);
+  }
+  return null;
+};
+
+const userFromStorage = getFromLocalStorage("user") ? JSON.parse(getFromLocalStorage("user")) : null;
+const tokenFromStorage = getFromLocalStorage("token") ? getFromLocalStorage("token") : null;
 
 const authSlice = createSlice({
   name: "auth",
@@ -12,12 +21,22 @@ const authSlice = createSlice({
       state.token = token;
       state.loading = false;
       state.error = null;
+      // Save to localStorage on client side
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("token", token);
+      }
     },
     clearCredentials: (state) => {
       state.user = null;
       state.token = null;
       state.loading = false;
       state.error = null;
+      // Remove from localStorage on client side
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+      }
     },
   },
 });
