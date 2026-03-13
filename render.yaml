@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: next-js
+    runtime: node
+    plan: starter
+    buildCommand: npm install; npm run build
+    startCommand: npm run start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
