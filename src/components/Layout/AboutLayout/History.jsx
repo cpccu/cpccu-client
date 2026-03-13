@@ -3,12 +3,12 @@ import React from "react";
 export default function History() {
   const milestones = [
     {
-      year: "2020",
+      year: "2022",
       title: "The Beginning",
-      description: "The CIT University Programming Club was founded to create a collaborative programming community for students interested in technology and software development.",
+      description: "The Competitive Programming Camp City University was founded to create a collaborative programming community for students interested in technology and software development.",
     },
     {
-      year: "2022",
+      year: "2023",
       title: "Community Growth",
       description: "More students joined the club, and regular coding sessions, peer learning activities, and programming discussions became part of the club culture.",
     },
@@ -20,7 +20,7 @@ export default function History() {
     {
       year: "2026",
       title: "A Continuing Journey",
-      description: "Today, the Programming Club continues to grow as a student-driven community, where members learn programming, share knowledge, collaborate on projects, and prepare themselves for careers in technology.",
+      description: "Today, The Competitive Programming Camp City University continues to grow as a student-driven community, where members learn programming, share knowledge, collaborate on projects, and prepare themselves for careers in technology.",
     },
   ];
 
@@ -35,19 +35,46 @@ export default function History() {
           <h2 className="text-2xl font-semibold text-pText mb-4">Foundation</h2>
           <div className="flex flex-col gap-4 text-gray-700 leading-relaxed text-lg">
             <p>
-              The City University Programming Club was established in 2020 by a group of passionate students who shared a common interest in programming, technology, and collaborative learning. The club was created with the goal of building a supportive community where students could learn, teach, and grow together.
-            </p>
-            <p>
-              From the beginning, the club focused on creating an environment where students help each other improve their coding skills, explore new technologies, and work on real-world projects. Senior members guide juniors, and everyone contributes to building a strong learning culture.
+              Competitive Programming Camp City University (CPCCU) was established on October 20, 2022, at City University Bangladesh in Khagan, Savar. The journey began when Md Shoriful Islam Ashiq (CSE 60), together with Md Anisur Rahman Anik (CSE 61), Khandakar Amir Hamza (CSE 58), and Roudra Mondal (CSE 60), laid the foundation of a vision that continues to grow, inspire, and unite. CPCCU stands as the identity of the competitive programmers' community, dedicated to nurturing growth and cooperative efforts among coders at all levels.
             </p>
           </div>
         </div>
 
         <div className="mb-16">
-          <h2 className="text-2xl font-semibold text-pText mb-4">Community & Support</h2>
+          <h2 className="text-2xl font-semibold text-pText mb-4">Our Activities</h2>
           <p className="text-gray-700 leading-relaxed text-lg">
-            As the club continued to grow, many alumni members remained connected with the community. Some alumni support the club through mentorship, knowledge sharing, and donations, helping the organization organize events, workshops, and learning activities for current students.
+            Our goal is to create a dynamic environment for active learning and expert guidance. We actively engage in:
           </p>
+          <ul className="list-disc list-inside text-gray-700 leading-relaxed text-lg">
+            <li>Organizing Weekly, Monthly, Quarterly, and Yearly Programming Contests.</li>
+            <li>Taking classes on programming topics for beginner and intermediate-level students.</li>
+            <li>Providing rewards, gifts, and importantly, Certificates to the participants.</li>
+          </ul>
+        </div>
+
+
+
+        <div className="mb-16">
+           <h2 className="text-2xl font-semibold text-pText mb-4">Vision & Evolution</h2>
+          <div className="flex flex-col gap-4 text-gray-700 leading-relaxed text-lg">
+            <ul className="list-disc list-inside text-gray-700 leading-relaxed text-lg">
+              <li>Inspire and empower students to excel in programming competitions and beyond.</li>
+              <li>Foster a culture of inclusiveness, creativity, and innovation among club members.</li>
+              <li>Represent the institute and make a positive impact on the programming community.</li>
+            </ul>
+          </div>
+        </div>
+
+
+        <div className="mb-16">
+           <h2 className="text-2xl font-semibold text-pText mb-4">Mission</h2>
+          <div className="flex flex-col gap-4 text-gray-700 leading-relaxed text-lg">
+            <ul className="list-disc list-inside text-gray-700 leading-relaxed text-lg">
+              <li>Provide a supportive and collaborative environment for learning, practicing, and applying advanced programming skills and techniques.</li>
+              <li>Compete with other teams at national and international levels and showcase the institute’s excellence.</li>
+              <li>Contribute to the development and dissemination of open-source software and knowledge.</li>
+            </ul>
+          </div>
         </div>
 
         <div className="mb-16">
@@ -63,18 +90,6 @@ export default function History() {
                 </p>
               </div>
             ))}
-          </div>
-        </div>
-
-        <div>
-          <h2 className="text-2xl font-semibold text-pText mb-4">Vision & Evolution</h2>
-          <div className="flex flex-col gap-4 text-gray-700 leading-relaxed text-lg">
-            <p>
-              The CIT University Programming Club aims to build a strong technology community within the university. Our mission is to encourage innovation, teamwork, problem-solving, and continuous learning.
-            </p>
-            <p>
-              By connecting students, alumni, and mentors, the club continues to evolve as a platform where ideas are shared, skills are developed, and future developers are inspired.
-            </p>
           </div>
         </div>
       </section>
