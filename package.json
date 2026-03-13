@@ -4,18 +4,18 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "bun --bun next dev",
+    "build": "bun --bun next build",
+    "start": "bun --bun next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.1.0",
-    "@fortawesome/fontawesome-svg-core": "^7.1.0",
-    "@fortawesome/free-brands-svg-icons": "^7.1.0",
-    "@fortawesome/free-regular-svg-icons": "^7.1.0",
-    "@fortawesome/free-solid-svg-icons": "^7.1.0",
-    "@fortawesome/react-fontawesome": "^3.1.1",
+    "@fortawesome/fontawesome-free": "^7.2.0",
+    "@fortawesome/fontawesome-svg-core": "^7.2.0",
+    "@fortawesome/free-brands-svg-icons": "^7.2.0",
+    "@fortawesome/free-regular-svg-icons": "^7.2.0",
+    "@fortawesome/free-solid-svg-icons": "^7.2.0",
+    "@fortawesome/react-fontawesome": "^3.2.0",
     "@gpfunk/tailwindcss-clsx": "^1.0.0",
     "@reduxjs/toolkit": "^2.11.2",
     "clsx": "^2.1.1",
@@ -25,19 +25,19 @@
     "react": "^19.2.4",
     "react-countup": "^6.5.3",
     "react-dom": "^19.2.4",
-    "react-icons": "^5.5.0",
+    "react-icons": "^5.6.0",
     "react-redux": "^9.2.0",
     "react-scroll": "^1.9.3",
     "react-scroll-trigger": "^0.6.14",
-    "sweetalert2": "^11.26.20",
-    "tailwind-merge": "^3.4.0",
-    "tailwindcss": "^4.1.18",
+    "sweetalert2": "^11.26.22",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.1",
     "upload-js": "^2.24.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.18",
-    "eslint": "^9.39.2",
+    "@tailwindcss/postcss": "^4.2.1",
+    "eslint": "^10.0.3",
     "eslint-config-next": "^16.1.6",
-    "postcss": "^8.5.6"
+    "postcss": "^8.5.8"
   }
 }
