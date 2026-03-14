@@ -12,7 +12,7 @@ import { useDispatch } from "react-redux";
 import { setCredentials } from "@/features/auth/authSlice";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
-import OtpPopup from "../ALERT/OtpVerifyPopup";
+import OtpVerifyPopup from "../ALERT/OtpVerifyPopup";
 
 export default function Signup() {
 
@@ -162,7 +162,7 @@ export default function Signup() {
               </button>
               {isError && <ErrorAlert title="Registration failed!" text={error?.data?.message || "Please check your details and try again."} />}
               {/* {isSuccess && <SuccessAlert title={data?.message || "Registration successful!"} />} */}
-              {showOtpPopup && <OtpVerifyPopup email={email} onVerified={() => setShowOtpPopup(false)} />}
+              {showOtpPopup && <OtpVerifyPopup email={email} onVerified={() => setShowOtpPopup(false)} onClosed={() => setShowOtpPopup(false)} />}
             </section>
           </form>
           <section>

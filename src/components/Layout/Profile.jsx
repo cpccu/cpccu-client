@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import defaultAvatar from "@/assets/avatar/default-avatar.avif";
+import defaultAvatar from "@/assets/avatar/default-avatar.png";
 import { useUpdateUserMutation } from "@/features/users/userApi";
 import { useUserImageUploadMutation } from "@/features/users/userApi";
+import { useSelector, useDispatch } from "react-redux";
+import { setCredentials } from "@/features/auth/authSlice";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
+import { set } from "date-fns";
 
 export default function ProfilePage({ user, isOwnProfile }) {
-  console.log("Profile data => ", user);
-  const [updateUser , { isLoading, isSuccess , isError, reset }] = useUpdateUserMutation();
+  const dispatch = useDispatch();
+  const hydrated = useSelector((state) => state.auth.hydrated);
+  const [updateUser, { isLoading, isSuccess, isError, reset }] = useUpdateUserMutation();
   const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageUploadSuccess, isError: isImageUploadError, reset: resetImageUpload }] = useUserImageUploadMutation();
   const [profile, setProfile] = useState({
     avatar: user?.avatar || "",
@@ -25,12 +29,13 @@ export default function ProfilePage({ user, isOwnProfile }) {
     section: user?.section || "",
   });
 
+  const [mounted, setMounted] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [newSkill, setNewSkill] = useState("");
   const [imageFile, setImageFile] = useState(null);
 
   // Calculate profile completion %
-  const fields = ["fullName","email","phone","github","linkedin","skills","studentId","batch","section"];
+  const fields = ["fullName", "email", "phone", "github", "linkedin", "skills", "studentId", "batch", "section"];
   const completion = Math.round(
     (fields.filter(f => profile[f] && (Array.isArray(profile[f]) ? profile[f].length > 0 : true)).length / fields.length) * 100
   );
@@ -45,9 +50,9 @@ export default function ProfilePage({ user, isOwnProfile }) {
       formData.append("image", imageFile);
       try {
         await userImageUpload({
-           key:"avatar", 
-           imageData: formData 
-          }).unwrap();
+          key: "avatar",
+          imageData: formData
+        }).unwrap();
       } catch (error) {
         console.error("Image upload failed:", error);
       }
@@ -68,22 +73,42 @@ export default function ProfilePage({ user, isOwnProfile }) {
   };
 
   useEffect(() => {
+    setMounted(true);
+    if (isImageUploadSuccess) {
+    window.location.reload();
+  }
     if (isSuccess || isError) {
       const timer = setTimeout(() => reset(), 2000);
       return () => clearTimeout(timer);
     }
-  }, [isSuccess, isError, reset]);
+  }, [isImageUploadSuccess, isSuccess, isError, reset]);
 
+
+  if (!hydrated) {
+    return null; // or a loading spinner
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">My Profile</h1>
-        {isOwnProfile && (<button
-          onClick={() => {
+        {mounted && isOwnProfile && (<button
+          onClick={async () => {
             if (editMode) {
-              updateUser(profile);
-              setEditMode(false);
+              try {
+                const res = await updateUser(profile).unwrap();
+
+                dispatch(
+                  setCredentials({
+                    user: res.data,
+                    token: localStorage.getItem("token"),
+                  })
+                );
+
+                setEditMode(false);
+              } catch (error) {
+                console.error(error);
+              }
             } else {
               setEditMode(true);
             }
@@ -123,18 +148,18 @@ export default function ProfilePage({ user, isOwnProfile }) {
           {editMode && (
             <>
               <input
-              type="file"
-              placeholder="Profile Picture"
-              onChange={(e) => setImageFile(e.target.files[0])}
-              className="border px-2 py-1 rounded-md w-full text-sm"
-            />
-            <button
-              onClick={handleImageUpload}
-              disabled={isImageUploading}
-              className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition w-full"
-            >
-              {isImageUploading ? "Uploading..." : "Upload Picture"}
-            </button>
+                type="file"
+                placeholder="Profile Picture"
+                onChange={(e) => setImageFile(e.target.files[0])}
+                className="border px-2 py-1 rounded-md w-full text-sm"
+              />
+              <button
+                onClick={handleImageUpload}
+                disabled={isImageUploading}
+                className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition w-full"
+              >
+                {isImageUploading ? "Uploading..." : "Upload Picture"}
+              </button>
             </>
           )}
         </div>
