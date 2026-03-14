@@ -13,7 +13,7 @@
   --breakpoint-xxl: 1920px;
 
   /* Colors */
-  --color-primary: #f35f3b;
+  --color-primary: #3b82f6;
   --color-header: #3b60c9;
   --color-header-hover: #5b80e6;
   --color-footer: #333437;
@@ -24,11 +24,43 @@
   --color-p-text: #223f6f;
   --color-profile: #f0f2f5;
 
+  /* Shadcn-like variables */
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222.2 84% 4.9%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222.2 84% 4.9%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222.2 84% 4.9%);
+  --color-secondary: hsl(210 40% 96.1%);
+  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  --color-accent: hsl(210 40% 96.1%);
+  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+  --color-border: hsl(214.3 31.8% 91.4%);
+  --color-input: hsl(214.3 31.8% 91.4%);
+  --color-ring: hsl(12 88% 59%);
+
   /* Font */
   --font-custom: "Inria Sans", sans-serif;
 
   /* Box shadow */
   --shadow-custom: 0px 0px 16px -5px rgba(59, 96, 201, 0.91);
+
+  /* Animations */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
 }
 
 body {

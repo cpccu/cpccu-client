@@ -41,18 +41,20 @@
     "path": "/blog",
     "level": 0
   },
-
   {
     "page": "Contact",
     "path": "/contact",
     "level": 0
   },
-
+  {
+    "page": "Certificate",
+    "path": "/certificate",
+    "level": 0
+  },
   {
     "page": "Job Pipeline",
     "path": "/job-pipeline",
     "level": 0,
     "requireLogin": true
   }
-
 ]
