@@ -1,4 +1,4 @@
-import Button from "../GlobalComponents/Button";
+import Button from "@/components/GlobalComponents/Button";
 
 export default function ProfileID() {
   return (
@@ -12,7 +12,7 @@ export default function ProfileID() {
           <img src="" alt="profile" />
         </span>
         <div className="text-center lg:text-left">
-          <h1 className="text-2xl lg:text-4xl font-bold text-pText">
+          <h1 className="text-2xl lg:text-4xl font-bold text-p-text">
             Rahul Roy Nipon
           </h1>
           <p>

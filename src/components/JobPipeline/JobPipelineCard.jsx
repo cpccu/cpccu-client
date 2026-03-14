@@ -1,4 +1,4 @@
-import JobPipelineCardSkill from "./JobPipelineCardSkill";
+import JobPipelineCardSkill from "@/components/JobPipeline/JobPipelineCardSkill";
 import { FaGithub } from "react-icons/fa";
 import { ImLinkedin } from "react-icons/im";
 import { format } from "date-fns";
@@ -55,8 +55,8 @@ export default function JobPipelineCard({ data }) {
         </h2>
 
         <ul className="flex flex-col text-gray-600 gap-3 overflow-y-auto px-5">
-          {skills.map((skill) => {
-            return <JobPipelineCardSkill skill={skill} />;
+          {skills.map((skill, index) => {
+            return <JobPipelineCardSkill key={`${skill.skillName}-${index}`} skill={skill} />;
           })}
         </ul>
       </div>

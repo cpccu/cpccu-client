@@ -1,0 +1,20 @@
+services:
+  # - type: web
+  #   name: next-js
+  #   runtime: node
+  #   plan: starter
+  #   buildCommand: bun install; bun run build
+  #   startCommand: bun run start
+  #   autoDeploy: true
+  #   envVars:
+  #     - key: NODE_ENV
+  #       value: production
+  - type: web
+    name: nextjs-static
+    runtime: static
+    buildCommand: bun install; bun run build
+    staticPublishPath: out
+    pullRequestPreviewsEnabled: true # optional
+    envVars:
+      - key: NODE_ENV
+        value: production

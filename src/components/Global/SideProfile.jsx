@@ -1,21 +1,23 @@
+"use client";
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faAngleDoubleLeft } from "@fortawesome/free-solid-svg-icons";
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import Data from "./../../../data/LogInfo.json";
+import { usePathname, useRouter } from "next/navigation";
+import Data from "@/data/LogInfo.json";
 
 export default function SideProfile() {
   const [isOpen, setOpen] = useState(false);
   const [show, setShow] = useState(true);
 
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const path = `/profile/${Data?.username}`;
 
   const goProfile = useCallback(() => {
-    navigate(path);
-  }, [navigate, path]);
+    router.push(path);
+  }, [router, path]);
 
   useEffect(() => {
     setOpen(false);
@@ -31,7 +33,7 @@ export default function SideProfile() {
     <section className="fixed top-52 right-0 z-40 flex items-center justify-center group">
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="bg-headerHover/20 group-hover:bg-headerHover trans flex items-center justify-center h-8 w-8"
+        className="bg-header-hover/20 group-hover:bg-header-hover trans flex items-center justify-center h-8 w-8"
       >
         <FontAwesomeIcon
           className={`text-white/60 group-hover:text-white text-2xl trans ${

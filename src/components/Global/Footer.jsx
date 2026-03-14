@@ -5,8 +5,8 @@ import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { faLinkedinIn } from "@fortawesome/free-brands-svg-icons";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faAngleLeft } from "@fortawesome/free-solid-svg-icons";
-import InstituteInfo from "../../../data/global/institude.json";
-import { Link } from "react-router-dom";
+import InstituteInfo from "@/data/global/institude.json";
+import Link from "next/link";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 
 export default function Footer() {
@@ -59,10 +59,10 @@ export function FooterInfo() {
       </div>
 
       <section className="flex flex-col items-start gap-2 font-semibold text-sm">
-        <Link to={`mailto:${InstituteInfo?.email}`}>
+        <Link href={`mailto:${InstituteInfo?.email}`}>
           <button>Email: {InstituteInfo?.email}</button>
         </Link>
-        {/* <Link to={`tel:${InstituteInfo?.phone}`}>
+        {/* <Link href={`tel:${InstituteInfo?.phone}`}>
           <button>Hotline: {InstituteInfo?.phone}</button>
         </Link> */}
       </section>
@@ -94,7 +94,7 @@ export function Touch() {
             placeholder="Enter your email"
             required
           />
-          <button className="bg-header hover:bg-headerHover w-[21%] trans">
+          <button className="bg-header hover:bg-header-hover w-[21%] trans">
             <FontAwesomeIcon className="h-5" icon={faPaperPlane} />
           </button>
         </form>
@@ -103,11 +103,11 @@ export function Touch() {
           {InstituteInfo?.media.map((item, index) => (
             <Link
               key={index}
-              to={item?.url}
+              href={item?.url}
               target="_blank"
               rel="noopener noreferrer"
             >
-              <button className="bg-header hover:bg-headerHover trans flex items-center justify-center px-3 py-2 w-10 h-10">
+              <button className="bg-header hover:bg-header-hover trans flex items-center justify-center px-3 py-2 w-10 h-10">
                 <FontAwesomeIcon className="w-7 h-7" icon={Allicon[index]} />
               </button>
             </Link>
@@ -132,7 +132,7 @@ export function UsefullLink() {
         {InstituteInfo?.useFullLink.element.map((item, index) => (
           <Link
             key={index}
-            to={item?.url}
+            href={item?.url}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -164,7 +164,7 @@ export function OrgLink() {
         {InstituteInfo?.org.element.map((item, index) => (
           <Link
             key={index}
-            to={item?.url}
+            href={item?.url}
             target="_blank"
             rel="noopener noreferrer"
           >

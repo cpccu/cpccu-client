@@ -1,11 +1,39 @@
-import useIMG from "./../../assets/icons/user.svg";
-import pictureIMG from "./../../assets/icons/picture.svg";
-import eventIMG from "./../../assets/icons/event.svg";
-import medalIMG from "./../../assets/icons/medal.svg";
-import Data from "../../../data/home/Count.json";
-import ScrollTrigger from "react-scroll-trigger";
+"use client";
+
+import useIMG from "@/assets/icons/user.svg";
+import pictureIMG from "@/assets/icons/picture.svg";
+import eventIMG from "@/assets/icons/event.svg";
+import medalIMG from "@/assets/icons/medal.svg";
+import Data from "@/data/home/Count.json";
 import CountUp from "react-countup";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+
+function ScrollTrigger({ onEnter, onExit, children }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            onEnter?.();
+          } else {
+            onExit?.();
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onEnter, onExit]);
+
+  return <div ref={ref}>{children}</div>;
+}
 
 export default function Count() {
   const AllIMG = [useIMG, pictureIMG, eventIMG, medalIMG];

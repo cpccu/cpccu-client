@@ -1,6 +1,8 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import cn from "../../../lib/cn.js";
+import Link from "next/link";
+import cn from "@/lib/cn.js";
 
 const UpComingEventCard = ({ data, clName }) => {
   return (
@@ -57,7 +59,7 @@ const UpComingEventCard = ({ data, clName }) => {
         </p>
 
         {data?.btnLink ? (
-          <Link to={data?.btnLink} target="_blank" rel="noopener noreferrer">
+          <Link href={data?.btnLink} target="_blank" rel="noopener noreferrer">
             <button
               className="bg-black/30 text-white font-bold uppercase px-5 py-2 
           hover:text-gray-600 hover:bg-white border-[3px] border-white trans"
@@ -68,7 +70,7 @@ const UpComingEventCard = ({ data, clName }) => {
         ) : null}
 
         {data?.btnLink1 ? (
-          <Link to={data?.btnLink1} target="_blank" rel="noopener noreferrer">
+          <Link href={data?.btnLink1} target="_blank" rel="noopener noreferrer">
             <button
               className="bg-black/30 text-white font-bold uppercase px-5 py-2 
           hover:text-gray-600 hover:bg-white border-[3px] border-white trans"
@@ -129,42 +131,54 @@ function TimeBox({ date }) {
     return timeLeft;
   };
 
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+  const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    setTimeLeft(calculateTimeLeft());
+
+    const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
 
-    return () => clearTimeout(timer);
-  });
+    return () => clearInterval(timer);
+  }, [date]);
+
+  if (!timeLeft) return null; // prevents hydration mismatch
 
   const { days, hours, minutes, seconds } = timeLeft;
 
   return (
     <main className="flex gap-5">
-      {(!days && !hours && !minutes && !seconds) ? <section className="flex flex-col items-center font-bold gap-1">
-        <div className="border text-center px-5 py-2 font-bold text-2xl rounded-xl bg-black/70 trans">
-          Ended
-        </div>
-      </section> : (
+      {(!days && !hours && !minutes && !seconds) ? (
+        <section className="flex flex-col items-center font-bold gap-1">
+          <div className="border text-center px-5 py-2 font-bold text-2xl rounded-xl bg-black/70 trans">
+            Ended
+          </div>
+        </section>
+      ) : (
         <>
           <section className="flex flex-col items-center font-bold gap-1">
             <div>Days</div>
-            <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70 trans">
+            <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
               {days || "00"}
             </div>
-          </section><section className="flex flex-col items-center font-bold gap-1">
+          </section>
+
+          <section className="flex flex-col items-center font-bold gap-1">
             <div>Hr</div>
             <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
               {hours || "00"}
             </div>
-          </section><section className="flex flex-col items-center font-bold gap-1">
+          </section>
+
+          <section className="flex flex-col items-center font-bold gap-1">
             <div>Min</div>
             <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
               {minutes || "00"}
             </div>
-          </section><section className="flex flex-col items-center font-bold gap-1">
+          </section>
+
+          <section className="flex flex-col items-center font-bold gap-1">
             <div>Sec</div>
             <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
               {seconds || "00"}
@@ -173,8 +187,11 @@ function TimeBox({ date }) {
         </>
       )}
 
-
-      {(!days && !hours && !minutes && !seconds) ? null : <p className="self-end font-bold text-xl hidden lg:block">Remaining</p>}
+      {(!days && !hours && !minutes && !seconds) ? null : (
+        <p className="self-end font-bold text-xl hidden lg:block">
+          Remaining
+        </p>
+      )}
     </main>
   );
 }

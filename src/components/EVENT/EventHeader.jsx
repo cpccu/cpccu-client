@@ -1,7 +1,9 @@
+"use client";
+
 import { useContext } from "react";
 import { Link as ScrollEvent } from "react-scroll";
-import EventScroll from "../../Context/EventScroll/EventScroll";
-import Data from "./../../../data/event/event.json";
+import EventScroll from "@/Context/EventScroll/EventScroll";
+import Data from "@/data/event/event.json";
 
 export default function EventHeader() {
   const { scrollTarget } = useContext(EventScroll);

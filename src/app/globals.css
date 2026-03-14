@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  /* Breakpoints (screens) */
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-mdd: 905px;
+  --breakpoint-lg: 976px;
+  --breakpoint-mxl: 1280px;
+  --breakpoint-xl: 1440px;
+  --breakpoint-mmxl: 1600px;
+  --breakpoint-mmmxl: 1750px;
+  --breakpoint-xxl: 1920px;
+
+  /* Colors */
+  --color-primary: #f35f3b;
+  --color-header: #3b60c9;
+  --color-header-hover: #5b80e6;
+  --color-footer: #333437;
+  --color-count: #161f37;
+  --color-responsibility: #ecf1f5;
+  --color-text-white: #e7e7e7;
+  --color-scroll: #334caf;
+  --color-p-text: #223f6f;
+  --color-profile: #f0f2f5;
+
+  /* Font */
+  --font-custom: "Inria Sans", sans-serif;
+
+  /* Box shadow */
+  --shadow-custom: 0px 0px 16px -5px rgba(59, 96, 201, 0.91);
+}
+
+body {
+  scroll-behavior: smooth;
+}
+
+.padding {
+  @apply px-[1.1em] md:px-[2.5em] lg:px-[2.9em] xl:px-[7em];
+}
+
+.padding2 {
+  @apply px-[1.1em] md:px-[2.5em] lg:px-[2.9em] xl:px-[10em];
+}
+
+.trans {
+  @apply transition-all duration-500;
+}
+
+.conText {
+  @apply md:text-lg lg:text-[1.1rem] leading-7;
+}

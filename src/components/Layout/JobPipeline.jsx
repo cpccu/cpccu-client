@@ -1,5 +1,5 @@
-import JobPipelineHeader from "../JobPipeline/JobPipelineHeader";
-import JobPipelineHeroSection from "../JobPipeline/JobPipelineHeroSection";
+import JobPipelineHeader from "@/components/JobPipeline/JobPipelineHeader";
+import JobPipelineHeroSection from "@/components/JobPipeline/JobPipelineHeroSection";
 
 export default function JobPipeline() {
   return (

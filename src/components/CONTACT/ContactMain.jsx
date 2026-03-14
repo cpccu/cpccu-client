@@ -1,7 +1,9 @@
+"use client";
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { useContext, useEffect } from "react";
-import ContactScroll from "../../Context/ContactScroll/ContactScroll";
+import ContactScroll from "@/Context/ContactScroll/ContactScroll";
 
 export default function ContactMain() {
   const { setTarget } = useContext(ContactScroll);
@@ -76,7 +78,7 @@ export default function ContactMain() {
             ></textarea>
           </div>
           <div className="flex justify-center">
-            <button className="bg-header flex items-center justify-center gap-3 px-3 py-2 hover:bg-headerHover trans">
+            <button className="bg-header flex items-center justify-center gap-3 px-3 py-2 hover:bg-header-hover trans">
               <h1 className="font-bold text-white">Send</h1>
               <FontAwesomeIcon className=" text-white" icon={faPaperPlane} />
             </button>

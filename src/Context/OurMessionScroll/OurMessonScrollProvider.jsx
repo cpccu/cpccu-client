@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import OurMissionScroll from "./OurMessionScroll";
+import OurMissionScroll from "@/Context/OurMessionScroll/OurMessionScroll";
 
 export default function OurMissionScrollProvider({ children }) {
   const [target, setTarget] = useState(null);

@@ -1,5 +1,5 @@
-import jobPipelineData from "./../../../data/job-pipeline/Info.json";
-import JobPipelineCard from "./JobPipelineCard";
+import jobPipelineData from "@/data/job-pipeline/Info.json";
+import JobPipelineCard from "@/components/JobPipeline/JobPipelineCard";
 
 export default function JobPipelineHeroSection() {
   return (
