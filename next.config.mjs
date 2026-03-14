@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export",
+  // output: "export", // for static
   reactStrictMode: true,
   // async redirects() {
   //   return [
@@ -12,6 +12,7 @@ const nextConfig = {
   //   ];
   // },
   images: {
+    // unoptimized: true, // for static
     remotePatterns: [
       { protocol: "https", hostname: "**" },
       { protocol: "http", hostname: "**" },
