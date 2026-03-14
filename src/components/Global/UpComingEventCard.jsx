@@ -117,66 +117,73 @@ export default UpComingEventCard;
 function TimeBox({ date }) {
   const calculateTimeLeft = () => {
     const difference = +new Date(date) - +new Date();
-    let timeLeft = {};
 
-    if (difference > 0) {
-      timeLeft = {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((difference / 1000 / 60) % 60),
-        seconds: Math.floor((difference / 1000) % 60),
-      };
-    }
+    if (difference <= 0) return null;
 
-    return timeLeft;
+    return {
+      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((difference / 1000 / 60) % 60),
+      seconds: Math.floor((difference / 1000) % 60),
+    };
   };
 
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+  const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
+    const update = () => setTimeLeft(calculateTimeLeft());
 
-    return () => clearTimeout(timer);
-  });
+    update();
+    const timer = setInterval(update, 1000);
+
+    return () => clearInterval(timer);
+  }, [date]);
+
+  if (!timeLeft) {
+    return (
+      <main className="flex gap-5">
+        <section className="flex flex-col items-center font-bold gap-1">
+          <div className="border text-center px-5 py-2 font-bold text-2xl rounded-xl bg-black/70">
+            Ended
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   const { days, hours, minutes, seconds } = timeLeft;
 
   return (
     <main className="flex gap-5">
-      {(!days && !hours && !minutes && !seconds) ? <section className="flex flex-col items-center font-bold gap-1">
-        <div className="border text-center px-5 py-2 font-bold text-2xl rounded-xl bg-black/70 trans">
-          Ended
+      <section className="flex flex-col items-center font-bold gap-1">
+        <div>Days</div>
+        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
+          {days}
         </div>
-      </section> : (
-        <>
-          <section className="flex flex-col items-center font-bold gap-1">
-            <div>Days</div>
-            <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70 trans">
-              {days || "00"}
-            </div>
-          </section><section className="flex flex-col items-center font-bold gap-1">
-            <div>Hr</div>
-            <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
-              {hours || "00"}
-            </div>
-          </section><section className="flex flex-col items-center font-bold gap-1">
-            <div>Min</div>
-            <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
-              {minutes || "00"}
-            </div>
-          </section><section className="flex flex-col items-center font-bold gap-1">
-            <div>Sec</div>
-            <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
-              {seconds || "00"}
-            </div>
-          </section>
-        </>
-      )}
+      </section>
 
+      <section className="flex flex-col items-center font-bold gap-1">
+        <div>Hr</div>
+        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
+          {hours}
+        </div>
+      </section>
 
-      {(!days && !hours && !minutes && !seconds) ? null : <p className="self-end font-bold text-xl hidden lg:block">Remaining</p>}
+      <section className="flex flex-col items-center font-bold gap-1">
+        <div>Min</div>
+        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
+          {minutes}
+        </div>
+      </section>
+
+      <section className="flex flex-col items-center font-bold gap-1">
+        <div>Sec</div>
+        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
+          {seconds}
+        </div>
+      </section>
+
+      <p className="self-end font-bold text-xl hidden lg:block">Remaining</p>
     </main>
   );
 }
