@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export",
+  // output: "export", // for static export - comment out for Node.js server
   reactStrictMode: true,
   // async redirects() {
   //   return [
