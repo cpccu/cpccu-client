@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import GalleryScroll from "./GalleryScroll";
+import GalleryScroll from "@/Context/GalleryScroll/GalleryScroll";
 
 export default function GalleryScrollProvider({ children }) {
   const [scrollTarget, setScrollTarget] = useState(null);

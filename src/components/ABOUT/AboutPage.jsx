@@ -1,4 +1,4 @@
-import AboutCard from "./AboutCard";
+import AboutCard from "@/components/ABOUT/AboutCard";
 
 export default function AboutPage({ Data }) {
   return (

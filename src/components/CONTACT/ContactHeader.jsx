@@ -1,6 +1,8 @@
+"use client";
+
 import { useContext } from "react";
-import Data from "./../../../data/contact/contact.json";
-import ContactScroll from "./../../Context/ContactScroll/ContactScroll";
+import Data from "@/data/contact/contact.json";
+import ContactScroll from "@/Context/ContactScroll/ContactScroll";
 import { Link as ContactScrollLink } from "react-scroll";
 
 export default function ContactHeader() {

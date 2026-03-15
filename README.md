@@ -27,9 +27,15 @@ https://i.ibb.co.com/6BFjFf7/Artboard-1new.png
 
 ## project work init commands for newbies
 
+This is a **Next.js 15** project with **Tailwind CSS 4**, using the App Router and `src` directory.
+
 `npm install`
 
-`npm run dev`
+`npm run dev` — start dev server at [http://localhost:3000](http://localhost:3000)
+
+`npm run build` — production build
+
+`npm run start` — run production server
 
 ## Configure github
 

@@ -1,9 +1,9 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
-import ProfileID from "./ProfileID";
-import Data from "../../../data/LogInfo.json";
-import ProfileDetails from "./ProfileDetails";
-import ProfileBlog from "./ProfileBlog";
+import ProfileID from "@/components/PROFILE/ProfileID";
+import Data from "@/data/LogInfo.json";
+import ProfileDetails from "@/components/PROFILE/ProfileDetails";
+import ProfileBlog from "@/components/PROFILE/ProfileBlog";
 
 export default function ProfileCard({ id }) {
   return (

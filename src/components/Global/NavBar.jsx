@@ -1,18 +1,21 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
-import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
-import NavOpen from "./../../assets/icons/navOpen.svg";
-import NavClose from "./../../assets/icons/navClose.svg";
-import InstitudeInfo from "../../../data/global/institude.json";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import NavOpen from "@/assets/icons/navOpen.svg";
+import NavClose from "@/assets/icons/navClose.svg";
+import InstitudeInfo from "@/data/global/institude.json";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { faSignInAlt } from "@fortawesome/free-solid-svg-icons";
-
-import Data from "../../../data/global/navBar.json";
-import GoToTop from "./GoToTop";
-import { data } from "autoprefixer";
+import Data from "@/data/global/navBar.json";
+import GoToTop from "@/components/Global/GoToTop";
+import { useFetchUsersQuery } from "@/features/users/userApi";
 
 export default function NavBar() {
-  const navigate = useNavigate();
+  const { data: user, isLoading, isError } = useFetchUsersQuery();
+  const router = useRouter();
   const [fixed, setFixed] = useState(false);
   const [open, setOpen] = useState(false);
   const mobileNav = useRef(null);
@@ -22,10 +25,10 @@ export default function NavBar() {
     setOpen((prev) => !prev);
   };
 
-  const goHome = () => {
-    // goTop();
-    <GoToTop />;
-    return navigate("/");
+  const goHome = (e) => {
+    e?.preventDefault?.();
+    setOpen(false);
+    router.push("/");
   };
 
   useEffect(() => {
@@ -64,8 +67,7 @@ export default function NavBar() {
         fixed && "md:sticky shadow-2xl"
       } sticky top-0 md:static transition-all duration-1000 z-50 bg-white flex items-center justify-between padding`}
     >
-      {/* logo and name start */}
-      <NavLink to={"/"} onClick={() => setOpen(false)}>
+      <Link href="/" onClick={() => setOpen(false)}>
         <section
           onClick={goHome}
           className="flex items-center justify-center gap-2 py-2 lg:-py-0 cursor-default"
@@ -85,11 +87,9 @@ export default function NavBar() {
             <p className="text-sm font-bold">{InstitudeInfo?.uniName}</p>
           </div>
         </section>
-      </NavLink>
-      {/* logo and name end */}
+      </Link>
 
       <section>
-        {/* nav link start */}
         <button
           ref={mobileNavToggler}
           onClick={navHandler}
@@ -121,18 +121,15 @@ export default function NavBar() {
               </div>
             </section>
           </section>
-          {/* nav link */}
           <NavItem setOpen={setOpen} />
 
-          <Link to="/login">
+          <Link href="/login">
             <button className="trans hover:ring bg-gradient-to-r from-header to-green-500 text-white flex md:hidden items-center justify-center gap-2 py-2 absolute bottom-20 left-10 right-10 rounded-full font-semibold">
               <FontAwesomeIcon icon={faSignInAlt} />
               <span>Login</span>
             </button>
           </Link>
         </nav>
-
-        {/* nav link end */}
       </section>
     </main>
   );
@@ -142,7 +139,7 @@ export function NavItem({ setOpen }) {
   const paths = ["/history", "/committee", "/member", "/alumni"];
   const [isOpen, setIsOpen] = useState(null);
   const [aboutOpen, setAboutOpen] = useState(null);
-  const { pathname } = useLocation();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (paths.includes(pathname)) {
@@ -157,21 +154,20 @@ export function NavItem({ setOpen }) {
       {Data
         ? Data.map((item, index) => {
             if (item.level === 0) {
+              const isActive = pathname === item.path;
               return (
                 <li key={index}>
-                  <NavLink
-                    to={item.path}
-                    className={({ isActive }) =>
-                      ` ${
-                        isActive
-                          ? "bg-header text-white lg:border-b-4 lg:border-header lg:text-black lg:bg-header/20 lg:hover:bg-header/20"
-                          : "hover:text-header trans hover:bg-header/20 lg:hover:bg-transparent"
-                      } block px-5 md:px-7 py-2 lg:py-7 cursor-pointer font-semibold capitalize`
-                    }
+                  <Link
+                    href={item.path}
+                    className={` ${
+                      isActive
+                        ? "bg-header text-white lg:border-b-4 lg:border-header lg:text-black lg:bg-header/20 lg:hover:bg-header/20"
+                        : "hover:text-header trans hover:bg-header/20 lg:hover:bg-transparent"
+                    } block px-5 md:px-7 py-2 lg:py-7 cursor-pointer font-semibold capitalize`}
                     onClick={() => setOpen(false)}
                   >
                     {item.page}
-                  </NavLink>
+                  </Link>
                 </li>
               );
             } else {
@@ -199,20 +195,21 @@ export function NavItem({ setOpen }) {
                       aboutOpen ? "group-hover:flex" : "hidden"
                     } lg:hidden lg:shadow-xl lg:group-hover:flex flex-col lg:items-center bg-white lg:absolute top-full left-0 ml-5 lg:ml-0 trans z-10`}
                   >
-                    {item?.element.map((ele, num) => (
-                      <NavLink
-                        to={ele?.path}
-                        key={num}
-                        className={({ isActive }) =>
-                          `${
-                            isActive ? "text-header" : "text-gray-900"
-                          }  flex w-full hover:bg-header/20 cursor-pointer py-1 lg:py-2 capitalize font-semibold border-b`
-                        }
-                        onClick={() => setOpen(false)}
-                      >
-                        <li className="w-full px-6">{ele?.page}</li>
-                      </NavLink>
-                    ))}
+                    {item?.element.map((ele, num) => {
+                      const isSubActive = pathname === ele?.path;
+                      return (
+                        <Link
+                          href={ele?.path}
+                          key={num}
+                          className={`${
+                            isSubActive ? "text-header" : "text-gray-900"
+                          }  flex w-full hover:bg-header/20 cursor-pointer py-1 lg:py-2 capitalize font-semibold border-b`}
+                          onClick={() => setOpen(false)}
+                        >
+                          <li className="w-full px-6">{ele?.page}</li>
+                        </Link>
+                      );
+                    })}
                   </ul>
                 </li>
               );

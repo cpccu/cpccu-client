@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      // allow importing from both src/lib (primary) and root lib (fallback)
+      "@/lib/*": ["./src/lib/*", "./lib/*"],
+      "@/data/*": ["./data/*"]
+    }
+  },
+  "include": ["src/**/*", "lib/**/*", "data/**/*"],
+  "exclude": ["node_modules"]
+}

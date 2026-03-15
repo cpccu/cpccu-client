@@ -1,11 +1,24 @@
-import Logo from "./../../assets/logo/cpccu.png";
-import { Link } from "react-router-dom";
+"use client";
+
+import Image from "next/image";
+import Logo from "@/assets/logo/cpccu.png";
+import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
-import { useState } from "react";
-import InputBox from "./InputBox";
+import { useState, useEffect } from "react";
+import InputBox from "@/components/LOGINSIGNUP/InputBox";
+import { useRegisterMutation } from "@/features/auth/authApi";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/features/auth/authSlice";
+import SuccessAlert from "../ALERT/SuccessAlert";
+import ErrorAlert from "../ALERT/ErrorAlert";
+import OtpVerifyPopup from "../ALERT/OtpVerifyPopup";
 
 export default function Signup() {
+
+  const dispatch = useDispatch();
+  const [register, { data, isLoading, isError, isSuccess, error, reset }] = useRegisterMutation();
+
   const labelCSS = `uppercase font-semibold text-sm text-gray-800 font-custom`;
   const inputCSS = `outline-none border-b border-gray-300 py-2 focus:border-black`;
   const btn = `uppercase font-semibold h-12 px-1 rounded-full w-full text-sm`;
@@ -16,11 +29,46 @@ export default function Signup() {
   const [fullName, setFullName] = useState("");
   const [uniID, setUniID] = useState("");
   const [batch, setBatch] = useState("");
+  const [showOtpPopup, setShowOtpPopup] = useState(false);
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (password !== confirmPass) {
+
+      return <ErrorAlert title="Password Mismatch!" text="Please make sure your passwords match and try again." />;
+    }
+    try {
+      const userData = {
+        email,
+        password,
+        confirm_password: confirmPass,
+        fullName,
+        uniID,
+        batch,
+      };
+      const response = await register(userData).unwrap();
+      console.log("response => ", response)
+      dispatch(setCredentials(response));
+      setShowOtpPopup(true);
+    } catch (err) {
+      console.error("Registration failed:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (isSuccess || isError) {
+      const timer = setTimeout(() => {
+        reset();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, isError, reset]);
 
   return (
     <>
-      <Link to="/">
-        <button className="bg-header absolute z-30 left-[2rem] mdd:left-[6rem] top-10 md:top-16 flex items-center justify-center h-10 rounded-lg lg:w-[10rem] gap-3 px-3 py-2 hover:bg-headerHover trans">
+      <Link href="/">
+        <button className="bg-header absolute z-30 left-[2rem] mdd:left-[6rem] top-10 md:top-16 flex items-center justify-center h-10 rounded-lg lg:w-[10rem] gap-3 px-3 py-2 hover:bg-header-hover trans">
           <FontAwesomeIcon
             className=" text-white font-extrabold text-2xl"
             icon={faArrowLeftLong}
@@ -44,20 +92,17 @@ export default function Signup() {
           </h1>
         </section>
         <main className="mx-auto w-full lg:min-w-[30rem] lg:w-[60rem] lg:max-w-[70rem] flex flex-col gap-7 items-start justify-center padding">
-          {/* logo section start */}
           <section className="flex flex-col self-center items-center justify-center gap-2">
-            <img className="h-16 md:h-24" src={Logo} alt="Logo" />
+            <Image className="h-16 md:h-24 w-auto" src={Logo} alt="Logo" width={96} height={96} />
             <h2 className="text-xl md:text-2xl font-custom">
               Welcome to CPCCU
             </h2>
           </section>
-          {/* logo section end */}
           <form
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handleSubmit}
             className="flex flex-col gap-4 w-full"
           >
             <section className="grid grid-cols-12 gap-5">
-              {/* input username start */}
               <InputBox
                 type={"email"}
                 title={"Email"}
@@ -66,10 +111,6 @@ export default function Signup() {
                 data={email}
                 setData={setEmail}
               />
-              {/* input username end */}
-
-              {/* uni info */}
-              {/* full name */}
               <InputBox
                 type={"text"}
                 title={"Full name"}
@@ -80,7 +121,6 @@ export default function Signup() {
               />
             </section>
             <section className=" grid md:grid-cols-12 gap-5">
-              {/* uni id */}
               <InputBox
                 type={"number"}
                 title={"CITY UNIVERSITY ID"}
@@ -89,7 +129,6 @@ export default function Signup() {
                 data={uniID}
                 setData={setUniID}
               />
-              {/* uni batch*/}
               <InputBox
                 type={"number"}
                 title={"BATCH NO."}
@@ -98,7 +137,6 @@ export default function Signup() {
                 data={batch}
                 setData={setBatch}
               />
-              {/* input password start */}
             </section>
             <InputBox
               type={"password"}
@@ -107,7 +145,6 @@ export default function Signup() {
               data={password}
               setData={setPassword}
             />
-
             <InputBox
               type={"password"}
               title={"confirm password"}
@@ -115,25 +152,25 @@ export default function Signup() {
               data={confirmPass}
               setData={setConfirmPass}
             />
-            {/* input password end */}
-
             <section className="flex items-center justify-center gap-5 mt-5">
               <button
-                className={`${btn} bg-gradient-to-r from-headerHover to-fuchsia-700 text-header hover:ring trans`}
+                className={`${btn} bg-gradient-to-r from-header-hover to-fuchsia-700 text-header hover:ring trans`}
               >
                 <div className="bg-white rounded-full h-10 flex items-center justify-center">
-                  create account
+                  {isLoading ? "Signing Up..." : "Sign Up"}
                 </div>
               </button>
+              {isError && <ErrorAlert title="Registration failed!" text={error?.data?.message || "Please check your details and try again."} />}
+              {/* {isSuccess && <SuccessAlert title={data?.message || "Registration successful!"} />} */}
+              {showOtpPopup && <OtpVerifyPopup email={email} onVerified={() => setShowOtpPopup(false)} onClosed={() => setShowOtpPopup(false)} />}
             </section>
           </form>
-
           <section>
             <h1 className={`${labelCSS} text-lg`}>
               Already created an account?
             </h1>
             <Link
-              to={"/login"}
+              href={"/login"}
               className={`${labelCSS} text-lg text-header shadow-sm`}
             >
               Log In here!

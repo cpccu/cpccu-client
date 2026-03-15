@@ -1,7 +1,9 @@
+"use client";
+
 import { useContext } from "react";
-import GalleryScroll from "../../Context/GalleryScroll/GalleryScroll";
+import GalleryScroll from "@/Context/GalleryScroll/GalleryScroll";
 import { Link as ScrollGallery } from "react-scroll";
-import Data from "./../../../data/gallery/gallery.json";
+import Data from "@/data/gallery/gallery.json";
 
 export default function GalleryHeader() {
   const { scrollTarget } = useContext(GalleryScroll);

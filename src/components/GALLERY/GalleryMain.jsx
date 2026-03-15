@@ -1,8 +1,10 @@
+"use client";
+
 import { useContext, useEffect, useState } from "react";
-import GalleryCard from "./../Global/GalleryCard";
-import GalleryScroll from "../../Context/GalleryScroll/GalleryScroll";
-import Data from "./../../../data/GalleryBodyCard.json";
-import Pagination from "../Global/Pagination";
+import GalleryCard from "@/components/Global/GalleryCard";
+import GalleryScroll from "@/Context/GalleryScroll/GalleryScroll";
+import Data from "@/data/GalleryBodyCard.json";
+import Pagination from "@/components/Global/Pagination";
 
 export default function GalleryMain() {
   const { setScrollTarget } = useContext(GalleryScroll);

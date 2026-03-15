@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import ProfileBlogModal from "./Profile_Blog_Modal";
+import ProfileBlogModal from "@/components/PROFILE/Profile_Blog_Modal";
 
 export default function ProfileBlog() {
   return (

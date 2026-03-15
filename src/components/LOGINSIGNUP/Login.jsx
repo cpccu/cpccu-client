@@ -1,12 +1,28 @@
-import Logo from "./../../assets/logo/cpccu.png";
-import { Link } from "react-router-dom";
+"use client";
+
+import Image from "next/image";
+import Logo from "@/assets/logo/cpccu.png";
+import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
-import InputBox from "./InputBox";
-import { useCallback, useEffect, useState } from "react";
-import bgimg from "./../../assets/img/abc.jpg";
+import InputBox from "@/components/LOGINSIGNUP/InputBox";
+import bgimg from "@/assets/img/abc.jpg";
+import { useState, useEffect} from "react";
+import { useLoginMutation } from "@/features/auth/authApi";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/features/auth/authSlice";
+import SuccessAlert from "../ALERT/SuccessAlert";
+import ErrorAlert from "../ALERT/ErrorAlert";
+import { useRouter } from "next/navigation";
+
+
 export default function Login() {
+  const router = useRouter();
   const btn = `uppercase font-semibold h-12 px-1 rounded-full w-full text-sm`;
+  const dispatch = useDispatch();
+  const [login, { data, isLoading, isError, isSuccess, error, reset }] = useLoginMutation();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // const [logValue, setLog] = useState(false);
   // const log = useCallback(() => {
@@ -17,10 +33,40 @@ export default function Login() {
   //   log();
   // });
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const userData = {
+        email,
+        password,
+      };
+      const response = await login(userData).unwrap();
+      console.log("response => ", response)
+      dispatch(setCredentials({
+        user: response.data,
+        token: response.token || response.data.token ||  null,
+      }));
+      localStorage.setItem("user", JSON.stringify(response.data));
+      localStorage.setItem("token", response.token || response.data.token || null);
+      router.push(`/profile/${response.data._id}`);
+    } catch (err) {
+      console.error("Login failed:", err);
+    }
+  }
+
+  useEffect(() => {
+    if (isSuccess || isError) {
+      const timer = setTimeout(() => {
+        reset();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, isError, reset]);
+
   return (
     <div>
-      <Link to="/">
-        <button className="bg-header absolute z-50 right-[2rem] mdd:right-[6rem] mt-[5rem] flex items-center justify-center h-10 rounded-lg lg:w-[10rem] gap-3 px-3 py-2 hover:bg-headerHover trans">
+      <Link href="/">
+        <button className="bg-header absolute z-50 right-[2rem] mdd:right-[6rem] mt-[5rem] flex items-center justify-center h-10 rounded-lg lg:w-[10rem] gap-3 px-3 py-2 hover:bg-header-hover trans">
           <FontAwesomeIcon
             className=" text-white font-extrabold text-2xl"
             icon={faArrowLeftLong}
@@ -42,26 +88,26 @@ export default function Login() {
           </section>
           {/* logo section end */}
           <form
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handleSubmit}
             className="flex flex-col gap-6 w-full"
           >
             {/* input username start */}
-            <InputBox type={"email"} title={"email"} id={"userMail"} />
+            <InputBox type={"email"} title={"email"} id={"userMail"} setData={setEmail} />
             {/* input username end */}
             {/* input password start */}
-            <InputBox type={"password"} title={"password"} id={"userPass"} />
+            <InputBox type={"password"} title={"password"} id={"userPass"} setData={setPassword} />
             {/* input password end */}
 
             <section className="flex items-center justify-center gap-5 mt-5">
-              <button
-                className={`${btn} bg-gradient-to-r from-headerHover to-fuchsia-700 text-white hover:ring trans`}
+              <button 
+                className={`${btn} bg-gradient-to-r from-header-hover to-fuchsia-700 text-white hover:ring trans`}
               >
-                login
+              {isLoading ? "Logging in..." : "Login"}
               </button>
               <button
-                className={`${btn} bg-gradient-to-r from-headerHover to-fuchsia-700 text-header hover:ring trans`}
+                className={`${btn} bg-gradient-to-r from-header-hover to-fuchsia-700 text-header hover:ring trans`}
               >
-                <Link to="/signup">
+                <Link href="/signup">
                   <div className="bg-white rounded-full h-10 flex items-center justify-center">
                     create account
                   </div>
@@ -88,6 +134,8 @@ export default function Login() {
             Login to Access Dashboard
           </h1>
         </section>
+        {isError && <ErrorAlert title="Login failed!" text={error?.data?.message || "Please check your credentials and try again."} />}
+        {isSuccess && <SuccessAlert title={data?.message || "Login successful!" } />}
       </div>
     </div>
   );

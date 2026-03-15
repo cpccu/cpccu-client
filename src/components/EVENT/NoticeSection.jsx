@@ -1,8 +1,10 @@
+"use client";
+
 import { useContext, useEffect, useState } from "react";
-import UpComingEventCard from "../Global/UpComingEventCard";
-import Data from "./../../../data/upcomingEvent.json";
-import EventScroll from "../../Context/EventScroll/EventScroll";
-import Pagination from "../Global/Pagination";
+import UpComingEventCard from "@/components/Global/UpComingEventCard";
+import Data from "@/data/upcomingEvent.json";
+import EventScroll from "@/Context/EventScroll/EventScroll";
+import Pagination from "@/components/Global/Pagination";
 
 export default function NoticeSection() {
   const { setScrollTarget } = useContext(EventScroll);
