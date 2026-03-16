@@ -1,10 +1,5 @@
 [
   {
-    "page": "Home",
-    "path": "/",
-    "level": 0
-  },
-  {
     "page": "About",
     "level": 1,
     "element": [
@@ -23,7 +18,17 @@
       {
         "page": "member",
         "path": "/member"
-      }
+      },
+      {
+    "page": "Blog",
+    "path": "/blog",
+    "level": 0
+  },
+  {
+    "page": "Contact",
+    "path": "/contact",
+    "level": 0
+  }
     ]
   },
   {
@@ -34,16 +39,6 @@
   {
     "page": "Gallery",
     "path": "/gallery",
-    "level": 0
-  },
-  {
-    "page": "Blog",
-    "path": "/blog",
-    "level": 0
-  },
-  {
-    "page": "Contact",
-    "path": "/contact",
     "level": 0
   },
   {
