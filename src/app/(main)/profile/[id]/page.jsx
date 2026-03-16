@@ -7,10 +7,12 @@ import { useParams } from "next/navigation";
 
 export default function ProfilePage({ params }) {
   const User = useSelector((state) => state.auth.user);
-  console.log(" User => ", User)
+  const hydrated = useSelector((state) => state.auth.hydrated);
   const { id } = useParams();
+  if (!hydrated) {
+    return <div>loading...</div>;
+  }
   const isOwnProfile = User?._id === id;
-  console.log("own profile => ", isOwnProfile)
 
   return <Profile user={User} isOwnProfile={isOwnProfile} />;
 }

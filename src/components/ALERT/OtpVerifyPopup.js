@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import { useSendOtpMutation, useOtpVerifyMutation } from "@/features/auth/authApi";
+import { X } from "lucide-react";
 
-export default function OtpVerifyPopup({ email, onVerified }) {
+export default function OtpVerifyPopup({ email, onVerified, onClosed }) {
   const OTP_LENGTH = 6; // Can be alphanumeric
   const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(""));
   const [counter, setCounter] = useState(60);
@@ -84,6 +85,7 @@ export default function OtpVerifyPopup({ email, onVerified }) {
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
       <div className="bg-white/90 backdrop-blur-md w-full max-w-md rounded-3xl shadow-xl p-6 text-center flex flex-col items-center gap-4 animate-fadeIn">
         <h2 className="text-2xl font-bold">Verify OTP</h2>
+        <X className="text-red-500 absolute top-4 right-4 cursor-pointer" onClick={onClosed} />
         <p className="text-gray-600 text-sm">
           Enter the {OTP_LENGTH}-character code sent to <span className="font-semibold">{email}</span>
         </p>

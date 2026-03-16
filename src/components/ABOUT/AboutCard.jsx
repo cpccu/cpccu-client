@@ -1,6 +1,6 @@
 import { MdOutlineEmail } from "react-icons/md";
 import Image from "next/image";
-import DefaultAvater from "@/assets/avatar/default-avatar.avif";
+import DefaultAvater from "@/assets/avatar/default-avatar.png";
 import Link from "next/link";
 
 export default function AboutCard({ Data }) {
