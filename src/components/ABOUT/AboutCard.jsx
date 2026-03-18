@@ -12,13 +12,13 @@ export default function AboutCard({ Data }) {
           height={400}
           width={400}
           className="h-full w-full object-cover group-hover:scale-105 trans"
-          src={Data?.avatar || DefaultAvater}
-          alt={Data?.fullName || "Profile Picture"}
+          src={Data?.img || DefaultAvater}
+          alt={Data?.name || "Profile Picture"}
         />
       </section>
       <section className="flex flex-col items-center text-center justify-center gap-1">
         <h1 className="text-2xl font-semibold capitalize text-p-text">
-          {Data?.fullName}
+          {Data?.name}
         </h1>
         <p className={`italic capitalize text-xl ${Data?.type && "font-bold"}`}>
           {Data?.position}
