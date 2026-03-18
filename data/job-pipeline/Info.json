@@ -1,439 +1,119 @@
 [
-  {
-    "id": 1,
-    "img": "data/job-pipeline/img/Alok.jpg",
-    "name": "Mohaiminul Hoque Alok",
-    "tag": "Frontend Developer",
-    "email": "mohaimenulhoquealok@gmail.com",
-    "phone": "+880 1947151532",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
+    {
+        "id": 1,
+        "img": "https://i.ibb.co.com/LKqh6HH/Whats-App-Image-2026-03-10-at-6-54-52-PM.jpg",
+        "name": "FORHAD HOSSEN",
+        "tag": "Junior Software Developer",
+        "email": "frhossen001@gmail.com",
+        "phone": "+8801969849408",
+        "socials": {
+            "github": "https://github.com/Forhad404-FR",
+            "linkedin": "https://www.linkedin.com/in/forhad-hossen-728b26286/"
+        },
+        "skills": [
+            {
+                "skillName": "Dart, C, Java",
+                "experience": "Programming languages utilized for software development."
+            },
+            {
+                "skillName": "Flutter, HTML, CSS",
+                "experience": "Applied in frontend development, including building modular Flutter UIs for mobile health applications."
+            },
+            {
+                "skillName": "Node.js, Express.js, MongoDB, SQL",
+                "experience": "Utilized for backend development and database management, including REST API integration."
+            },
+            {
+                "skillName": "Data Structures & Algorithms (DSA)",
+                "experience": "Core concepts applied for software development and problem-solving."
+            },
+            {
+                "skillName": "Git, GitHub, VS Code",
+                "experience": "Essential tools used for version control, project hosting, and daily coding workflows."
+            },
+            {
+                "skillName": "Communication, Teamwork, Presentation, Problem Solving, Quick Learner",
+                "experience": "Soft skills further developed through teaching complex topics and managing classroom activities at Suffa Academy."
+            }
+        ],
+        "createdAt": "2026-03-01T09:18:27.410Z"
     },
-    "skills": [
-      {
-        "skillName": "Vue.js",
-        "experience": "Worked on 3 full-stack Vue apps with Vuex and Vue Router."
-      },
-      {
-        "skillName": "HTML & CSS",
-        "experience": "4+ years crafting responsive, accessible layouts."
-      },
-      {
-        "skillName": "Figma",
-        "experience": "Used regularly for prototyping and design handoff."
-      },
-      {
-        "skillName": "TypeScript",
-        "experience": "Integrated into Vue and React projects for type safety."
-      }
-    ],
-    "createdAt": "2024-03-04T09:18:27.410Z"
-  },
-  {
-    "id": 2,
-    "img": "data/job-pipeline/img/tishad.jpg",
-    "name": "Hasib Al Tishad",
-    "tag": "Full Stack Engineer",
-    "email": "hasibaltishad01339@gmail.com",
-    "phone": "+880 1624098592",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
+    {
+        "id": 2,
+        "img": "https://i.ibb.co.com/JFnFhcfB/Whats-App-Image-2026-03-10-at-7-29-37-PM.jpg",
+        "name": "Md. Masum Hossain",
+        "tag": "Full Stack Developer",
+        "email": "mdmasumhossain1712@gmail.com",
+        "phone": "+8801772423200",
+        "socials": {
+            "github": "https://github.com/MdMasumHossain5555",
+            "linkedin": "https://www.linkedin.com/in/mdmasumhossen/"
+        },
+        "skills": [
+            {
+                "skillName": "Core Web Technologies: HTML5, CSS3, SCSS, JavaScript(ES6+)",
+                "experience": "Built responsive and dynamic user interfaces for various web applications, including e-commerce and doctor appointment platforms."
+            },
+            {
+                "skillName": "Frontend Frameworks: React.js, Next.js",
+                "experience": "Developed single-page and server-side rendered applications, such as a full-featured e-commerce web app and a routine management system."
+            },
+            {
+                "skillName": "CSS Frameworks: TailwindCSS, Bootstrap",
+                "experience": "Crafted fully responsive designs and customizable UI components across multiple projects."
+            },
+            {
+                "skillName": "State Management & Data Fetching: Redux, RTK Query, Context API, Axios",
+                "experience": "Implemented smooth API integration and state management for complex applications like a doctor appointment system."
+            },
+            {
+                "skillName": "Backend Runtime & Frameworks: Node.js, Express.js",
+                "experience": "Developed robust server-side logic and APIs for routine management and e-commerce platforms."
+            },
+            {
+                "skillName": "Database & Authentication: MongoDB, JWT",
+                "experience": "Managed databases for product and routine data, and implemented secure role-based login and registration systems."
+            },
+            {
+                "skillName": "Development Tools: Git, GitHub, Postman, Figma",
+                "experience": "Utilized for version control, collaborative development, API testing, and UI/UX design workflows."
+            },
+            {
+                "skillName": "Interpersonal Skills: Quick learner, Time-management, Teamwork, Active listener",
+                "experience": "Aims to utilize fast learning abilities and teamwork to contribute to innovative web development projects within a dynamic team."
+            }
+        ],
+        "createdAt": "2026-03-01T09:18:27.410Z"
     },
-    "skills": [
-      {
-        "skillName": "Node.js",
-        "experience": "Built RESTful APIs and background jobs for SaaS apps."
-      },
-      {
-        "skillName": "React",
-        "experience": "Developed reusable component libraries and dynamic UIs."
-      }
-    ],
-    "createdAt": "2024-07-01T17:45:02.781Z"
-  },
-  {
-    "id": 3,
-    "img": "https://i.ibb.co.com/Xk6bt77V/pic.jpg",
-    "name": "Anisur Rahman Farazi",
-    "tag": "Full Stack Engineer",
-    "email": "anisurrahmanfarazi@gmail.com",
-    "phone": "+8801641088544",
-    "socials": {
-      "github": "https://github.com/anisurrahmanfarazi17",
-      "linkedin": "https://www.linkedin.com/in/anisurrahmanfarazi17/"
-    },
-    "skills": [
-      {
-        "skillName": "HTML & CSS",
-        "experience": "2+ years crafting responsive, accessible layouts."
-      },
-      {
-        "skillName": "Django",
-        "experience": "Built and maintained APIs and admin panels with DRF."
-      },
-      {
-        "skillName": "PostgreSQL",
-        "experience": "Designed normalized schemas and optimized queries."
-      },
-      {
-        "skillName": "Redis",
-        "experience": "Used for caching and background task queues."
-      },
-      {
-        "skillName": "Docker",
-        "experience": "Containerized services and managed dev/prod environments."
-      }
-    ],
-    "createdAt": "2023-11-22T12:06:14.604Z"
-  },
-  {
-    "id": 4,
-    "img": "https://i.ibb.co/4ZH6DcN4/3uPKIO8H.jpg",
-    "name": "Antipa Islam",
-    "tag": "Mobile App Developer",
-    "email": "antipa.islam@example.com",
-    "phone": "+12135554444",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Flutter",
-        "experience": "3 years building cross-platform apps with responsive UI."
-      },
-      {
-        "skillName": "Dart",
-        "experience": "Used daily for state management and API integration."
-      },
-      {
-        "skillName": "Firebase",
-        "experience": "Implemented authentication, Firestore DB, and analytics."
-      }
-    ],
-    "createdAt": "2024-05-17T08:52:39.998Z"
-  },
-  {
-    "id": 5,
-    "img": "https://i.ibb.co/FqJsk9KG/T8BCl1AC.jpg",
-    "name": "Jomila Akter",
-    "tag": "Frontend Developer",
-    "email": "jomila.akter@example.com",
-    "phone": "+14155550101",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Vue.js",
-        "experience": "Worked on 3 full-stack Vue apps with Vuex and Vue Router."
-      },
-      {
-        "skillName": "HTML & CSS",
-        "experience": "4+ years crafting responsive, accessible layouts."
-      },
-      {
-        "skillName": "Figma",
-        "experience": "Used regularly for prototyping and design handoff."
-      },
-      {
-        "skillName": "TypeScript",
-        "experience": "Integrated into Vue and React projects for type safety."
-      }
-    ],
-    "createdAt": "2024-03-04T09:18:27.410Z"
-  },
-  {
-    "id": 6,
-    "img": "https://i.ibb.co/Jjq1fp9D/LGaedLyG.jpg",
-    "name": "Rakibul Hassan",
-    "tag": "Full Stack Engineer",
-    "email": "rakibul.hassan@example.com",
-    "phone": "+442032960124",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Node.js",
-        "experience": "Built RESTful APIs and background jobs for SaaS apps."
-      },
-      {
-        "skillName": "React",
-        "experience": "Developed reusable component libraries and dynamic UIs."
-      }
-    ],
-    "createdAt": "2024-07-01T17:45:02.781Z"
-  },
-  {
-    "id": 7,
-    "img": "https://i.ibb.co/kgSTvkvC/kw6xofoB.jpg",
-    "name": "Sumit Chakma",
-    "tag": "Backend Developer",
-    "email": "sumit.chakma@example.com",
-    "phone": "+8613800138000",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Python",
-        "experience": "5 years writing production code for data and web backends."
-      },
-      {
-        "skillName": "Django",
-        "experience": "Built and maintained APIs and admin panels with DRF."
-      },
-      {
-        "skillName": "PostgreSQL",
-        "experience": "Designed normalized schemas and optimized queries."
-      },
-      {
-        "skillName": "Redis",
-        "experience": "Used for caching and background task queues."
-      },
-      {
-        "skillName": "Docker",
-        "experience": "Containerized services and managed dev/prod environments."
-      }
-    ],
-    "createdAt": "2023-11-22T12:06:14.604Z"
-  },
-  {
-    "id": 8,
-    "img": "https://i.ibb.co/4ZH6DcN4/3uPKIO8H.jpg",
-    "name": "Antipa Islam",
-    "tag": "Mobile App Developer",
-    "email": "antipa.islam@example.com",
-    "phone": "+12135554444",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Flutter",
-        "experience": "3 years building cross-platform apps with responsive UI."
-      },
-      {
-        "skillName": "Dart",
-        "experience": "Used daily for state management and API integration."
-      },
-      {
-        "skillName": "Firebase",
-        "experience": "Implemented authentication, Firestore DB, and analytics."
-      }
-    ],
-    "createdAt": "2024-05-17T08:52:39.998Z"
-  },
-  {
-    "id": 9,
-    "img": "https://i.ibb.co/FqJsk9KG/T8BCl1AC.jpg",
-    "name": "Jomila Akter",
-    "tag": "Frontend Developer",
-    "email": "jomila.akter@example.com",
-    "phone": "+14155550101",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Vue.js",
-        "experience": "Worked on 3 full-stack Vue apps with Vuex and Vue Router."
-      },
-      {
-        "skillName": "HTML & CSS",
-        "experience": "4+ years crafting responsive, accessible layouts."
-      },
-      {
-        "skillName": "Figma",
-        "experience": "Used regularly for prototyping and design handoff."
-      },
-      {
-        "skillName": "TypeScript",
-        "experience": "Integrated into Vue and React projects for type safety."
-      }
-    ],
-    "createdAt": "2024-03-04T09:18:27.410Z"
-  },
-  {
-    "id": 10,
-    "img": "https://i.ibb.co/Jjq1fp9D/LGaedLyG.jpg",
-    "name": "Rakibul Hassan",
-    "tag": "Full Stack Engineer",
-    "email": "rakibul.hassan@example.com",
-    "phone": "+442032960124",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Node.js",
-        "experience": "Built RESTful APIs and background jobs for SaaS apps."
-      },
-      {
-        "skillName": "React",
-        "experience": "Developed reusable component libraries and dynamic UIs."
-      }
-    ],
-    "createdAt": "2024-07-01T17:45:02.781Z"
-  },
-  {
-    "id": 11,
-    "img": "https://i.ibb.co/kgSTvkvC/kw6xofoB.jpg",
-    "name": "Sumit Chakma",
-    "tag": "Backend Developer",
-    "email": "sumit.chakma@example.com",
-    "phone": "+8613800138000",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Python",
-        "experience": "5 years writing production code for data and web backends."
-      },
-      {
-        "skillName": "Django",
-        "experience": "Built and maintained APIs and admin panels with DRF."
-      },
-      {
-        "skillName": "PostgreSQL",
-        "experience": "Designed normalized schemas and optimized queries."
-      },
-      {
-        "skillName": "Redis",
-        "experience": "Used for caching and background task queues."
-      },
-      {
-        "skillName": "Docker",
-        "experience": "Containerized services and managed dev/prod environments."
-      }
-    ],
-    "createdAt": "2023-11-22T12:06:14.604Z"
-  },
-  {
-    "id": 12,
-    "img": "https://i.ibb.co/4ZH6DcN4/3uPKIO8H.jpg",
-    "name": "Antipa Islam",
-    "tag": "Mobile App Developer",
-    "email": "antipa.islam@example.com",
-    "phone": "+12135554444",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Flutter",
-        "experience": "3 years building cross-platform apps with responsive UI."
-      },
-      {
-        "skillName": "Dart",
-        "experience": "Used daily for state management and API integration."
-      },
-      {
-        "skillName": "Firebase",
-        "experience": "Implemented authentication, Firestore DB, and analytics."
-      }
-    ],
-    "createdAt": "2024-05-17T08:52:39.998Z"
-  },
-  {
-    "id": 13,
-    "img": "https://i.ibb.co/FqJsk9KG/T8BCl1AC.jpg",
-    "name": "Jomila Akter",
-    "tag": "Frontend Developer",
-    "email": "jomila.akter@example.com",
-    "phone": "+14155550101",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Vue.js",
-        "experience": "Worked on 3 full-stack Vue apps with Vuex and Vue Router."
-      },
-      {
-        "skillName": "HTML & CSS",
-        "experience": "4+ years crafting responsive, accessible layouts."
-      },
-      {
-        "skillName": "Figma",
-        "experience": "Used regularly for prototyping and design handoff."
-      },
-      {
-        "skillName": "TypeScript",
-        "experience": "Integrated into Vue and React projects for type safety."
-      }
-    ],
-    "createdAt": "2024-03-04T09:18:27.410Z"
-  },
-  {
-    "id": 14,
-    "img": "https://i.ibb.co/Jjq1fp9D/LGaedLyG.jpg",
-    "name": "Rakibul Hassan",
-    "tag": "Full Stack Engineer",
-    "email": "rakibul.hassan@example.com",
-    "phone": "+442032960124",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Node.js",
-        "experience": "Built RESTful APIs and background jobs for SaaS apps."
-      },
-      {
-        "skillName": "React",
-        "experience": "Developed reusable component libraries and dynamic UIs."
-      }
-    ],
-    "createdAt": "2024-07-01T17:45:02.781Z"
-  },
-  {
-    "id": 15,
-    "img": "https://i.ibb.co/kgSTvkvC/kw6xofoB.jpg",
-    "name": "Sumit Chakma",
-    "tag": "Backend Developer",
-    "email": "sumit.chakma@example.com",
-    "phone": "+8613800138000",
-    "socials": {
-      "github": "#",
-      "linkedin": "#"
-    },
-    "skills": [
-      {
-        "skillName": "Python",
-        "experience": "5 years writing production code for data and web backends."
-      },
-      {
-        "skillName": "Django",
-        "experience": "Built and maintained APIs and admin panels with DRF."
-      },
-      {
-        "skillName": "PostgreSQL",
-        "experience": "Designed normalized schemas and optimized queries."
-      },
-      {
-        "skillName": "Redis",
-        "experience": "Used for caching and background task queues."
-      },
-      {
-        "skillName": "Docker",
-        "experience": "Containerized services and managed dev/prod environments."
-      }
-    ],
-    "createdAt": "2023-11-22T12:06:14.604Z"
-  }
+    {
+        "id": 3,
+        "img": "https://i.ibb.co.com/Xk6bt77V/pic.jpg",
+        "name": "Anisur Rahman Farazi",
+        "tag": "Full Stack Engineer",
+        "email": "anisurrahmanfarazi@gmail.com",
+        "phone": "+8801641088544",
+        "socials": {
+            "github": "https://github.com/anisurrahmanfarazi17",
+            "linkedin": "https://www.linkedin.com/in/anisurrahmanfarazi17/"
+        },
+        "skills": [
+            {
+                "skillName": "C, HTML & CSS",
+                "experience": "Possesses a strong foundation in programming and utilizes digital tools for content creation and management."
+            },
+            {
+                "skillName": "Social media management, Community strategy, Student engagement",
+                "experience": "Directed the club's social media strategy and digital presence to boost student engagement and drive community growth."
+            },
+            {
+                "skillName": "Project management, Event coordination, Goal planning",
+                "experience": "Organized and coordinated university-wide competitive programming and article writing contests, facilitating smooth operations and event execution."
+            },
+            {
+                "skillName": "Soft Skills: Strong communication skills, Teamwork and collaboration, Analytical thinking, Adaptability and learning",
+                "experience": "Leveraged strong communication and teamwork skills to collaborate with club members and university staff for event planning."
+            }
+        ],
+        "createdAt": "2026-03-01T09:18:27.410Z"
+    }
 ]
