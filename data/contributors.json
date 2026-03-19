@@ -1,0 +1,101 @@
+[
+  {
+    "id": 1,
+    "name": "Arif Hossain",
+    "role": "Lead Developer",
+    "department": "CSE",
+    "batch": "2021",
+    "contribution": "Frontend Architecture & UI/UX Design",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Arif&backgroundColor=b6e3f4"
+  },
+  {
+    "id": 2,
+    "name": "Nusrat Jahan",
+    "role": "Backend Developer",
+    "department": "CSE",
+    "batch": "2021",
+    "contribution": "API Development & Database Design",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Nusrat&backgroundColor=c0aede"
+  },
+  {
+    "id": 3,
+    "name": "Tanvir Ahmed",
+    "role": "Full Stack Developer",
+    "department": "CSE",
+    "batch": "2022",
+    "contribution": "Certificate System & Authentication",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Tanvir&backgroundColor=d1d4f9"
+  },
+  {
+    "id": 4,
+    "name": "Sadia Islam",
+    "role": "UI Designer",
+    "department": "CSE",
+    "batch": "2022",
+    "contribution": "Design System & Component Library",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Sadia&backgroundColor=ffd5dc"
+  },
+  {
+    "id": 5,
+    "name": "Rakibul Hasan",
+    "role": "DevOps Engineer",
+    "department": "CSE",
+    "batch": "2020",
+    "contribution": "Deployment, CI/CD & Server Management",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Rakibul&backgroundColor=b6e3f4"
+  },
+  {
+    "id": 6,
+    "name": "Farhan Kabir",
+    "role": "Frontend Developer",
+    "department": "CSE",
+    "batch": "2023",
+    "contribution": "Event & Gallery Modules",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Farhan&backgroundColor=c0aede"
+  },
+  {
+    "id": 7,
+    "name": "Mitu Akter",
+    "role": "Content Manager",
+    "department": "CSE",
+    "batch": "2023",
+    "contribution": "Blog System & Content Strategy",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Mitu&backgroundColor=ffd5dc"
+  },
+  {
+    "id": 8,
+    "name": "Sabbir Rahman",
+    "role": "Backend Developer",
+    "department": "CSE",
+    "batch": "2022",
+    "contribution": "Job Pipeline & User Management",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Sabbir&backgroundColor=d1d4f9"
+  },
+  {
+    "id": 9,
+    "name": "Lamia Sultana",
+    "role": "QA Engineer",
+    "department": "CSE",
+    "batch": "2021",
+    "contribution": "Testing, Bug Fixes & Documentation",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Lamia&backgroundColor=b6e3f4"
+  }
+]
