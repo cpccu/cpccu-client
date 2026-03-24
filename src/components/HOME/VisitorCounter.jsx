@@ -34,7 +34,7 @@ const VisitorCounter = () => {
   }, []);
 
   return (
-    <section className="bg-count text-white py-12 md:py-16 lg:py-20 padding border-t border-white/10">
+    <section className="bg-count text-white py-12 md:py-16 lg:py-14 padding border-t border-white/10">
       <div className="max-w-7xl mx-auto flex flex-col items-center justify-center">
         <div className="flex items-center justify-center gap-x-8 md:gap-10">
           <div className="bg-white/10 p-4 rounded-full backdrop-blur-sm">
