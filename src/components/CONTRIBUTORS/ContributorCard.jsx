@@ -28,7 +28,7 @@ export default function ContributorCard({ contributor }) {
 
         {/* Info */}
         <div className="text-center flex flex-col gap-1">
-          <h3 className="text-lg font-bold text-gray-900 capitalize group-hover:text-header transition-colors duration-300">
+          <h3 className="text-lg font-bold text-gray-900 group-hover:text-header transition-colors duration-300">
             {contributor?.name}
           </h3>
           <span className="inline-block bg-header/10 text-header text-xs font-semibold px-3 py-1 rounded-full">
@@ -38,7 +38,7 @@ export default function ContributorCard({ contributor }) {
 
         {/* Department & Batch */}
         <div className="flex items-center gap-3 text-sm text-gray-500">
-          <span>Batch &apos;{contributor?.batch}</span>
+          <span>Batch {contributor?.batch}</span>
         </div>
 
         {/* Contribution */}
