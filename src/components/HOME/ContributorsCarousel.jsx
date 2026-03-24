@@ -132,7 +132,7 @@ function CarouselCard({ contributor }) {
 
         {/* Name & Role */}
         <div>
-          <h3 className="font-bold text-gray-900 text-base capitalize group-hover:text-header transition-colors duration-300">
+          <h3 className="font-bold text-gray-900 text-base group-hover:text-header transition-colors duration-300">
             {contributor?.name}
           </h3>
           <span className="inline-block mt-1 bg-header/10 text-header text-xs font-semibold px-2.5 py-0.5 rounded-full">
