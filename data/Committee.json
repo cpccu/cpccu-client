@@ -1,109 +1,58 @@
 [
   {
-    "type": 1,
-    "img": "https://i.ibb.co/qJWcghq/ashiq.jpg",
-    "name": "Md Shoriful Islam Ashiq",
+    "img": "https://i.ibb.co.com/Vc2dY95L/IMG-6764-JPG.jpg",
+    "name": "Zahin Abdullah",
     "position": "President",
-    "email": "mdsiaofficial@gmail.com",
-    "phone": "+8801885981241"
+    "email": "zahin.abdullah10000@gmail.com",
+    "phone": "+8801912027692"
   },
   {
-    "type": 1,
-    "img": "https://i.ibb.co/B2bCTCY/rafi.jpg",
-    "name": "Imrul Hasan Rafi",
+    "img": "https://i.ibb.co.com/TBLKcS8t/IMG-2447.jpg",
+    "name": "Md. Rihad Hasan Rasin",
     "position": "Vice President",
-    "email": "imrulhasan431@gmail.com",
-    "phone": "+8801865606375"
+    "email": "rihadhasan747@gmail.com",
+    "phone": "+8801405800752"
   },
   {
-    "img": "https://i.ibb.co/t3x1BtD/Screenshot-2024-05-15-025744.png",
-    "name": "Rahul Roy Nipon",
-    "position": "Web Developer",
-    "email": "rahulroynipon@gmail.com",
-    "phone": "+8801717791358"
-  },
-  {
-    "img": "https://i.ibb.co/KKFcNyR/IMG-20230216-214256.jpg",
-    "name": "Md. Anisur Rahman Anik",
+    "img": "https://i.ibb.co.com/7t4L6ny3/ranju.jpg",
+    "name": "Md.Rangu Mia",
     "position": "General Secretary",
-    "email": "delighteraranik@gmail.com",
-    "phone": "+8801403377849"
+    "email": "mdranjuahmed783@gmail.com",
+    "phone": "+8801925707116"
   },
   {
-    "img": "https://i.ibb.co/VTdP4kp/foysal.png",
-    "name": "Foysal Ahammed Sami",
-    "position": "Join Secretary",
-    "email": "foysal.developer@gmail.com",
-    "phone": "+8801610569865"
+    "img": "https://i.ibb.co.com/JFnFhcfB/Whats-App-Image-2026-03-10-at-7-29-37-PM.jpg",
+    "name": "Md Masum Hossen",
+    "position": "Web Developer",
+    "email": "mdmasumhossain1712@gmail.com",
+    "phone": "+8801772423200"
   },
   {
-    "img": "https://i.ibb.co/C27wd69/Tahsin.jpg",
-    "name": "Md. Tahsin Ferdous",
-    "position": "Organizing Secretary",
-    "email": "tahsin.ferdous3546@gmail.com",
-    "phone": "+8801310091260"
-  },
-  {
-    "img": "https://i.ibb.co/QjGrCGt/aranik.jpg",
-    "name": "Atikur Rahman Anik",
-    "position": "Club Manager",
-    "email": "anikislam114911@gmail.com",
-    "phone": "+8801314670069"
-  },
-  {
-    "img": "https://i.ibb.co/bKnfbFB/shahnur.jpg",
-    "name": "Mohammad Shahnur",
-    "position": "Assistant Club Manager",
-    "email": "mdshahnur05@gmail.com",
-    "phone": "+8801637416047 "
-  },
-  {
-    "img": "https://i.ibb.co/fFGNBN7/Whats-App-Image-2024-05-16-at-16-47-10-8ae87e9f.jpg",
-    "name": "Mashroor Ahmed",
-    "position": "Treasurer",
-    "email": "mashroorahmed452@gmail.com",
-    "phone": "+8801917080894"
-  },
-  {
-    "img": "https://i.ibb.co/xXhBfPX/IMG-20211208-180914.jpg",
+    "img": "https://i.ibb.co.com/Kc4rSR4L/sohag.jpg",
     "name": "Mohammad Sohag Mia",
-    "position": "Joint Treasurer",
+    "position": "Treasurer",
     "email": "sohugmia1234@gmail.com",
     "phone": "+8801887374177"
   },
   {
-    "img": "https://i.ibb.co/vC98v81/IMG-20240106-125610.jpg",
-    "name": "Naeem Biswass Niloy",
-    "position": "Media Executive",
-    "email": "niloybiswass097@gmail.com",
-    "phone": "+8801708045058"
+    "img": "https://i.ibb.co.com/Sw0KGwpC/MD-MA-R-UF.jpg",
+    "name": "Md. Maruf",
+    "position": "Contest Support Lead",
+    "email": "mdmarufhasan135rg@gmail.com",
+    "phone": "+8801876830549"
   },
   {
-    "img": "https://i.ibb.co/YQnPLLK/Whats-App-Image-2024-05-18-at-00-22-10-e29b218e.jpg",
-    "name": "Navid Hassan",
-    "position": "Joint Media Executive",
-    "email": "nha02112002@gmail.com",
-    "phone": "+8801778548640"
+    "img": "https://i.ibb.co.com/twJ5zzfS/anisur-1.jpg",
+    "name": "Anisur Rahman Farazi",
+    "position": "Social Media Manager",
+    "email": "anisurrahmanfarazi@gmail.com",
+    "phone": "+8801641088544"
   },
   {
-    "img": "https://i.ibb.co/X7NY3YZ/IMG-20211208-180914.jpg",
-    "name": "Md. Mahadi Hasan",
-    "position": "Creative Executive",
-    "email": "mahadihasan8461@gmail.com",
-    "phone": "+8801865697584"
-  },
-  {
-    "img": "https://i.ibb.co/RC3g1V0/Whats-App-Image-2024-05-24-at-10-15-59-db14279a.jpg",
-    "name": "Muhammad Ashraful Islam",
-    "position": "Joint Creative Executive",
-    "email": "arasru01@gmail.com",
-    "phone": "+8801833408699"
-  },
-  {
-    "img": "https://i.ibb.co/vsnVbNg/my-profile.jpg",
-    "name": "Md. Abrar Siddiqui",
-    "position": "Content Writer",
-    "email": "abrarsiddiqui306@gmail.com",
-    "phone": "+8801717651691"
+    "img": "https://i.ibb.co.com/ymH0M7HR/image.png",
+    "name": "Jamia islam tanha",
+    "position": "Event Organizer",
+    "email": "jamiaislamtanha@gmail.com",
+    "phone": "+8801820290838"
   }
 ]
