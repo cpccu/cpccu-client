@@ -2,8 +2,11 @@ name: Update Contributors
 
 on:
   schedule:
-    - cron: '0 0 * * 2,5' # Runs every Sunday at midnight UTC
+    - cron: '0 0 * * 2,5' # Runs every Tuesday and Friday at midnight UTC
   workflow_dispatch: # Allows manual triggering
+
+permissions:
+  contents: write  # This allows the Action to commit the updated JSON file
 
 jobs:
   update-contributors:
