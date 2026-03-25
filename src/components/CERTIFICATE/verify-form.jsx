@@ -96,7 +96,8 @@ export function VerifyForm() {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-1.5 rounded-xl bg-muted/50 border border-border/50 p-1.5">
+      {/* Search type tabs - Desktop original, Mobile optimized */}
+      <div className="flex gap-1.5 rounded-xl bg-muted/50 border border-border/50 p-1.5 md:overflow-hidden overflow-x-auto">
         {SEARCH_TYPES.map(({ value, label, Icon }) => (
           <button
             key={value}
@@ -105,20 +106,22 @@ export function VerifyForm() {
               setSearchType(value);
               handleClear();
             }}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+            className={`flex-1 md:flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap md:whitespace-normal flex-shrink-0 md:flex-shrink-1 ${
               searchType === value
                 ? "bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg shadow-primary/25"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             <Icon className="w-4 h-4" />
-            <span className="hidden sm:inline">{label}</span>
-            <span className="sm:hidden">{label.split(" ")[0]}</span>
+            <span className="hidden md:inline">{label}</span>
+            <span className="md:hidden">{label.split(" ")[0]}</span>
           </button>
         ))}
       </div>
 
+      {/* Search form */}
       <form onSubmit={handleSearch} className="space-y-4">
+        {/* Input field */}
         <div className="relative group">
           <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
             <currentType.Icon className="w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -134,6 +137,7 @@ export function VerifyForm() {
           />
         </div>
 
+        {/* Error message */}
         {error && (
           <div className="flex items-center gap-3 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -141,6 +145,7 @@ export function VerifyForm() {
           </div>
         )}
 
+        {/* Submit button */}
         <button
           type="submit"
           disabled={isFetching || !query.trim()}
@@ -160,6 +165,7 @@ export function VerifyForm() {
         </button>
       </form>
 
+      {/* Results section */}
       {searched && (
         <div className="space-y-5">
           <div className="flex items-center justify-between">

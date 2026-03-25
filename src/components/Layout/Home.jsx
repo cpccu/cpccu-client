@@ -5,6 +5,9 @@ import OurMission from "@/components/HOME/OurMission";
 import OurResponsibility from "@/components/HOME/OurResponsibility";
 import Count from "@/components/HOME/Count";
 import GallerySection from "@/components/HOME/GallerySection";
+import ContributorsCarousel from "@/components/HOME/ContributorsCarousel";
+import VisitorCounter from "@/components/HOME/VisitorCounter";
+
 
 export default function Home() {
   return (
@@ -18,9 +21,11 @@ export default function Home() {
         />
       </section>
       <OurMission />
+      <ContributorsCarousel />
       <OurResponsibility />
       <Count />
       <GallerySection />
+      <VisitorCounter />
     </OurMissionScrollProvider>
   );
 }
