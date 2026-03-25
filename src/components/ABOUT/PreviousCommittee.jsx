@@ -44,7 +44,7 @@ export default function PreviousCommittee() {
                 className="w-full bg-gradient-to-r from-header/5 to-blue-50 hover:from-header/10 hover:to-blue-100 px-6 py-4 flex items-center justify-between transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-header/20 flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full bg-header/20 flex items-center justify-center">
                     <span className="text-header font-bold text-sm">{yearData.year.split("-")[0]}</span>
                   </div>
                   <div className="text-left">
