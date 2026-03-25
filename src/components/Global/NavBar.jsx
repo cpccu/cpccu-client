@@ -10,7 +10,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { faSignInAlt } from "@fortawesome/free-solid-svg-icons";
 import Data from "@/data/global/navBar.json";
-import GoToTop from "@/components/Global/GoToTop";
 import { useFetchUsersQuery } from "@/features/users/userApi";
 
 export default function NavBar() {
@@ -33,7 +32,7 @@ export default function NavBar() {
 
   useEffect(() => {
     const scrollBar = () => {
-      if (Math.ceil(window.scrollY) > 180) {
+      if (Math.ceil(window.scrollY) > 100) {
         setFixed(true);
       } else {
         setFixed(false);
@@ -61,76 +60,108 @@ export default function NavBar() {
     };
   }, []);
 
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [open]);
+
   return (
     <main
       className={`${
-        fixed && "md:sticky shadow-2xl"
-      } sticky top-0 md:static transition-all duration-1000 z-50 bg-white flex items-center justify-between padding`}
+        fixed ? "fixed top-0 left-0 right-0 shadow-xl" : "relative"
+      } transition-all duration-300 z-[100] bg-white flex items-center justify-between padding min-h-[60px] md:min-h-[80px] w-full border-b border-gray-100`}
     >
-      <Link href="/" onClick={() => setOpen(false)}>
+      <Link href="/" onClick={() => setOpen(false)} className="z-[110]">
         <section
           onClick={goHome}
-          className="flex items-center justify-center gap-2 py-2 lg:-py-0 cursor-default"
+          className="flex items-center justify-center gap-2 py-2 cursor-pointer"
         >
           <img
-            className="h-12"
+            className="h-10 md:h-12 w-auto"
             src={InstitudeInfo?.img}
             alt={InstitudeInfo?.alt}
           />
           <div className="flex flex-col justify-center">
-            <h1 className="text-lg md:text-2xl hidden md:block lg:hidden max-w-[1130px] mxl:block text-header font-bold font-custom">
+            <h1 className="text-lg md:text-2xl hidden md:block lg:hidden max-w-[1130px] mxl:block text-header font-bold font-custom leading-tight">
               {InstitudeInfo?.fullName}
             </h1>
-            <h1 className="text-lg md:text-2xl md:hidden lg:block mxl:hidden text-header font-bold font-custom">
+            <h1 className="text-lg md:text-2xl md:hidden lg:block mxl:hidden text-header font-bold font-custom leading-tight">
               {InstitudeInfo?.shortName}
             </h1>
-            <p className="text-sm font-bold">{InstitudeInfo?.uniName}</p>
+            <p className="text-[10px] md:text-sm font-bold text-gray-500 uppercase tracking-tight">
+              {InstitudeInfo?.uniName}
+            </p>
           </div>
         </section>
       </Link>
 
-      <section>
+      <section className="flex items-center">
         <button
           ref={mobileNavToggler}
           onClick={navHandler}
-          className="lg:hidden"
+          className="lg:hidden z-[120] p-2 focus:outline-none flex items-center justify-center bg-gray-50 rounded-lg"
+          aria-label="Toggle navigation"
         >
-          <img className="h-8 md:h-9" src={open ? NavClose : NavOpen} alt="" />
+          {open ? (
+            <img className="h-6 w-6 md:h-7 md:w-7" src={NavClose} alt="Close" />
+          ) : (
+            <img className="h-6 w-6 md:h-7 md:w-7" src={NavOpen} alt="Open" />
+          )}
         </button>
+        
         <nav
           ref={mobileNav}
           className={`${
-            open ? "left-0" : "-left-[70%] md:-left-[40%]"
-          } fixed top-0 bottom-0 w-[70%] md:w-[40%] shadow-2xl bg-white lg:shadow-none lg:w-full lg:bg-transparent lg:static trans z-50`}
+            open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          } fixed lg:static top-0 left-0 bottom-0 w-[80%] md:w-[50%] lg:w-full h-full lg:h-auto shadow-2xl lg:shadow-none bg-white lg:bg-transparent transition-transform duration-300 ease-in-out z-[110] overflow-y-auto lg:overflow-visible flex flex-col lg:flex-row`}
         >
-          <section className="flex py-2 items-center justify-between px-5 md:px-7 lg:py-4 border-b border-gray-600/30 lg:hidden">
-            <section className="flex items-center gap-2">
+          <section className="flex py-6 items-center justify-between px-6 md:px-8 border-b border-gray-100 lg:hidden bg-gray-50/50">
+            <section className="flex items-center gap-3">
               <img
-                className="h-12"
+                className="h-10 w-auto"
                 src={InstitudeInfo?.img}
                 alt={InstitudeInfo?.alt}
               />
               <div>
-                <h1 className="text-lg md:text-2xl hidden md:block lg:hidden max-w-[1130px] mxl:block text-header font-bold font-custom">
-                  {InstitudeInfo?.fullName}
-                </h1>
-                <h1 className="text-lg md:text-2xl md:hidden lg:block mxl:hidden text-header font-bold font-custom">
+                <h1 className="text-base font-bold text-header">
                   {InstitudeInfo?.shortName}
                 </h1>
-                <p className="text-sm">{InstitudeInfo?.uniName}</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest">
+                  {InstitudeInfo?.uniName}
+                </p>
               </div>
             </section>
           </section>
+
           <NavItem setOpen={setOpen} />
 
-          <Link href="/login">
-            <button className="trans hover:ring bg-gradient-to-r from-header to-green-500 text-white flex md:hidden items-center justify-center gap-2 py-2 absolute bottom-20 left-10 right-10 rounded-full font-semibold">
-              <FontAwesomeIcon icon={faSignInAlt} />
-              <span>Login</span>
-            </button>
-          </Link>
+          <div className="mt-auto p-8 lg:hidden border-t border-gray-50">
+            {!user?.data && (
+              <Link href="/login" onClick={() => setOpen(false)}>
+                <button className="w-full bg-header text-white flex items-center justify-center gap-2 py-4 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all">
+                  <FontAwesomeIcon icon={faSignInAlt} />
+                  <span>Login to Portal</span>
+                </button>
+              </Link>
+            )}
+          </div>
         </nav>
       </section>
+
+      {/* Mobile Overlay */}
+      {open && (
+        <div 
+          className="fixed inset-0 bg-black/40 z-[105] lg:hidden backdrop-blur-[2px] transition-opacity duration-300"
+          onClick={() => setOpen(false)}
+        />
+      )}
     </main>
   );
 }
@@ -150,20 +181,20 @@ export function NavItem({ setOpen }) {
   }, [pathname]);
 
   return (
-    <ul className="flex flex-col lg:flex-row z-50 mt-10 lg:mt-0">
+    <ul className="flex flex-col lg:flex-row z-50 mt-2 lg:mt-0 w-full lg:w-auto">
       {Data
         ? Data.map((item, index) => {
             if (item.level === 0) {
               const isActive = pathname === item.path;
               return (
-                <li key={index}>
+                <li key={index} className="w-full lg:w-auto">
                   <Link
                     href={item.path}
                     className={` ${
                       isActive
-                        ? "bg-header text-white lg:border-b-4 lg:border-header lg:text-black lg:bg-header/20 lg:hover:bg-header/20"
-                        : "hover:text-header trans hover:bg-header/20 lg:hover:bg-transparent"
-                    } block px-5 md:px-7 py-2 lg:py-7 cursor-pointer font-semibold capitalize`}
+                        ? "text-header bg-blue-50/50 lg:border-b-4 lg:border-header lg:bg-transparent"
+                        : "text-gray-700 hover:text-header hover:bg-gray-50 lg:hover:bg-transparent"
+                    } block px-6 md:px-8 py-4 lg:py-7 cursor-pointer font-bold capitalize transition-all`}
                     onClick={() => setOpen(false)}
                   >
                     {item.page}
@@ -172,28 +203,28 @@ export function NavItem({ setOpen }) {
               );
             } else {
               return (
-                <li key={index} className="group relative">
+                <li key={index} className="group relative w-full lg:w-auto">
                   <button
                     className={` ${
                       isOpen
-                        ? "bg-header text-white lg:border-b-4 lg:border-header lg:text-black lg:bg-header/20 lg:hover:bg-header/20"
-                        : "group-hover:text-header trans hover:bg-header/20 lg:hover:bg-transparent"
-                    } w-full flex items-center gap-3 px-5 md:px-7 py-2 lg:py-7 cursor-pointer font-semibold capitalize`}
+                        ? "text-header bg-blue-50/50 lg:border-b-4 lg:border-header lg:bg-transparent"
+                        : "text-gray-700 group-hover:text-header hover:bg-gray-50 lg:hover:bg-transparent"
+                    } w-full flex items-center justify-between lg:justify-start gap-3 px-6 md:px-8 py-4 lg:py-7 cursor-pointer font-bold capitalize transition-all`}
                     onClick={() => setAboutOpen((prev) => !prev)}
                   >
-                    <p>{item?.page}</p>
+                    <span>{item?.page}</span>
                     <FontAwesomeIcon
                       className={`${
-                        aboutOpen ? "-rotate-180 lg:rotate-0" : "rotate-0"
-                      }  trans`}
+                        aboutOpen ? "rotate-180" : "rotate-0"
+                      } transition-transform duration-300 lg:group-hover:rotate-180 text-xs`}
                       icon={faChevronDown}
                     />
                   </button>
 
                   <ul
                     className={`${
-                      aboutOpen ? "group-hover:flex" : "hidden"
-                    } lg:hidden lg:shadow-xl lg:group-hover:flex flex-col lg:items-center bg-white lg:absolute top-full left-0 ml-5 lg:ml-0 trans z-10`}
+                      aboutOpen ? "flex" : "hidden"
+                    } lg:hidden lg:group-hover:flex flex-col bg-gray-50/50 lg:bg-white lg:absolute lg:top-full lg:left-0 lg:min-w-[220px] lg:shadow-2xl z-10 lg:rounded-b-xl lg:border-t-2 lg:border-header`}
                   >
                     {item?.element.map((ele, num) => {
                       const isSubActive = pathname === ele?.path;
@@ -202,11 +233,11 @@ export function NavItem({ setOpen }) {
                           href={ele?.path}
                           key={num}
                           className={`${
-                            isSubActive ? "text-header" : "text-gray-900"
-                          }  flex w-full hover:bg-header/20 cursor-pointer py-1 lg:py-2 capitalize font-semibold border-b`}
+                            isSubActive ? "text-header bg-blue-50" : "text-gray-600"
+                          } flex w-full hover:bg-header/10 cursor-pointer py-4 px-10 lg:px-6 capitalize font-semibold border-b border-gray-100 lg:border-none transition-colors`}
                           onClick={() => setOpen(false)}
                         >
-                          <li className="w-full px-6">{ele?.page}</li>
+                          <li className="w-full">{ele?.page}</li>
                         </Link>
                       );
                     })}
