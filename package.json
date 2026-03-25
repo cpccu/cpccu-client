@@ -7,6 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "bun-dev": "bun --bun next dev",
+    "bun-build": "bun --bun next build",
+    "bun-start": "bun --bun next start",
     "lint": "next lint"
   },
   "dependencies": {

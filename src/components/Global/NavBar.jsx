@@ -41,6 +41,10 @@ export default function NavBar() {
     };
 
     const mobileNavClose = (event) => {
+      // Check if event.target is a valid Node
+      if (!event?.target || !(event.target instanceof Node)) {
+        return;
+      }
       if (
         mobileNav.current &&
         mobileNavToggler.current &&
