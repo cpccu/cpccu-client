@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import NavOpen from "@/assets/icons/navOpen.svg";
 import NavClose from "@/assets/icons/navClose.svg";
@@ -106,14 +107,16 @@ export default function NavBar() {
         <button
           ref={mobileNavToggler}
           onClick={navHandler}
-          className="lg:hidden z-[120] p-2 focus:outline-none flex items-center justify-center bg-gray-50 rounded-lg"
+          className="lg:hidden z-[120] p-2 focus:outline-none flex items-center justify-center bg-gray-50 rounded-lg min-w-[40px] min-h-[40px]"
           aria-label="Toggle navigation"
         >
-          {open ? (
-            <img className="h-6 w-6 md:h-7 md:w-7" src={NavClose} alt="Close" />
-          ) : (
-            <img className="h-6 w-6 md:h-7 md:w-7" src={NavOpen} alt="Open" />
-          )}
+          <Image 
+            src={open ? NavClose : NavOpen} 
+            alt={open ? "Close" : "Open"} 
+            width={24} 
+            height={24}
+            className="h-6 w-6 md:h-7 md:w-7"
+          />
         </button>
         
         <nav
