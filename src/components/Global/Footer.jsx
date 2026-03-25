@@ -14,7 +14,7 @@ export default function Footer() {
 
   return (
     <>
-      <main className="bg-count text-white padding grid justify-between gap-y-8 md:gap-y-12 md:gap-x-6 grid-cols-2 lg:grid-cols-11 py-10 md:py-16 lg:py-24">
+      <main className="bg-count text-white padding grid justify-between gap-y-8 md:gap-y-12 md:gap-x-6 grid-cols-2 lg:grid-cols-11 py-10 md:py-16 lg:py-12">
         <FooterInfo />
         <Touch />
         <UsefullLink />
