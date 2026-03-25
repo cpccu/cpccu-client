@@ -35,18 +35,18 @@ export default function CertificatePage() {
             }}
           />
 
-          {/* Floating elements */}
+          {/* Floating elements - hidden on mobile for performance */}
           <div
-            className="absolute top-20 left-[10%] w-2 h-2 rounded-full bg-primary/40 animate-pulse"
+            className="absolute top-20 left-[10%] w-2 h-2 rounded-full bg-primary/40 animate-pulse hidden sm:block"
             aria-hidden="true"
           />
           <div
-            className="absolute top-32 right-[15%] w-3 h-3 rounded-full bg-accent/30 animate-pulse"
+            className="absolute top-32 right-[15%] w-3 h-3 rounded-full bg-accent/30 animate-pulse hidden sm:block"
             style={{ animationDelay: "0.5s" }}
             aria-hidden="true"
           />
           <div
-            className="absolute bottom-20 left-[20%] w-2 h-2 rounded-full bg-primary/30 animate-pulse"
+            className="absolute bottom-20 left-[20%] w-2 h-2 rounded-full bg-primary/30 animate-pulse hidden sm:block"
             style={{ animationDelay: "1s" }}
             aria-hidden="true"
           />

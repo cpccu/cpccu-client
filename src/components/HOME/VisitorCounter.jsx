@@ -10,16 +10,38 @@ const VisitorCounter = () => {
   useEffect(() => {
     const fetchTotalCount = async () => {
       try {
-        // Use a persistent key for the total visitor count starting from today
-        const namespace = "cpccu-club";
-        const key = "total-visitors-v1";
+        // Use explicit string values to avoid [object Object] issue
+        const namespace = String("cpccu-club");
+        const key = String("total-visitors-v1");
+        const url = `https://api.counterapi.dev/v1/${namespace}/${key}/up`;
+        
+        console.log("Fetching visitor count from:", url);
+        
+        // Validate URL before fetching
+        if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+          console.error("Invalid URL generated");
+          setTotalCount(1250);
+          setLoading(false);
+          return;
+        }
         
         // Increment and get the cumulative count
-        const response = await fetch(`https://api.counterapi.dev/v1/${namespace}/${key}/up`);
+        const response = await fetch(url);
+        
+        // Check if response is OK
+        if (!response.ok) {
+          console.error("Failed to fetch visitor count:", response.status, response.statusText);
+          setTotalCount(1250);
+          setLoading(false);
+          return;
+        }
+        
         const data = await response.json();
         
         if (data && data.count) {
           setTotalCount(data.count);
+        } else {
+          setTotalCount(1250);
         }
       } catch (error) {
         console.error("Error fetching visitor count:", error);
