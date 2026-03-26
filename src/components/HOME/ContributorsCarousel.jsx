@@ -117,7 +117,7 @@ function CarouselCard({ contributor }) {
 
       <div className="p-5 flex flex-col items-center gap-3 text-center">
         {/* Avatar */}
-        <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-header/10 group-hover:ring-header/40 transition-all duration-500 mt-1">
+        <div className="w-40 h-40 rounded-full overflow-hidden ring-4 ring-header/10 group-hover:ring-header/40 transition-all duration-500 mt-1">
           <img
             src={contributor?.avatar}
             alt={contributor?.name}

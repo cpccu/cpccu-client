@@ -12,7 +12,7 @@ export default function ContributorCard({ contributor }) {
       <div className="p-6 flex flex-col items-center gap-4 flex-1">
         {/* Avatar */}
         <div className="relative">
-          <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-header/20 group-hover:ring-header/50 transition-all duration-500">
+          <div className="w-40 h-40 rounded-full overflow-hidden ring-4 ring-header/20 group-hover:ring-header/50 transition-all duration-500">
             <img
               src={contributor?.avatar}
               alt={contributor?.name}
