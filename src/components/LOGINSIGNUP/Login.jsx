@@ -1,12 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import Logo from "@/assets/logo/cpccu.png";
+const Logo = "/assets/logo/cpccu.png";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
 import InputBox from "@/components/LOGINSIGNUP/InputBox";
-import bgimg from "@/assets/img/abc.jpg";
+const bgimg = "/assets/img/abc.jpg";
 import { useState, useEffect} from "react";
 import { useLoginMutation } from "@/features/auth/authApi";
 import { useDispatch } from "react-redux";
