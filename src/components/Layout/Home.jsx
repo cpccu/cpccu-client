@@ -7,6 +7,7 @@ import Count from "@/components/HOME/Count";
 import GallerySection from "@/components/HOME/GallerySection";
 import ContributorsCarousel from "@/components/HOME/ContributorsCarousel";
 import VisitorCounter from "@/components/HOME/VisitorCounter";
+import DonatorsCarousel from "../HOME/DonatorsCarousel";
 
 
 export default function Home() {
@@ -23,6 +24,7 @@ export default function Home() {
       <OurMission />
       <ContributorsCarousel />
       <OurResponsibility />
+      <DonatorsCarousel/>
       <Count />
       <GallerySection />
       <VisitorCounter />
