@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import defaultAvatar from "@/assets/avatar/default-avatar.png";
+const defaultAvatar = "/assets/avatar/default-avatar.png";
 import { useUpdateUserMutation } from "@/features/users/userApi";
 import { useUserImageUploadMutation } from "@/features/users/userApi";
 import { useSelector, useDispatch } from "react-redux";
