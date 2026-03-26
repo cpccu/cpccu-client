@@ -5,7 +5,7 @@
     "role": "Contributor",
     "department": "CSE",
     "batch": "60th",
-    "contribution": "Contributed 164 commits to the project",
+    "contribution": "Contributed 170 commits to the project",
     "github": "https://github.com/mdsiaofficial",
     "linkedin": "https://www.linkedin.com/in/mdsiaofficial/",
     "avatar": "https://avatars.githubusercontent.com/u/22385106?v=4"
@@ -27,7 +27,7 @@
     "role": "Contributor",
     "department": "CSE",
     "batch": "67th",
-    "contribution": "Contributed 50 commits to the project",
+    "contribution": "Contributed 65 commits to the project",
     "github": "https://github.com/anisurrahmanfarazi17",
     "linkedin": "https://www.linkedin.com/in/anisurrahmanfarazi17/",
     "avatar": "https://avatars.githubusercontent.com/u/71831499?v=4"
@@ -89,6 +89,17 @@
   },
   {
     "id": 9,
+    "name": "actions-user",
+    "role": "Contributor",
+    "department": "CSE",
+    "batch": "TBD",
+    "contribution": "Contributed 1 commits to the project",
+    "github": "https://github.com/actions-user",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://avatars.githubusercontent.com/u/65916846?v=4"
+  },
+  {
+    "id": 10,
     "name": "MH-Alok",
     "role": "Contributor",
     "department": "CSE",
@@ -99,7 +110,7 @@
     "avatar": "https://avatars.githubusercontent.com/u/207171962?v=4"
   },
   {
-    "id": 10,
+    "id": 11,
     "name": "abu-taher-saikat",
     "role": "Contributor",
     "department": "CSE",
