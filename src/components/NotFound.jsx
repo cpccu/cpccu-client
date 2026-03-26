@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import IMG404 from "@/assets/img/404.jpg";
+const IMG404 = "/assets/img/404.jpg";
 
 export default function NotFound() {
   const router = useRouter();

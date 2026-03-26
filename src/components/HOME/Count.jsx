@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image"; 
-import useIMG from "@/assets/icons/user.svg";
-import pictureIMG from "@/assets/icons/picture.svg";
-import eventIMG from "@/assets/icons/event.svg";
-import medalIMG from "@/assets/icons/medal.svg";
+const useIMG = "/assets/icons/user.svg";
+const pictureIMG = "/assets/icons/picture.svg";
+const eventIMG = "/assets/icons/event.svg";
+const medalIMG = "/assets/icons/medal.svg";
 import Data from "@/data/home/Count.json";
 import CountUp from "react-countup";
 import { useState, useRef, useEffect } from "react";

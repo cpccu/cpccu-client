@@ -32,78 +32,78 @@ export default function PreviousCommittee() {
 
       {/* Timeline Accordion */}
       <section className="padding">
-        <div className="max-w-4xl mx-auto space-y-4">
+        <div className="max-w-7xl mx-auto space-y-6">
           {PreviousCommitteeData.map((yearData, index) => (
             <div
               key={index}
-              className="border border-gray-200 rounded-xl overflow-hidden hover:border-header/50 transition-all duration-300"
+              className="border border-gray-200 rounded-2xl overflow-hidden hover:border-header/50 transition-all duration-300 shadow-sm"
             >
               {/* Year Header */}
               <button
                 onClick={() => toggleYear(yearData.year)}
-                className="w-full bg-gradient-to-r from-header/5 to-blue-50 hover:from-header/10 hover:to-blue-100 px-6 py-4 flex items-center justify-between transition-all duration-300"
+                className="w-full bg-gradient-to-r from-header/5 to-blue-50 hover:from-header/10 hover:to-blue-100 px-8 py-6 flex items-center justify-between transition-all duration-300"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-24 h-24 rounded-full bg-header/20 flex items-center justify-center">
-                    <span className="text-header font-bold text-sm">{yearData.year.split("-")[0]}</span>
+                <div className="flex items-center gap-6">
+                  <div className="w-30 h-25 rounded-2xl bg-header/20 flex items-center justify-center">
+                    <span className="text-header font-bold text-lg">{yearData.year.split("-")[0]}</span>
                   </div>
                   <div className="text-left">
-                    <p className="text-lg font-bold text-gray-900">{yearData.year}</p>
-                    <p className="text-sm text-gray-500">{yearData.members.length} members</p>
+                    <p className="text-2xl font-bold text-gray-900">{yearData.year}</p>
+                    <p className="text-base text-gray-500">{yearData.members.length} members</p>
                   </div>
                 </div>
                 <FaChevronDown
                   className={`text-header transition-transform duration-300 ${
                     expandedYear === yearData.year ? "rotate-180" : ""
                   }`}
-                  size={18}
+                  size={24}
                 />
               </button>
 
               {/* Members Grid - Expandable */}
               {expandedYear === yearData.year && (
-                <div className="bg-gray-50 px-6 py-8 border-t border-gray-200">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-gray-50 px-8 py-12 border-t border-gray-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                     {yearData.members.map((member, memberIndex) => (
                       <div
                         key={memberIndex}
-                        className="bg-white rounded-lg shadow-sm hover:shadow-md border border-gray-100 hover:border-header/30 transition-all duration-300 overflow-hidden group"
+                        className="bg-white rounded-2xl shadow-md hover:shadow-xl border border-gray-100 hover:border-header/30 transition-all duration-500 overflow-hidden group"
                       >
                         {/* Top accent bar */}
-                        <div className="h-1 w-full bg-gradient-to-r from-header to-blue-400" />
+                        <div className="h-2 w-full bg-gradient-to-r from-header to-blue-400" />
 
-                        <div className="p-4 flex flex-col items-center gap-3 text-center">
+                        <div className="p-8 flex flex-col items-center gap-6 text-center">
                           {/* Avatar */}
-                          <div className="w-16 h-16 rounded-full overflow-hidden ring-3 ring-header/10 group-hover:ring-header/40 transition-all duration-300">
+                          <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-header/10 group-hover:ring-header/40 transition-all duration-500 shadow-inner">
                             <img
                               src={member?.avatar}
                               alt={member?.fullName}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
                               onError={(e) => {
                                 e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                                   member?.fullName
-                                )}&background=3b60c9&color=fff&size=128`;
+                                )}&background=3b60c9&color=fff&size=256`;
                               }}
                             />
                           </div>
 
                           {/* Info */}
-                          <div>
-                            <h3 className="font-bold text-gray-900 text-sm capitalize group-hover:text-header transition-colors duration-300">
+                          <div className="space-y-2">
+                            <h3 className="font-extrabold text-gray-900 text-xl capitalize group-hover:text-header transition-colors duration-300">
                               {member?.fullName}
                             </h3>
-                            <span className="inline-block mt-1 bg-header/10 text-header text-xs font-semibold px-2 py-0.5 rounded-full">
+                            <div className="inline-block bg-header/10 text-header text-sm font-bold px-4 py-1.5 rounded-full border border-header/20">
                               {member?.position}
-                            </span>
+                            </div>
                           </div>
 
                           {/* Email */}
                           <a
                             href={`mailto:${member?.email}`}
-                            className="text-xs text-header hover:text-header/80 transition-colors duration-300 truncate w-full"
+                            className="text-sm font-medium text-gray-500 hover:text-header transition-colors duration-300 flex items-center gap-2 group/email"
                             title={member?.email}
                           >
-                            {member?.email}
+                            <span className="truncate max-w-[200px]">{member?.email}</span>
                           </a>
                         </div>
                       </div>

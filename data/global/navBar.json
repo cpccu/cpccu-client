@@ -20,6 +20,10 @@
         "path": "/member"
       },
       {
+        "page": "Contributors",
+        "path": "/contributors"
+      },
+      {
     "page": "Blog",
     "path": "/blog",
     "level": 0
