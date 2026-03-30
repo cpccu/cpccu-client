@@ -89,17 +89,6 @@
   },
   {
     "id": 9,
-    "name": "actions-user",
-    "role": "Contributor",
-    "department": "CSE",
-    "batch": "TBD",
-    "contribution": "Contributed 1 commits to the project",
-    "github": "https://github.com/actions-user",
-    "linkedin": "https://linkedin.com",
-    "avatar": "https://avatars.githubusercontent.com/u/65916846?v=4"
-  },
-  {
-    "id": 10,
     "name": "MH-Alok",
     "role": "Contributor",
     "department": "CSE",
@@ -110,7 +99,7 @@
     "avatar": "https://avatars.githubusercontent.com/u/207171962?v=4"
   },
   {
-    "id": 11,
+    "id": 10,
     "name": "abu-taher-saikat",
     "role": "Contributor",
     "department": "CSE",
