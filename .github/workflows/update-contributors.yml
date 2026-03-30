@@ -30,9 +30,31 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/update_contributors.py
 
-      - name: Commit and push changes
+      - name: Commit and push changes to all branches
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          
+          # Stage the changes
           git add data/contributors.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: auto-update contributors.json" && git push)
+          
+          # Check if there are any changes to commit
+          if git diff --quiet && git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          
+          # Commit the changes
+          git commit -m "chore: auto-update contributors.json"
+          
+          # Push to dev
+          echo "Pushing to dev..."
+          git push origin HEAD:dev
+          
+          # Push to main
+          echo "Pushing to main..."
+          git push origin HEAD:main
+          
+          # Push to release
+          echo "Pushing to release..."
+          git push origin HEAD:release

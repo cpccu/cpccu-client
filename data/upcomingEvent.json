@@ -1,5 +1,23 @@
 [
   {
+    "img": "https://i.ibb.co.com/0V6HhMbp/Whats-App-Image-2026-03-28-at-4-41-11-PM-1.jpg",
+    "alt": "CPCCU Bootcamp Contest-1",
+    "eventHeadLine1": "CPCCU Bootcamp Contest-1",
+    "textContext": "CPCCU invites you to step away from the compiler and share your unique perspective.",
+    "eventHeadLine2": "Reward",
+    "reward": "Winners will get a certificate and some prizes.",
+    "eventHeadLine3": "Rules",
+    "rules1": "If someone cheats, they will be disqualified of the challenge.",
+    "rules2": "Cheating = Copying other's code, Copy pasting from online search.",
+    "rules3": "Try not to copy others code.",
+    "rules4": "Try to think out the solution yourself.",
+    "btnText": "Sign Up For Coderoj",
+    "btnLink": "https://www.coderoj.com/",
+    "btnText1": "Contest Link",
+    "btnLink1": "https://www.coderoj.com/c/jlu4Ug8",
+    "date": "2026-03-31T21:00:00+06:00"
+  },
+  {
     "img": "https://i.ibb.co.com/S776RY8f/Bootcamp.png",
     "alt": "Competitive Programming-এ হাতে খড়ি Bootcamp",
     "eventHeadLine1": "Competitive Programming-এ হাতে খড়ি Bootcamp",
@@ -34,7 +52,8 @@
     "btnText1": "Contest Link",
     "btnLink1": "https://vjudge.net/contest/794777",
     "date": "2026-03-15T21:30:00+06:00"
-  },{
+  },
+  {
     "img": "https://i.ibb.co.com/WNjVCmZS/619251012-2052657095520277-1723176887416274105-n.jpg",
     "alt": "Beyond the Code: Article Writing Contest 2026",
     "eventHeadLine1": "Beyond the Code: Article Writing Contest 2026",
