@@ -16,7 +16,7 @@ def fetch_contributors(repo):
     headers = {
         "Accept": "application/vnd.github.v3+json"
     }
-    token = os.getenv('GITHUB_TOKEN')
+    token = os.getenv('GITHUB_TOKEN' )
     if token:
         headers['Authorization'] = f"token {token}"
     
@@ -43,10 +43,18 @@ def main():
 
     # 3. Merge contributors by login
     all_contributors = {}
+    
+    # LIST OF BOTS TO EXCLUDE
+    EXCLUDED_LOGINS = ['actions-user', 'github-actions[bot]', 'github-actions', 'dependabot[bot]']
 
     def process_list(contributors):
         for c in contributors:
             login = c['login']
+            
+            # SKIP BOTS AND AUTOMATED USERS
+            if login.lower() in EXCLUDED_LOGINS or '[bot]' in login.lower() or 'actions' in login.lower():
+                continue
+                
             github_url = c['html_url'].lower().rstrip('/')
             if github_url in all_contributors:
                 all_contributors[github_url]['contributions'] += c['contributions']
@@ -78,7 +86,7 @@ def main():
         # Preserve if exists
         if github_url in existing_map:
             e = existing_map[github_url]
-            role = e.get('role', role)
+            role = e.get('role', role )
             department = e.get('department', department)
             batch = e.get('batch', batch)
             linkedin = e.get('linkedin', linkedin)

@@ -24,6 +24,10 @@
         "path": "/contributors"
       },
       {
+        "page": "Donators",
+        "path": "/donators"
+      },
+      {
     "page": "Blog",
     "path": "/blog",
     "level": 0
