@@ -19,6 +19,23 @@
     }
   },
   {
+    "img": "https://i.ibb.co.com/TBgyy2dy/655792717-1978161452807851-4522077264371501638-n.png",
+    "name": "R. R Rafi",
+    "position": "Product Manager",
+    "batch": "29th",
+    "technology": "",
+    "job": {
+      "Product Manager": "Wetopia Global"
+    },
+    "email": "rafi@wetechglobal.org",
+    "phone": "+8801926261878",
+    "socials": {
+      "github": "https://github.com/reduanrafi",
+      "linkedin": "https://linkedin.com/in/reduanrafi/",
+      "facebook": "https://www.facebook.com/reduan.rafi.7"
+    }
+  },
+  {
     "img": "https://i.ibb.co/Zh37CJ8/boni.jpg",
     "name": "Boni Yeamin",
     "position": "Cyber Security Engineer",
