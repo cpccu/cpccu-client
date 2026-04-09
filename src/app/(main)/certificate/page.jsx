@@ -169,11 +169,8 @@ export default function CertificatePage() {
                     className="text-primary font-medium hover:underline"
                   >
                     cpccu.club@gmail.com
-                  </a>{" "}
-                  or call{" "}
-                  <span className="font-mono text-foreground">
-                    +88017177-91358
-                  </span>
+                  </a>
+                  
                   .
                 </p>
               </div>
