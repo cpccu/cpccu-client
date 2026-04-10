@@ -170,8 +170,6 @@ export default function CertificatePage() {
                   >
                     cpccu.club@gmail.com
                   </a>
-                  
-                  .
                 </p>
               </div>
             </div>
