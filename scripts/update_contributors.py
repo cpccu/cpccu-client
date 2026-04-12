@@ -1,6 +1,7 @@
 import json
 import os
 import requests
+import time
 
 def load_json(filename):
     try:
@@ -11,25 +12,67 @@ def load_json(filename):
         print(f"Error loading {filename}: {e}")
     return []
 
-def fetch_contributors(repo):
-    url = f"https://api.github.com/repos/{repo}/contributors"
+def fetch_contributors_from_branch(repo, branch='release'):
+    """
+    Fetches contributors and their commit counts for a specific branch.
+    Since the /contributors endpoint doesn't support branch filtering,
+    we use the /commits endpoint with pagination.
+    """
+    url = f"https://api.github.com/repos/{repo}/commits"
     headers = {
         "Accept": "application/vnd.github.v3+json"
     }
-    token = os.getenv('GITHUB_TOKEN' )
+    token = os.getenv('GITHUB_TOKEN')
     if token:
         headers['Authorization'] = f"token {token}"
     
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"Error fetching {repo}: {response.status_code} - {response.text}")
-            return []
-    except Exception as e:
-        print(f"Exception fetching {repo}: {e}")
-        return []
+    params = {
+        "sha": branch,
+        "per_page": 100
+    }
+    
+    contributor_stats = {}
+    page = 1
+    
+    print(f"Fetching commits for {repo} on branch '{branch}'...")
+    
+    while True:
+        params["page"] = page
+        try:
+            response = requests.get(url, headers=headers, params=params)
+            if response.status_code != 200:
+                print(f"Error fetching commits for {repo}: {response.status_code} - {response.text}")
+                break
+            
+            commits = response.json()
+            if not commits:
+                break
+            
+            for commit in commits:
+                author = commit.get('author')
+                if author:
+                    login = author['login']
+                    if login not in contributor_stats:
+                        contributor_stats[login] = {
+                            'login': login,
+                            'avatar_url': author['avatar_url'],
+                            'html_url': author['html_url'],
+                            'contributions': 0
+                        }
+                    contributor_stats[login]['contributions'] += 1
+            
+            # Check if there's a next page
+            if 'next' not in response.links:
+                break
+            page += 1
+            # Simple rate limit safety
+            time.sleep(0.1)
+            
+        except Exception as e:
+            print(f"Exception fetching commits for {repo}: {e}")
+            break
+            
+    return list(contributor_stats.values())
 
 def main():
     # 1. Load existing contributors to preserve manual edits
@@ -37,9 +80,10 @@ def main():
     existing_data = load_json(existing_file)
     existing_map = {c['github'].lower().rstrip('/'): c for c in existing_data}
 
-    # 2. Fetch latest contributors from both repos
-    client_contributors = fetch_contributors('cpccu/cpccu-client')
-    server_contributors = fetch_contributors('cpccu/cpccu-server')
+    # 2. Fetch latest contributors from both repos on the 'release' branch
+    # Note: Using 'release' branch as requested
+    client_contributors = fetch_contributors_from_branch('cpccu/cpccu-client', 'release')
+    server_contributors = fetch_contributors_from_branch('cpccu/cpccu-server', 'release')
 
     # 3. Merge contributors by login
     all_contributors = {}
@@ -86,7 +130,7 @@ def main():
         # Preserve if exists
         if github_url in existing_map:
             e = existing_map[github_url]
-            role = e.get('role', role )
+            role = e.get('role', role)
             department = e.get('department', department)
             batch = e.get('batch', batch)
             linkedin = e.get('linkedin', linkedin)
