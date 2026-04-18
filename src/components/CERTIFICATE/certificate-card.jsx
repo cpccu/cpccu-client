@@ -77,7 +77,7 @@ export function CertificateCard({ certificate }) {
           <h2 className="text-2xl md:text-3xl font-extrabold text-foreground text-balance">
             {certificate.recipientName}
           </h2>
-          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             {certificate.description}
           </p>
         </div>
@@ -89,7 +89,7 @@ export function CertificateCard({ certificate }) {
             Contest / Event
           </p>
           <p className="text-lg font-bold text-foreground">
-            {certificate.eventName}
+            {certificate.contestName}
           </p>
           <span className="text-xs text-primary font-semibold mt-2 inline-block px-2 py-1 bg-primary/10 rounded-md">
             {CONTEST_TYPE_LABELS[certificate.contestType]}
@@ -116,7 +116,7 @@ export function CertificateCard({ certificate }) {
             <div>
               <p className="text-xs text-muted-foreground">Student ID</p>
               <p className="text-sm font-mono font-bold text-foreground">
-                {certificate.studentId}
+                {certificate.recipientId}
               </p>
             </div>
           </div>

@@ -1,34 +1,53 @@
-import { Award, Trophy, Users, Layers } from "lucide-react";
-import { STATS } from "@/lib/certificates-data";
+"use client";
 
-const stats = [
-  {
-    label: "Certificates Issued",
-    value: STATS.totalCertificates,
-    Icon: Award,
-    suffix: "+",
-  },
-  {
-    label: "Contests Held",
-    value: STATS.totalContests,
-    Icon: Layers,
-    suffix: "+",
-  },
-  {
-    label: "Total Participants",
-    value: STATS.totalParticipants,
-    Icon: Users,
-    suffix: "+",
-  },
-  {
-    label: "Winners Recognized",
-    value: STATS.totalWinners,
-    Icon: Trophy,
-    suffix: "+",
-  },
-];
+import { Award, Trophy, Users, Layers, Loader2 } from "lucide-react";
+import { useGetCertificateStatsQuery } from "@/features/certificate/certificateApi";
 
 export function CertificateStats() {
+  const { data, isLoading } = useGetCertificateStatsQuery();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-10 col-span-2">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const statsData = data?.data || {
+    totalCertificates: 0,
+    totalContests: 0,
+    totalParticipants: 0,
+    totalWinners: 0,
+  };
+
+  const stats = [
+    {
+      label: "Certificates Issued",
+      value: statsData.totalCertificates,
+      Icon: Award,
+      suffix: "+",
+    },
+    {
+      label: "Contests Held",
+      value: statsData.totalContests,
+      Icon: Layers,
+      suffix: "+",
+    },
+    {
+      label: "Total Participants",
+      value: statsData.totalParticipants,
+      Icon: Users,
+      suffix: "+",
+    },
+    {
+      label: "Winners Recognized",
+      value: statsData.totalWinners,
+      Icon: Trophy,
+      suffix: "+",
+    },
+  ];
+
   return (
     <div className="grid grid-cols-2 gap-4">
       {stats.map(({ label, value, Icon, suffix }) => (
