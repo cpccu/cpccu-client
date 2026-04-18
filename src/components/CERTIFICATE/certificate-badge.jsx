@@ -5,7 +5,7 @@ import { Award, Medal, Star, Trophy, BookOpen, HelpCircle } from "lucide-react";
 const BADGE_CONFIG = {
   winner: {
     label: "1st Place",
-    colorClass: "text-yellow-300",
+    colorClass: "text-yellow-400",
     bgClass: "bg-gradient-to-r from-yellow-400/20 to-amber-500/20",
     borderClass: "border-yellow-400/50",
     glowClass: "shadow-yellow-400/20",
@@ -13,10 +13,10 @@ const BADGE_CONFIG = {
   },
   "runner-up": {
     label: "2nd Place",
-    colorClass: "text-slate-200",
-    bgClass: "bg-gradient-to-r from-slate-300/15 to-slate-400/15",
-    borderClass: "border-slate-300/50",
-    glowClass: "shadow-slate-300/20",
+    colorClass: "text-orange-400",
+    bgClass: "bg-gradient-to-r from-orange-400/15 to-amber-400/15",
+    borderClass: "border-orange-400/50",
+    glowClass: "shadow-orange-400/20",
     Icon: Medal,
   },
   "top-performer": {
