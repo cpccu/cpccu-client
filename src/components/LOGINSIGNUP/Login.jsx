@@ -69,7 +69,7 @@ export default function Login() {
       <div className={`h-svh padding flex px-3 pb-12`}>
         <main className="mx-auto lg:min-w-[30rem] lg:w-[60rem] lg:max-w-[70rem] flex flex-col gap-14 items-start justify-center padding">
           <section className="flex flex-col self-center items-center justify-center gap-2">
-            <img className="h-24" src={Logo} alt="Logo" />
+            <Image className="h-24 w-auto" src={Logo} alt="Logo" width={96} height={96} />
             <h2 className="text-2xl font-custom">Welcome to</h2>
             <h1 className="text-2xl text-center font-semibold text-gray-600">
               Competitive Programming Camp City University
