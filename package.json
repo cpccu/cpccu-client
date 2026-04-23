@@ -1,6 +1,6 @@
 {
   "name": "cpccu-client",
-  "author": "rahul roy nipon",
+  "author": "OSSCCU Team",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -18,7 +18,7 @@
     "@fortawesome/free-brands-svg-icons": "^7.2.0",
     "@fortawesome/free-regular-svg-icons": "^7.2.0",
     "@fortawesome/free-solid-svg-icons": "^7.2.0",
-    "@fortawesome/react-fontawesome": "^3.3.0",
+    "@fortawesome/react-fontawesome": "^3.3.1",
     "@gpfunk/tailwindcss-clsx": "^1.0.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -55,31 +55,31 @@
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.38.0",
     "input-otp": "^1.4.2",
-    "lucide-react": "^1.7.0",
-    "next": "^16.2.1",
+    "lucide-react": "^1.9.0",
+    "next": "^16.2.4",
     "prop-types": "^15.8.1",
-    "react": "^19.2.4",
+    "react": "^19.2.5",
     "react-countup": "^6.5.3",
     "react-day-picker": "^9.14.0",
-    "react-dom": "^19.2.4",
+    "react-dom": "^19.2.5",
     "react-icons": "^5.6.0",
     "react-redux": "^9.2.0",
-    "react-resizable-panels": "^4.7.6",
+    "react-resizable-panels": "^4.10.0",
     "react-scroll": "^1.9.3",
     "react-scroll-trigger": "^0.6.14",
     "recharts": "^3.8.1",
     "sonner": "^2.0.7",
     "sweetalert2": "^11.26.24",
     "tailwind-merge": "^3.5.0",
-    "tailwindcss": "^4.2.2",
+    "tailwindcss": "^4.2.4",
     "tailwindcss-animate": "^1.0.7",
     "upload-js": "^2.24.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.2",
-    "eslint": "^10.1.0",
-    "eslint-config-next": "^16.2.1",
-    "postcss": "^8.5.8"
+    "@tailwindcss/postcss": "^4.2.4",
+    "eslint": "^10.2.1",
+    "eslint-config-next": "^16.2.4",
+    "postcss": "^8.5.10"
   }
 }
