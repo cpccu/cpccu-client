@@ -9,15 +9,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import InputBox from "@/components/LOGINSIGNUP/InputBox";
 import { useRegisterMutation } from "@/features/auth/authApi";
-import { useDispatch } from "react-redux";
-import { setCredentials } from "@/features/auth/authSlice";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
 import OtpVerifyPopup from "../ALERT/OtpVerifyPopup";
 
 export default function Signup() {
   const router = useRouter();
-  const dispatch = useDispatch();
   const [register, { isLoading, isError, isSuccess, error, reset }] = useRegisterMutation();
 
   const labelCSS = `uppercase font-semibold text-sm text-gray-800 font-custom`;
@@ -50,7 +47,6 @@ export default function Signup() {
         console.warn("Registration succeeded but user ID was missing from response.");
       }
       setRegisteredUserId(userId || "");
-      dispatch(setCredentials(response));
       setShowOtpPopup(true);
     } catch (err) {
       console.error("Registration failed:", err);
