@@ -19,7 +19,7 @@ const BADGE_CONFIG = {
     glowClass: "shadow-orange-400/20",
     Icon: Medal,
   },
-  "top-performer": {
+  "2nd-runner-up": {
     label: "3rd Place",
     colorClass: "text-amber-400",
     bgClass: "bg-gradient-to-r from-amber-500/15 to-orange-500/15",
