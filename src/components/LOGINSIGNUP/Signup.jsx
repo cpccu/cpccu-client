@@ -45,7 +45,11 @@ export default function Signup() {
     try {
       const userData = { email, password, confirm_password: confirmPass, fullName, uniID, batch };
       const response = await register(userData).unwrap();
-      setRegisteredUserId(response?.data?._id || response?._id || "");
+      const userId = response?.data?._id ?? response?._id;
+      if (!userId) {
+        console.warn("Registration succeeded but user ID was missing from response.");
+      }
+      setRegisteredUserId(userId || "");
       dispatch(setCredentials(response));
       setShowOtpPopup(true);
     } catch (err) {
