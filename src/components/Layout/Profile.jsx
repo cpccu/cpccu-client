@@ -211,10 +211,10 @@ export default function Profile({ user, isOwnProfile }) {
                   <input 
                     value={newSkill} 
                     onChange={(e) => setNewSkill(e.target.value)}
-                     placeholder="Add skill..." 
-                     className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400"
-                   />
-                   <button onClick={handleAddSkill} className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold">+</button>
+                    placeholder="Add skill..." 
+                    className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400"
+                  />
+                  <button onClick={handleAddSkill} aria-label="Add skill" className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold">+</button>
                  </div>
                )}
              </div>
