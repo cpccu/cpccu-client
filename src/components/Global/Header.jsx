@@ -1,60 +1,53 @@
-import Link from "next/link";
-import InstitudeInfo from "@/data/global/institude.json";
+"use client";
+
+import Link from "next/image";
+import LinkNext from "next/link";
+import { useSelector } from "react-redux";
 import { IoMailOpenOutline } from "react-icons/io5";
-import { MdOutlineCall } from "react-icons/md";
-import { useFetchUsersQuery } from "@/features/users/userApi";
+import InstitudeInfo from "@/data/global/institude.json";
 
 export default function Header() {
-  const { data: user, isLoading, isError } = useFetchUsersQuery();
+  // 1. Get the logged-in user from Redux
+  const user = useSelector((state) => state.auth.user);
+
   return (
-    <header
-      className={` bg-blue-950 hidden md:flex text-white justify-between items-center padding`}
-    >
+    <header className="bg-blue-950 hidden md:flex text-white justify-between items-center px-12 py-2">
+      {/* Left side: Contact Info */}
       <div className="flex gap-7 font-semibold text-sm">
-        <p>
-          <Link
-            className="flex items-center justify-center gap-2"
-            href={`mailto:${InstitudeInfo?.email}`}
-          >
-            <IoMailOpenOutline size={25} />
-            <span>{InstitudeInfo?.email}</span>
-          </Link>
-        </p>
-        {/* <p>
-          <Link
-            className="flex items-center justify-center gap-2"
-            href={`tel:${InstitudeInfo?.phone}`}
-          >
-            <MdOutlineCall size={25} /> <span>{InstitudeInfo?.phone}</span>
-          </Link>
-        </p> */}
+        <LinkNext
+          className="flex items-center justify-center gap-2"
+          href={`mailto:${InstitudeInfo?.email}`}
+        >
+          <IoMailOpenOutline size={25} />
+          <span>{InstitudeInfo?.email}</span>
+        </LinkNext>
       </div>
+
+      {/* Right side: Auth Buttons (Same Design as Previous) */}
       <div className="flex gap-3 items-center font-semibold text-sm">
-       {user?.data ? (
-          <Link
-            href={`/profile/${user.data._id}`}
-            className="flex items-center justify-center gap-2"
-          >
-            <button className="bg-header text-white px-4 py-2 rounded-full">
+        {user ? (
+          /* Show ONLY Profile button if logged in */
+          <LinkNext href={`/profile/${user._id}`}>
+            <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition-all">
               Profile
             </button>
-          </Link>
+          </LinkNext>
         ) : (
+          /* Show Login and Signup buttons if logged out */
           <>
-           <Link href="/login">
-          <button className="py-2 px-5 bg-header/90 hover:bg-header trans">
-            Login
-          </button>
-        </Link>
+            <LinkNext href="/login">
+              <button className="py-2 px-6 bg-blue-600 hover:bg-blue-700 rounded-lg transition-all font-bold">
+                Login
+              </button>
+            </LinkNext>
 
-        <Link href="/signup">
-          <button className="py-2 px-5 bg-green-600 hover:bg-green-500 trans">
-            Signup
-          </button>
-        </Link>
+            <LinkNext href="/signup">
+              <button className="py-2 px-6 bg-green-600 hover:bg-green-500 rounded-lg transition-all font-bold">
+                Signup
+              </button>
+            </LinkNext>
           </>
-        )
-        }
+        )}
       </div>
     </header>
   );
