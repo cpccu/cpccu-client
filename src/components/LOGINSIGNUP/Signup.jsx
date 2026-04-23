@@ -18,7 +18,7 @@ import OtpVerifyPopup from "../ALERT/OtpVerifyPopup";
 export default function Signup() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const [register, { data, isLoading, isError, isSuccess, error, reset }] = useRegisterMutation();
+  const [register, { isLoading, isError, isSuccess, error, reset }] = useRegisterMutation();
 
   const labelCSS = `uppercase font-semibold text-sm text-gray-800 font-custom`;
   const btn = `uppercase font-semibold h-12 px-1 rounded-full w-full text-sm`;
@@ -115,7 +115,7 @@ export default function Signup() {
                   email={email} 
                   onVerified={() => {
                     setShowOtpPopup(false);
-                    const userId = registeredUserId || data?.data?._id || data?._id;
+                    const userId = registeredUserId;
                     router.push(userId ? `/profile/${userId}` : "/login");
                   }} 
                   onClosed={() => setShowOtpPopup(false)} 
