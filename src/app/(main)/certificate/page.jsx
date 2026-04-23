@@ -168,7 +168,7 @@ export default function CertificatePage() {
                     href="mailto:cpccu.club@gmail.com"
                     className="text-primary font-medium hover:underline"
                   >
-                    cpccu.club@gmail.com
+                    cpccu.club@gmail.com.
                   </a>
                 </p>
               </div>
