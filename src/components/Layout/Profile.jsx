@@ -18,6 +18,7 @@ export default function Profile({ user, isOwnProfile }) {
   const dispatch = useDispatch();
   const router = useRouter();
   const hydrated = useSelector((state) => state.auth.hydrated);
+  const token = useSelector((state) => state.auth.token);
   
   const [updateUser, { isLoading: isUpdating, isSuccess: isUpdateSuccess, isError: isUpdateError, reset: resetUpdate }] = useUpdateUserMutation();
   const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageSuccess, isError: isImageError, reset: resetImage }] = useUserImageUploadMutation();
@@ -56,7 +57,7 @@ export default function Profile({ user, isOwnProfile }) {
         const res = await updateUser(profile).unwrap();
         dispatch(setCredentials({ 
           user: res.data, 
-          token: localStorage.getItem("token") 
+          token
         }));
         setEditMode(false);
       } catch (error) {
