@@ -86,7 +86,7 @@ const VisitorCounter = () => {
               Total Visitors
             </p>
             <p className="text-sm md:text-base text-white/50 font-light mt-1 italic">
-              Counting since March 25, 2026
+              Counting since April 2026
             </p>
           </div>
         </div>

@@ -168,13 +168,8 @@ export default function CertificatePage() {
                     href="mailto:cpccu.club@gmail.com"
                     className="text-primary font-medium hover:underline"
                   >
-                    cpccu.club@gmail.com
-                  </a>{" "}
-                  or call{" "}
-                  <span className="font-mono text-foreground">
-                    +88017177-91358
-                  </span>
-                  .
+                    cpccu.club@gmail.com.
+                  </a>
                 </p>
               </div>
             </div>

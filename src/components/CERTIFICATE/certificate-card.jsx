@@ -20,6 +20,7 @@ const CONTEST_TYPE_LABELS = {
 };
 
 export function CertificateCard({ certificate }) {
+  console.log(certificate);
   const [copied, setCopied] = useState(false);
 
   const formattedDate = new Date(certificate.issueDate).toLocaleDateString(

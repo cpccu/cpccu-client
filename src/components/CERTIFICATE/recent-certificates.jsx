@@ -1,9 +1,29 @@
-import { CERTIFICATES } from "@/lib/certificates-data";
+"use client";
+
 import { CertificateBadge } from "./certificate-badge";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Loader2 } from "lucide-react";
+import { useGetRecentCertificatesQuery } from "@/features/certificate/certificateApi";
 
 export function RecentCertificates() {
-  const recent = CERTIFICATES.slice(0, 5);
+  const { data, isLoading } = useGetRecentCertificatesQuery();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const recent = data?.data || [];
+
+  if (recent.length === 0) {
+    return (
+      <div className="text-center py-10 border border-dashed border-border rounded-xl">
+        <p className="text-sm text-muted-foreground">No recent certificates</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -19,7 +39,7 @@ export function RecentCertificates() {
 
         return (
           <div
-            key={cert.id}
+            key={cert._id || cert.certificateId}
             className="group flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-border/60 bg-card/80 px-4 py-3.5 hover:border-primary/50 hover:bg-card transition-all"
           >
             <div className="flex items-center gap-3 flex-1 min-w-0">
