@@ -228,7 +228,7 @@ export default function Profile({ user, isOwnProfile }) {
                     <div className="text-gray-800 font-bold text-lg truncate">
                       {field === "github" || field === "linkedin" ? (
                         profile[field] ? (
-                          <a href={profile[field]} target="_blank" className="text-blue-600 hover:underline">{profile[field].replace(/^https?:\/\/(www\. )?/, '')}</a>
+                          <a href={profile[field]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{profile[field].replace(/^https?:\/\/(www\.)?/, '')}</a>
                         ) : "Not linked"
                       ) : (
                         profile[field] || "Not provided"
