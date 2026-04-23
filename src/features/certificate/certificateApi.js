@@ -21,10 +21,18 @@ export const certificateApi = baseApi.injectEndpoints({
         return `/certificates/verify?${params.toString()}`;
       },
     }),
+    getCertificateStats: build.query({
+      query: () => "/certificates/stats",
+    }),
+    getRecentCertificates: build.query({
+      query: () => "/certificates/recent",
+    }),
   }),
 });
 
 export const {
   useLazyVerifyCertificateQuery,
   useVerifyCertificateQuery,
+  useGetCertificateStatsQuery,
+  useGetRecentCertificatesQuery,
 } = certificateApi;
