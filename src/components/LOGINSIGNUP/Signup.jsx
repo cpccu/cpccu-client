@@ -31,6 +31,7 @@ export default function Signup() {
   const [batch, setBatch] = useState("");
   const [showOtpPopup, setShowOtpPopup] = useState(false);
   const [validationError, setValidationError] = useState("");
+  const [registeredUserId, setRegisteredUserId] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,6 +45,7 @@ export default function Signup() {
     try {
       const userData = { email, password, confirm_password: confirmPass, fullName, uniID, batch };
       const response = await register(userData).unwrap();
+      setRegisteredUserId(response?.data?._id || response?._id || "");
       dispatch(setCredentials(response));
       setShowOtpPopup(true);
     } catch (err) {
@@ -52,14 +54,14 @@ export default function Signup() {
   };
 
   useEffect(() => {
-    if (isSuccess || isError || validationError) {
+    if ((isSuccess || isError || validationError) && !showOtpPopup) {
       const timer = setTimeout(() => {
         reset();
         setValidationError("");
       }, 4000);
       return () => clearTimeout(timer);
     }
-  }, [isSuccess, isError, validationError, reset]);
+  }, [isSuccess, isError, validationError, showOtpPopup, reset]);
 
   return (
     <>
@@ -113,7 +115,7 @@ export default function Signup() {
                   email={email} 
                   onVerified={() => {
                     setShowOtpPopup(false);
-                    const userId = data?.data?._id || data?._id;
+                    const userId = registeredUserId || data?.data?._id || data?._id;
                     router.push(userId ? `/profile/${userId}` : "/login");
                   }} 
                   onClosed={() => setShowOtpPopup(false)} 
