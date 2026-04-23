@@ -80,6 +80,28 @@ export default function Profile({ user, isOwnProfile }) {
     }
   };
 
+  const handleAddSkill = () => {
+    const trimmedSkill = newSkill.trim();
+    if (!trimmedSkill) return;
+
+    setProfile((prev) => {
+      const hasDuplicate = prev.skills.some(
+        (skill) => skill.trim().toLowerCase() === trimmedSkill.toLowerCase()
+      );
+      if (hasDuplicate) return prev;
+
+      return { ...prev, skills: [...prev.skills, trimmedSkill] };
+    });
+    setNewSkill("");
+  };
+
+  const handleRemoveSkill = (skillToRemove) => {
+    setProfile((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((skill) => skill !== skillToRemove),
+    }));
+  };
+
   useEffect(() => {
     if (isUpdateSuccess || isUpdateError || isImageSuccess || isImageError) {
       const timer = setTimeout(() => {
@@ -178,7 +200,7 @@ export default function Profile({ user, isOwnProfile }) {
                 <span key={i} className="px-4 py-1.5 bg-blue-50 text-blue-700 text-sm font-bold rounded-full border border-blue-100 flex items-center gap-2">
                   {skill}
                   {editMode && (
-                    <button onClick={() => setProfile({...profile, skills: profile.skills.filter(s => s !== skill)})} className="hover:text-red-500">
+                    <button onClick={() => handleRemoveSkill(skill)} className="hover:text-red-500">
                       <FontAwesomeIcon icon={faTimes} />
                     </button>
                   )}
@@ -189,14 +211,14 @@ export default function Profile({ user, isOwnProfile }) {
                   <input 
                     value={newSkill} 
                     onChange={(e) => setNewSkill(e.target.value)}
-                    placeholder="Add skill..." 
-                    className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400"
-                  />
-                  <button onClick={() => { if(newSkill) { setProfile({...profile, skills: [...profile.skills, newSkill]}); setNewSkill(""); }}} className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold">+</button>
-                </div>
-              )}
-            </div>
-          </div>
+                     placeholder="Add skill..." 
+                     className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400"
+                   />
+                   <button onClick={handleAddSkill} className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold">+</button>
+                 </div>
+               )}
+             </div>
+           </div>
         </div>
 
         {/* Right Column: Detailed Information */}
