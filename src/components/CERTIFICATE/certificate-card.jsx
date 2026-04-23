@@ -77,7 +77,7 @@ export function CertificateCard({ certificate }) {
           <h2 className="text-2xl md:text-3xl font-extrabold text-foreground text-balance">
             {certificate.recipientName}
           </h2>
-              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             {certificate.description}
           </p>
         </div>
