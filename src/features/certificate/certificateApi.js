@@ -1,3 +1,17 @@
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+
+const publicApi = createApi({
+  reducerPath: 'publicApi',
+  baseQuery: fetchBaseQuery({
+    baseUrl: (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000').replace('/api/v1', ''),
+  }),
+  endpoints: (build) => ({
+    verifyCertificatePublic: build.query({
+      query: (certificateId) => `/verify/${certificateId}`,
+    }),
+  }),
+});
+
 import { baseApi } from "@/services/baseApi";
 
 export const certificateApi = baseApi.injectEndpoints({
@@ -29,6 +43,12 @@ export const certificateApi = baseApi.injectEndpoints({
     }),
   }),
 });
+
+export { publicApi };
+
+export const {
+  useVerifyCertificatePublicQuery,
+} = publicApi;
 
 export const {
   useLazyVerifyCertificateQuery,
