@@ -6,9 +6,11 @@ export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({ baseUrl,
     credentials: 'include',
-     prepareHeaders: (headers, { getState }) => {
+     prepareHeaders: (headers, { getState, endpoint }) => {
     const token = getState().auth.token;
-    headers.set('Content-Type', 'application/json');
+    if (endpoint !== 'userImageUpload') {
+      headers.set('Content-Type', 'application/json');
+    }
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
