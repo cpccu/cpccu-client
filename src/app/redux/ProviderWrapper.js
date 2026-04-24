@@ -11,17 +11,20 @@ import { fi } from "date-fns/locale";
 
 function AuthHydrator({ children }) {
   useEffect(() => {
-    const user = localStorage.getItem("user");
+    const userString = localStorage.getItem("user");
     const token = localStorage.getItem("token");
 
     try {
-      if (user && user !== "undefined" && token) {
-        store.dispatch(
-          setCredentials({
-            user: JSON.parse(user),
-            token,
-          })
-        );
+      if (userString && userString !== "undefined" && token) {
+        const user = JSON.parse(userString);
+        if (user) {
+          store.dispatch(
+            setCredentials({
+              user,
+              token,
+            })
+          );
+        }
       }
     } catch (error) {
       console.error("Failed to parse user from localStorage:", error);
