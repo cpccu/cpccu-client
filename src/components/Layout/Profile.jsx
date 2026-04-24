@@ -17,9 +17,7 @@ const defaultAvatar = "/assets/avatar/default-avatar.png";
 export default function Profile({ user, isOwnProfile }) {
   const dispatch = useDispatch();
   const router = useRouter();
-  const hydrated = useSelector((state) => state.auth.hydrated);
   const token = useSelector((state) => state.auth.token);
-  
   const [updateUser, { isLoading: isUpdating, isSuccess: isUpdateSuccess, isError: isUpdateError, reset: resetUpdate }] = useUpdateUserMutation();
   const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageSuccess, isError: isImageError, reset: resetImage }] = useUserImageUploadMutation();
 
@@ -112,8 +110,6 @@ export default function Profile({ user, isOwnProfile }) {
       return () => clearTimeout(timer);
     }
   }, [isUpdateSuccess, isUpdateError, isImageSuccess, isImageError, resetUpdate, resetImage]);
-
-  if (!hydrated) return <div className="flex justify-center items-center h-screen text-gray-500 font-medium">Loading profile...</div>;
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-10 bg-gray-50 min-h-screen">

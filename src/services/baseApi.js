@@ -10,9 +10,9 @@ export const baseApi = createApi({
     const token = getState().auth.token;
     if (endpoint !== 'userImageUpload') {
       headers.set('Content-Type', 'application/json');
-    }
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
     }
     return headers;
   }}),
