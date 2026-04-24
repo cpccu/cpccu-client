@@ -16,7 +16,7 @@
     "role": "Contributor",
     "department": "CSE",
     "batch": "67th",
-    "contribution": "Contributed 134 commits to the project",
+    "contribution": "Contributed 136 commits to the project",
     "github": "https://github.com/anisurrahmanfarazi17",
     "linkedin": "https://www.linkedin.com/in/anisurrahmanfarazi17/",
     "avatar": "https://avatars.githubusercontent.com/u/71831499?v=4"
@@ -67,17 +67,6 @@
   },
   {
     "id": 7,
-    "name": "Copilot",
-    "role": "Contributor",
-    "department": "CSE",
-    "batch": "TBD",
-    "contribution": "Contributed 7 commits to the project",
-    "github": "https://github.com/apps/copilot-swe-agent",
-    "linkedin": "https://linkedin.com",
-    "avatar": "https://avatars.githubusercontent.com/in/1143301?v=4"
-  },
-  {
-    "id": 8,
     "name": "sizan14789",
     "role": "Contributor",
     "department": "CSE",
@@ -88,7 +77,7 @@
     "avatar": "https://avatars.githubusercontent.com/u/195941736?v=4"
   },
   {
-    "id": 9,
+    "id": 8,
     "name": "FAsami",
     "role": "Contributor",
     "department": "CSE",
@@ -99,7 +88,7 @@
     "avatar": "https://avatars.githubusercontent.com/u/43314398?v=4"
   },
   {
-    "id": 10,
+    "id": 9,
     "name": "MH-Alok",
     "role": "Contributor",
     "department": "CSE",
@@ -110,7 +99,7 @@
     "avatar": "https://avatars.githubusercontent.com/u/207171962?v=4"
   },
   {
-    "id": 11,
+    "id": 10,
     "name": "abu-taher-saikat",
     "role": "Contributor",
     "department": "CSE",
