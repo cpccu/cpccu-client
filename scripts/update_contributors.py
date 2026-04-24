@@ -89,14 +89,26 @@ def main():
     all_contributors = {}
     
     # LIST OF BOTS TO EXCLUDE
-    EXCLUDED_LOGINS = ['actions-user', 'github-actions[bot]', 'github-actions', 'dependabot[bot]']
+    EXCLUDED_LOGINS = [
+        'actions-user', 
+        'github-actions[bot]', 
+        'github-actions', 
+        'dependabot[bot]',
+        'github-copilot[bot]',
+        'copilot-instructions[bot]',
+        'azure-pipelines[bot]'
+    ]
 
     def process_list(contributors):
         for c in contributors:
             login = c['login']
             
             # SKIP BOTS AND AUTOMATED USERS
-            if login.lower() in EXCLUDED_LOGINS or '[bot]' in login.lower() or 'actions' in login.lower():
+            # We filter by explicit list, [bot] suffix, and common automation keywords
+            if (login.lower() in EXCLUDED_LOGINS or 
+                '[bot]' in login.lower() or 
+                'actions' in login.lower() or 
+                'copilot' in login.lower()):
                 continue
                 
             github_url = c['html_url'].lower().rstrip('/')
