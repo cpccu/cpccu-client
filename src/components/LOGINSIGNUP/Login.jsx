@@ -38,8 +38,8 @@ export default function Login() {
       const response = await login(userData).unwrap();
       
       dispatch(setCredentials({
-        user: response.data,
-        token: response.token || response.data.token || null,
+        user: response.data.user,
+        token: response.data.token,
       }));
       
       router.push(`/profile/${response.data._id}`);
