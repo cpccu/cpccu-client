@@ -8,17 +8,31 @@ import contributorsData from "@/data/contributors.json";
 export default function ContributorsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
   const [cardWidth, setCardWidth] = useState(0);
   const intervalRef = useRef(null);
+  const dragStartXRef = useRef(0);
+  const dragCurrentXRef = useRef(0);
   const containerRef = useRef(null);
   const carouselTrackRef = useRef(null);
   const firstCardRef = useRef(null);
 
   // Duplicate items to create seamless infinite loop
-  const items = [...contributorsData, ...contributorsData];
+  const items = [...contributorsData, contributorsData[0]];
 
   // Calculate gap in pixels (gap-5 = 1.25rem = 20px)
   const gapSize = 20;
+
+  // Handle infinite loop reset - reset after 3rd card from the last
+  useEffect(() => {
+    if (currentIndex >= contributorsData.length - 3) {
+      const timer = setTimeout(() => {
+        setCurrentIndex(0);
+      }, 700); // Match transition duration
+      return () => clearTimeout(timer);
+    }
+  }, [currentIndex]);
 
   // Measure actual card width after rendering
   useEffect(() => {
@@ -52,19 +66,61 @@ export default function ContributorsCarousel() {
   };
 
   useEffect(() => {
-    if (!isHovered) {
+    if (!isHovered && !isDragging) {
       startAutoSlide();
     } else {
       stopAutoSlide();
     }
     return () => stopAutoSlide();
-  }, [isHovered]);
+  }, [isHovered, isDragging]);
 
   const goTo = (index) => {
     setCurrentIndex(index % contributorsData.length);
   };
 
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    dragStartXRef.current = e.clientX;
+    dragCurrentXRef.current = e.clientX;
+  };
 
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    dragCurrentXRef.current = e.clientX;
+    const diff = dragCurrentXRef.current - dragStartXRef.current;
+    setDragOffset(diff);
+  };
+
+  const handleMouseUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    const diff = dragCurrentXRef.current - dragStartXRef.current;
+
+    // Threshold: 50px drag to trigger slide
+    const threshold = 50;
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        // Dragged right - go to previous
+        setCurrentIndex((prev) => (prev - 1 + contributorsData.length) % contributorsData.length);
+      } else {
+        // Dragged left - go to next
+        setCurrentIndex((prev) => (prev + 1) % contributorsData.length);
+      }
+    }
+
+    setDragOffset(0);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [isDragging]);
 
   const handleKeyDown = (e) => {
     if (e.key === "ArrowLeft") {
@@ -133,9 +189,10 @@ export default function ContributorsCarousel() {
       {/* Carousel Track */}
       <div
         ref={containerRef}
-        className="relative select-none"
+        className="relative cursor-grab active:cursor-grabbing select-none"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onMouseDown={handleMouseDown}
       >
         {/* Left fade gradient */}
         <div className="absolute left-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
@@ -144,9 +201,9 @@ export default function ContributorsCarousel() {
 
         <div
           ref={carouselTrackRef}
-          className="flex gap-5 transition-transform duration-700 ease-in-out"
+          className={`flex gap-5 ${!isDragging ? 'transition-transform duration-700 ease-in-out' : ''}`}
           style={{
-            transform: `translateX(calc(-${currentIndex * (cardWidth + gapSize)}px))`,
+            transform: `translateX(calc(-${currentIndex * (cardWidth + gapSize)}px + ${dragOffset}px))`,
             paddingLeft: "1.1em",
           }}
         >
