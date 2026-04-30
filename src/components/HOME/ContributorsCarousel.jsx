@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, forwardRef } from "react";
 import Link from "next/link";
 import { FaGithub, FaLinkedin, FaArrowRight } from "react-icons/fa";
 import contributorsData from "@/data/contributors.json";
@@ -8,10 +8,36 @@ import contributorsData from "@/data/contributors.json";
 export default function ContributorsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [cardWidth, setCardWidth] = useState(0);
   const intervalRef = useRef(null);
+  const containerRef = useRef(null);
+  const carouselTrackRef = useRef(null);
+  const firstCardRef = useRef(null);
 
   // Duplicate items to create seamless infinite loop
-  const items = [...contributorsData, ...contributorsData, ...contributorsData];
+  const items = [...contributorsData, ...contributorsData];
+
+  // Calculate gap in pixels (gap-5 = 1.25rem = 20px)
+  const gapSize = 20;
+
+  // Measure actual card width after rendering
+  useEffect(() => {
+    const measureCardWidth = () => {
+      if (firstCardRef.current) {
+        const width = firstCardRef.current.offsetWidth;
+        setCardWidth(width);
+      }
+    };
+
+    // Measure after render
+    const timer = setTimeout(measureCardWidth, 0);
+
+    window.addEventListener("resize", measureCardWidth);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", measureCardWidth);
+    };
+  }, []);
 
   const startAutoSlide = () => {
     intervalRef.current = setInterval(() => {
@@ -37,6 +63,46 @@ export default function ContributorsCarousel() {
   const goTo = (index) => {
     setCurrentIndex(index % contributorsData.length);
   };
+
+
+
+  const handleKeyDown = (e) => {
+    if (e.key === "ArrowLeft") {
+      setCurrentIndex((prev) => (prev - 1 + contributorsData.length) % contributorsData.length);
+    } else if (e.key === "ArrowRight") {
+      setCurrentIndex((prev) => (prev + 1) % contributorsData.length);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const handleWheel = (e) => {
+    if (!containerRef.current || !containerRef.current.contains(e.target)) return;
+    e.preventDefault();
+
+    // Positive deltaY = scroll down = next slide
+    // Negative deltaY = scroll up = previous slide
+    if (e.deltaY > 0) {
+      setCurrentIndex((prev) => (prev + 1) % contributorsData.length);
+    } else {
+      setCurrentIndex((prev) => (prev - 1 + contributorsData.length) % contributorsData.length);
+    }
+  };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener("wheel", handleWheel, { passive: false });
+      return () => {
+        container.removeEventListener("wheel", handleWheel);
+      };
+    }
+  }, []);
 
   return (
     <section className="py-16 md:py-20 bg-gradient-to-b from-white to-blue-50/40 overflow-hidden">
@@ -66,7 +132,8 @@ export default function ContributorsCarousel() {
 
       {/* Carousel Track */}
       <div
-        className="relative"
+        ref={containerRef}
+        className="relative select-none"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -76,14 +143,19 @@ export default function ContributorsCarousel() {
         <div className="absolute right-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-l from-blue-50/40 to-transparent z-10 pointer-events-none" />
 
         <div
+          ref={carouselTrackRef}
           className="flex gap-5 transition-transform duration-700 ease-in-out"
           style={{
-            transform: `translateX(calc(-${currentIndex * (100 / 3)}% - ${currentIndex * 20 / 3}px))`,
+            transform: `translateX(calc(-${currentIndex * (cardWidth + gapSize)}px))`,
             paddingLeft: "1.1em",
           }}
         >
           {items.map((contributor, index) => (
-            <CarouselCard key={`${contributor.id}-${index}`} contributor={contributor} />
+            <CarouselCard
+              key={`${contributor.id}-${index}`}
+              contributor={contributor}
+              ref={index === 0 ? firstCardRef : null}
+            />
           ))}
         </div>
       </div>
@@ -94,11 +166,10 @@ export default function ContributorsCarousel() {
           <button
             key={index}
             onClick={() => goTo(index)}
-            className={`transition-all duration-300 rounded-full ${
-              currentIndex === index
-                ? "w-6 h-2.5 bg-header"
-                : "w-2.5 h-2.5 bg-gray-300 hover:bg-header/50"
-            }`}
+            className={`transition-all duration-300 rounded-full ${currentIndex === index
+              ? "w-6 h-2.5 bg-header"
+              : "w-2.5 h-2.5 bg-gray-300 hover:bg-header/50"
+              }`}
             aria-label={`Go to contributor ${index + 1}`}
           />
         ))}
@@ -107,10 +178,11 @@ export default function ContributorsCarousel() {
   );
 }
 
-function CarouselCard({ contributor }) {
+const CarouselCard = forwardRef(({ contributor }, ref) => {
   return (
     <div
-      className="shrink-0 w-[calc(33.333%-14px)] min-w-[260px] bg-white rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 hover:border-header/30 transition-all duration-500 overflow-hidden group"
+      ref={ref}
+      className="shrink-0 min-w-[260px] bg-white rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 hover:border-header/30 transition-all duration-500 overflow-hidden group"
     >
       {/* Top accent */}
       <div className="h-1 w-full bg-gradient-to-r from-header to-blue-400" />
@@ -171,4 +243,6 @@ function CarouselCard({ contributor }) {
       </div>
     </div>
   );
-}
+});
+
+CarouselCard.displayName = "CarouselCard";
