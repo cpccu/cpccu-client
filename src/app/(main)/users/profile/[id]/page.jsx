@@ -27,8 +27,7 @@ export default function page({ params }) {
 
   return (
     <>
-      <Profile user={user.data} />
-
+      <Profile user={user.data} isOwnProfile={isOwnProfile} />
     </>
   )
 }

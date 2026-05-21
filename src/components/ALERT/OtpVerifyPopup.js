@@ -61,8 +61,14 @@ export default function OtpVerifyPopup({ email, onVerified, onClosed }) {
 
     const res = await verifyOtp({ email, otp: code });
     if (res?.data?.success) {
-      Swal.fire("Success", "OTP Verified Successfully!", "success");
-      onVerified();
+      Swal.fire({
+        title: "Success",
+        text: "OTP Verified Successfully! Please login to continue.",
+        icon: "success",
+        confirmButtonText: "Go to Login"
+      }).then(() => {
+        onVerified();
+      });
     } else {
       Swal.fire("Invalid OTP", res?.error?.data?.message || "Try again", "error");
     }
