@@ -6,16 +6,19 @@ export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({ baseUrl,
     credentials: 'include',
-     prepareHeaders: (headers, { getState, endpoint }) => {
-    const token = getState().auth.token;
-    if (endpoint !== 'userImageUpload') {
-      headers.set('Content-Type', 'application/json');
+    prepareHeaders: (headers, { getState, endpoint }) => {
+      const token = getState().auth.token;
+      // For image uploads, we don't set Content-Type to let the browser set it with the boundary
+      if (endpoint !== 'userImageUpload') {
+        headers.set('Content-Type', 'application/json');
+      }
+      // Always set Authorization if token exists
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
-    }
-    return headers;
-  }}),
+      return headers;
+    },
+  }),
   tagTypes: ['Auth', 'Users', 'Posts'],
   endpoints: () => ({})
 });

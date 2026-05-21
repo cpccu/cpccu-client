@@ -46,7 +46,7 @@ export default function Profile({ user, isOwnProfile }) {
 
   const handleLogout = () => {
     dispatch(clearCredentials());
-    router.push("/login");
+    router.push("/");
   };
 
   const handleUpdate = async () => {
@@ -141,19 +141,21 @@ export default function Profile({ user, isOwnProfile }) {
         </div>
       </div>
 
-      {/* Profile Completion Bar */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-8">
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-gray-700 font-bold text-lg">Profile Completion</span>
-          <span className="text-blue-600 font-black text-xl">{completion}%</span>
+      {/* Profile Completion Bar - Only visible to owner */}
+      {isOwnProfile && (
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-8">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-gray-700 font-bold text-lg">Profile Completion</span>
+            <span className="text-blue-600 font-black text-xl">{completion}%</span>
+          </div>
+          <div className="w-full bg-gray-100 h-4 rounded-full overflow-hidden">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full transition-all duration-700 ease-out" 
+              style={{ width: `${completion}%` }}
+            />
+          </div>
         </div>
-        <div className="w-full bg-gray-100 h-4 rounded-full overflow-hidden">
-          <div 
-            className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full transition-all duration-700 ease-out" 
-            style={{ width: `${completion}%` }}
-          />
-        </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Photo & Skills */}

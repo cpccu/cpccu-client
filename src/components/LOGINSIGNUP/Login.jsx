@@ -42,7 +42,7 @@ export default function Login() {
         token: response.data.token,
       }));
       
-      router.push(`/profile/${response.data._id}`);
+      router.push(`/profile/${response.data.user._id}`);
     } catch (err) {
       console.error("Login failed:", err);
     }
