@@ -42,7 +42,7 @@ export default function Signup() {
     try {
       const userData = { email, password, confirm_password: confirmPass, fullName, uniID, batch };
       const response = await register(userData).unwrap();
-      const userId = response?.data?._id ?? response?._id;
+      const userId = response?.data?.user?._id ?? response?.data?._id ?? response?._id;
       if (!userId) {
         console.warn("Registration succeeded but user ID was missing from response.");
       }
@@ -113,11 +113,11 @@ export default function Signup() {
               {showOtpPopup && (
                 <OtpVerifyPopup 
                   email={email} 
-                  onVerified={() => {
-                    setShowOtpPopup(false);
-                    const userId = registeredUserId;
-                    router.push(userId ? `/profile/${userId}` : "/login");
-                  }} 
+                  	                  onVerified={() => {
+	                    setShowOtpPopup(false);
+	                    router.push("/login");
+	                  }} 
+ 
                   onClosed={() => setShowOtpPopup(false)} 
                 />
               )}

@@ -5,18 +5,18 @@ import Data from "@/data/LogInfo.json";
 import ProfileDetails from "@/components/PROFILE/ProfileDetails";
 import ProfileBlog from "@/components/PROFILE/ProfileBlog";
 
-export default function ProfileCard({ id }) {
+export default function ProfileCard({ user, isOwnProfile }) {
   return (
     <>
       <main className="grid grid-cols-12 gap-6 lg:px-28 bg-responsibility lg:py-10">
         <section className="col-span-12">
-          <ProfileID />
+          <ProfileID user={user} isOwnProfile={isOwnProfile} />
         </section>
         <section className="col-span-12 lg:col-span-4">
-          <ProfileDetails />
+          <ProfileDetails user={user} />
         </section>
         <section className="col-span-12 lg:col-span-8">
-          <ProfileBlog />
+          <ProfileBlog user={user} isOwnProfile={isOwnProfile} />
         </section>
       </main>
     </>
