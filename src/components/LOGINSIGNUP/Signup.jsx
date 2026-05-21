@@ -113,11 +113,11 @@ export default function Signup() {
               {showOtpPopup && (
                 <OtpVerifyPopup 
                   email={email} 
-                  onVerified={() => {
-                    setShowOtpPopup(false);
-                    const userId = registeredUserId;
-                    router.push(userId ? `/profile/${userId}` : "/login");
-                  }} 
+                  	                  onVerified={() => {
+	                    setShowOtpPopup(false);
+	                    router.push("/login");
+	                  }} 
+ 
                   onClosed={() => setShowOtpPopup(false)} 
                 />
               )}
