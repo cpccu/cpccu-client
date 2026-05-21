@@ -11,6 +11,7 @@ import { useUpdateUserMutation, useUserImageUploadMutation } from "@/features/us
 import { setCredentials, clearCredentials } from "@/features/auth/authSlice";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
+import ImageUploadModal from "../PROFILE/ImageUploadModal";
 
 const defaultAvatar = "/assets/avatar/default-avatar.png";
 
@@ -19,11 +20,11 @@ export default function Profile({ user, isOwnProfile }) {
   const router = useRouter();
   const token = useSelector((state) => state.auth.token);
   const [updateUser, { isLoading: isUpdating, isSuccess: isUpdateSuccess, isError: isUpdateError, reset: resetUpdate }] = useUpdateUserMutation();
-  const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageSuccess, isError: isImageError, reset: resetImage }] = useUserImageUploadMutation();
+  const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageSuccess, isError: isImageError, error: uploadError, reset: resetImage }] = useUserImageUploadMutation();
 
   const [editMode, setEditMode] = useState(false);
   const [newSkill, setNewSkill] = useState("");
-  const [imageFile, setImageFile] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [profile, setProfile] = useState({
     avatar: user?.avatar || "",
@@ -66,14 +67,13 @@ export default function Profile({ user, isOwnProfile }) {
     }
   };
 
-  const handleImageUpload = async () => {
-    if (!imageFile) return;
+  const handleImageUpload = async (file) => {
     const formData = new FormData();
-    formData.append("image", imageFile);
+    formData.append("image", file);
     try {
       const res = await userImageUpload({ key: "avatar", imageData: formData }).unwrap();
       setProfile(prev => ({ ...prev, avatar: res.data.avatar }));
-      setImageFile(null);
+      setIsModalOpen(false);
     } catch (error) {
       console.error("Upload failed:", error);
     }
@@ -172,24 +172,17 @@ export default function Profile({ user, isOwnProfile }) {
                 />
               </div>
               {editMode && (
-                <label className="absolute bottom-2 right-2 bg-blue-600 text-white p-3 rounded-full cursor-pointer hover:scale-110 transition-transform shadow-lg">
+                <button 
+                  onClick={() => setIsModalOpen(true)}
+                  className="absolute bottom-2 right-2 bg-blue-600 text-white p-3 rounded-full cursor-pointer hover:scale-110 transition-transform shadow-lg"
+                >
                   <FontAwesomeIcon icon={faCloudUploadAlt} />
-                  <input type="file" className="hidden" onChange={(e) => setImageFile(e.target.files[0])} />
-                </label>
+                </button>
               )}
             </div>
             
             <h2 className="text-2xl font-bold text-gray-800 mt-6">{profile.fullName || "Member Name"}</h2>
             <p className="text-blue-600 font-semibold uppercase text-sm tracking-widest mt-1">CPCCU Member</p>
-
-            {imageFile && (
-              <button 
-                onClick={handleImageUpload}
-                className="mt-4 px-4 py-2 bg-green-500 text-white text-sm font-bold rounded-xl hover:bg-green-600 transition-all w-full"
-              >
-                {isImageUploading ? "Uploading..." : "Confirm New Photo"}
-              </button>
-            )}
           </div>
 
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
@@ -263,11 +256,19 @@ export default function Profile({ user, isOwnProfile }) {
         </div>
       </div>
 
+      {/* Upload Modal */}
+      <ImageUploadModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onUpload={handleImageUpload}
+        isUploading={isImageUploading}
+      />
+
       {/* Alerts */}
       {isUpdateSuccess && <SuccessAlert title="Success!" text="Your profile has been updated." />}
       {isUpdateError && <ErrorAlert title="Error" text="Failed to save profile changes." />}
       {isImageSuccess && <SuccessAlert title="Success!" text="Profile picture updated." />}
-      {isImageError && <ErrorAlert title="Error" text="Failed to upload image." />}
+      {isImageError && <ErrorAlert title="Upload Failed" text={uploadError?.data?.message || "Failed to upload image."} />}
     </div>
   );
 }
