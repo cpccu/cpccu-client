@@ -4,18 +4,26 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FaGithub, FaLinkedin, FaArrowRight } from "react-icons/fa";
 import contributorsData from "@/data/contributors.json";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicContributor } from "@/lib/public-content";
 
 export default function ContributorsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const intervalRef = useRef(null);
+  const { data: contributorsResponse } = useGetPublicContentQuery("contributors");
+  const contributors = chooseLiveItems(
+    contributorsResponse,
+    contributorsData,
+    toPublicContributor,
+  );
 
   // Duplicate items to create seamless infinite loop
-  const items = [...contributorsData, ...contributorsData, ...contributorsData];
+  const items = [...contributors, ...contributors, ...contributors];
 
   const startAutoSlide = () => {
     intervalRef.current = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % contributorsData.length);
+      setCurrentIndex((prev) => (prev + 1) % contributors.length);
     }, 2000);
   };
 
@@ -32,10 +40,10 @@ export default function ContributorsCarousel() {
       stopAutoSlide();
     }
     return () => stopAutoSlide();
-  }, [isHovered]);
+  }, [isHovered, contributors.length]);
 
   const goTo = (index) => {
-    setCurrentIndex(index % contributorsData.length);
+    setCurrentIndex(index % contributors.length);
   };
 
   return (
@@ -90,7 +98,7 @@ export default function ContributorsCarousel() {
 
       {/* Dot Indicators */}
       <div className="flex justify-center gap-2 mt-8">
-        {contributorsData.map((_, index) => (
+        {contributors.map((_, index) => (
           <button
             key={index}
             onClick={() => goTo(index)}

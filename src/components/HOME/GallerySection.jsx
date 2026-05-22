@@ -3,22 +3,20 @@
 import GalleryCard from "@/components/Global/GalleryCard";
 import tabBtn from "@/data/home/GallerySection.json";
 import res from "@/data/GallaryCard.json";
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicGalleryItem } from "@/lib/public-content";
 
 export default function GallerySection() {
   const [Tag, setTag] = useState("all");
-  const [Data, setData] = useState(null);
-
-  const filterData = useCallback(() => {
-    const filteredData = res.filter((item) =>
+  const { data: galleryResponse } = useGetPublicContentQuery("gallery");
+  const galleryItems = chooseLiveItems(galleryResponse, res, toPublicGalleryItem);
+  const Data = useMemo(
+    () => galleryItems.filter((item) =>
       item.tag.split(" ").includes(Tag)
-    );
-    setData(filteredData);
-  }, [Tag]);
-
-  useEffect(() => {
-    filterData();
-  }, [filterData]); // Call filterData when the component mounts or when filterData changes
+    ),
+    [Tag, galleryItems],
+  );
 
   return (
     <section className="bg-responsibility padding py-14 md:py-20 lg:py-24">

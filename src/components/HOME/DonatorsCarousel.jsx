@@ -4,18 +4,22 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FaGlobe, FaLinkedin, FaArrowRight } from "react-icons/fa";
 import donatorsData from "@/data/donators.json";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicDonator } from "@/lib/public-content";
 
 export default function DonatorsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const intervalRef = useRef(null);
+  const { data: donatorsResponse } = useGetPublicContentQuery("donators");
+  const donators = chooseLiveItems(donatorsResponse, donatorsData, toPublicDonator);
 
   // Duplicate items to create seamless infinite loop
-  const items = [...donatorsData, ...donatorsData, ...donatorsData];
+  const items = [...donators, ...donators, ...donators];
 
   const startAutoSlide = () => {
     intervalRef.current = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % donatorsData.length);
+      setCurrentIndex((prev) => (prev + 1) % donators.length);
     }, 2000);
   };
 
@@ -32,10 +36,10 @@ export default function DonatorsCarousel() {
       stopAutoSlide();
     }
     return () => stopAutoSlide();
-  }, [isHovered]);
+  }, [isHovered, donators.length]);
 
   const goTo = (index) => {
-    setCurrentIndex(index % donatorsData.length);
+    setCurrentIndex(index % donators.length);
   };
 
   return (
@@ -90,7 +94,7 @@ export default function DonatorsCarousel() {
 
       {/* Dot Indicators */}
       <div className="flex justify-center gap-2 mt-8">
-        {donatorsData.map((_, index) => (
+        {donators.map((_, index) => (
           <button
             key={index}
             onClick={() => goTo(index)}

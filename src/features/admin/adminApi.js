@@ -10,6 +10,14 @@ export const adminApi = baseApi.injectEndpoints({
       query: () => "/admin/members",
       providesTags: ["AdminMembers"],
     }),
+    createAdminMember: builder.mutation({
+      query: (body) => ({
+        url: "/admin/members",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AdminOverview", "AdminMembers", "Users"],
+    }),
     updateAdminMember: builder.mutation({
       query: ({ id, ...body }) => ({
         url: `/admin/members/${id}`,
@@ -18,11 +26,124 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["AdminOverview", "AdminMembers", "Users"],
     }),
+    deleteAdminMember: builder.mutation({
+      query: (id) => ({
+        url: `/admin/members/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["AdminOverview", "AdminMembers", "Users"],
+    }),
+    getAdminContent: builder.query({
+      query: (resource) => `/admin/content/${resource}`,
+      providesTags: (result, error, resource) => [
+        { type: "AdminContent", id: resource },
+      ],
+    }),
+    createAdminContent: builder.mutation({
+      query: ({ resource, body }) => ({
+        url: `/admin/content/${resource}`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, { resource }) => [
+        { type: "AdminContent", id: resource },
+        { type: "PublicContent", id: resource },
+        "AdminOverview",
+      ],
+    }),
+    updateAdminContent: builder.mutation({
+      query: ({ resource, id, body }) => ({
+        url: `/admin/content/${resource}/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: (result, error, { resource }) => [
+        { type: "AdminContent", id: resource },
+        { type: "PublicContent", id: resource },
+        "AdminOverview",
+      ],
+    }),
+    deleteAdminContent: builder.mutation({
+      query: ({ resource, id }) => ({
+        url: `/admin/content/${resource}/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { resource }) => [
+        { type: "AdminContent", id: resource },
+        { type: "PublicContent", id: resource },
+        "AdminOverview",
+      ],
+    }),
+    getAdminStatistics: builder.query({
+      query: () => "/admin/statistics",
+      providesTags: ["AdminStatistics"],
+    }),
+    updateAdminStatistics: builder.mutation({
+      query: (body) => ({
+        url: "/admin/statistics",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["AdminStatistics", { type: "PublicContent", id: "statistics" }],
+    }),
+    getAdminSystemSettings: builder.query({
+      query: () => "/admin/system-settings",
+      providesTags: ["AdminSystemSettings"],
+    }),
+    updateAdminSystemSettings: builder.mutation({
+      query: (body) => ({
+        url: "/admin/system-settings",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["AdminSystemSettings"],
+    }),
+    getAdminCertificates: builder.query({
+      query: () => "/admin/certificates",
+      providesTags: ["AdminCertificates"],
+    }),
+    createAdminCertificate: builder.mutation({
+      query: (body) => ({
+        url: "/admin/certificates",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AdminCertificates", "AdminOverview"],
+    }),
+    updateAdminCertificate: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `/admin/certificates/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["AdminCertificates"],
+    }),
+    deleteAdminCertificate: builder.mutation({
+      query: (id) => ({
+        url: `/admin/certificates/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["AdminCertificates", "AdminOverview"],
+    }),
   }),
 });
 
 export const {
   useGetAdminOverviewQuery,
   useGetAdminMembersQuery,
+  useCreateAdminMemberMutation,
+  useDeleteAdminMemberMutation,
   useUpdateAdminMemberMutation,
+  useCreateAdminCertificateMutation,
+  useCreateAdminContentMutation,
+  useDeleteAdminCertificateMutation,
+  useDeleteAdminContentMutation,
+  useGetAdminCertificatesQuery,
+  useGetAdminContentQuery,
+  useGetAdminStatisticsQuery,
+  useUpdateAdminCertificateMutation,
+  useUpdateAdminContentMutation,
+  useUpdateAdminStatisticsMutation,
+  useGetAdminSystemSettingsQuery,
+  useUpdateAdminSystemSettingsMutation,
 } = adminApi;
