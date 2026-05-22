@@ -39,6 +39,19 @@ export const authApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: ['Auth'],
         }),
+        sendPasswordResetLink: builder.mutation({
+            query: ({ email }) => ({
+                url: `/auth/reset-link/${encodeURIComponent(email)}`,
+                method: 'GET',
+            }),
+        }),
+        resetPassword: builder.mutation({
+            query: (resetData) => ({
+                url: '/auth/reset-password',
+                method: 'PATCH',
+                body: resetData,
+            }),
+        }),
     }),
 });
 
@@ -48,4 +61,6 @@ export const {
     useSendOtpMutation,
     useOtpVerifyMutation,
     useLogoutMutation,
+    useSendPasswordResetLinkMutation,
+    useResetPasswordMutation,
 } = authApi;
