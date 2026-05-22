@@ -1,20 +1,25 @@
 "use client";
-import {useFetchUserByIdQuery} from "@/features/users/userApi";
+import { useFetchUserByIdQuery } from "@/features/users/userApi";
 import Profile from "@/components/Layout/Profile";
 import { useSelector } from "react-redux";
 import { useParams } from "next/navigation";
-
 
 export default function ProfilePage({ params }) {
   const User = useSelector((state) => state.auth.user);
   const hydrated = useSelector((state) => state.auth.hydrated);
   const { id } = useParams();
+  
+  const isOwnProfile = User?._id === id;
+
+  // Hooks must be called unconditionally
+  const { data: fetchedUser, isLoading } = useFetchUserByIdQuery(id, { 
+    skip: !hydrated || isOwnProfile 
+  });
+
   if (!hydrated) {
     return <div className="flex justify-center items-center h-screen text-gray-500 font-medium">Loading...</div>;
   }
-  const isOwnProfile = User?._id === id;
 
-  const { data: fetchedUser, isLoading } = useFetchUserByIdQuery(id, { skip: isOwnProfile });
   const user = isOwnProfile ? User : fetchedUser;
 
   if (isLoading) {
