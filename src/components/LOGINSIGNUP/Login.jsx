@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
 import InputBox from "@/components/LOGINSIGNUP/InputBox";
 import { useState, useEffect } from "react";
-import { useLoginMutation } from "@/features/auth/authApi";
+import { useLoginMutation, useSendPasswordResetLinkMutation } from "@/features/auth/authApi";
 import { useDispatch, useSelector } from "react-redux";
 import { setCredentials } from "@/features/auth/authSlice";
 import SuccessAlert from "../ALERT/SuccessAlert";
@@ -21,8 +21,20 @@ export default function Login() {
   const authUser = useSelector((state) => state.auth.user);
 
   const [login, { data, isLoading, isError, isSuccess, error, reset }] = useLoginMutation();
+  const [
+    sendPasswordResetLink,
+    {
+      data: resetLinkData,
+      isLoading: isResetLinkLoading,
+      isError: isResetLinkError,
+      isSuccess: isResetLinkSuccess,
+      error: resetLinkError,
+      reset: resetPasswordLinkRequest,
+    },
+  ] = useSendPasswordResetLinkMutation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [resetValidationError, setResetValidationError] = useState("");
 
   // Redirect if already logged in
   useEffect(() => {
@@ -48,6 +60,21 @@ export default function Login() {
     }
   }
 
+  const handlePasswordReset = async () => {
+    setResetValidationError("");
+
+    if (!email.trim()) {
+      setResetValidationError("Enter your email first so we can send the reset link.");
+      return;
+    }
+
+    try {
+      await sendPasswordResetLink({ email: email.trim() }).unwrap();
+    } catch (err) {
+      console.error("Password reset email failed:", err);
+    }
+  };
+
   useEffect(() => {
     if (isSuccess || isError) {
       const timer = setTimeout(() => {
@@ -56,6 +83,16 @@ export default function Login() {
       return () => clearTimeout(timer);
     }
   }, [isSuccess, isError, reset]);
+
+  useEffect(() => {
+    if (isResetLinkSuccess || isResetLinkError || resetValidationError) {
+      const timer = setTimeout(() => {
+        resetPasswordLinkRequest();
+        setResetValidationError("");
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [isResetLinkSuccess, isResetLinkError, resetValidationError, resetPasswordLinkRequest]);
 
   return (
     <div>
@@ -91,9 +128,14 @@ export default function Login() {
                 </Link>
               </button>
             </section>
-            <p className="text-center font-semibold mt-6 hover:underline text-header">
-              Forgot your login details?
-            </p>
+            <button
+              className="text-center font-semibold mt-6 hover:underline text-header disabled:cursor-wait disabled:opacity-70"
+              disabled={isResetLinkLoading}
+              onClick={handlePasswordReset}
+              type="button"
+            >
+              {isResetLinkLoading ? "Sending reset link..." : "Forgot your login details?"}
+            </button>
           </form>
         </main>
         <section
@@ -111,6 +153,9 @@ export default function Login() {
         </section>
         {isError && <ErrorAlert title="Login failed!" text={error?.data?.message || "Please check your credentials and try again."} />}
         {isSuccess && <SuccessAlert title={data?.message || "Login successful!" } />}
+        {resetValidationError && <ErrorAlert title="Email required" text={resetValidationError} />}
+        {isResetLinkError && <ErrorAlert title="Reset email failed!" text={resetLinkError?.data?.message || "Please try again."} />}
+        {isResetLinkSuccess && <SuccessAlert title={resetLinkData?.message || "Reset link sent!"} />}
       </div>
     </div>
   );
