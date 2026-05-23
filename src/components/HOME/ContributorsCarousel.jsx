@@ -7,36 +7,127 @@ import contributorsData from "@/data/contributors.json";
 
 export default function ContributorsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const intervalRef = useRef(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const trackRef = useRef(null);
+  const autoplayRef = useRef(null);
+  const rafRef = useRef(null);
+  const isHoveringRef = useRef(false);
+  const touchStartX = useRef(0);
+  const touchStartScroll = useRef(0);
 
-  // Duplicate items to create seamless infinite loop
-  const items = [...contributorsData, ...contributorsData, ...contributorsData];
+  const scrollToIndex = (index) => {
+    const track = trackRef.current;
+    if (!track) return;
 
-  const startAutoSlide = () => {
-    intervalRef.current = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % contributorsData.length);
-    }, 2000);
-  };
-
-  const stopAutoSlide = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+    const card = track.children[index];
+    if (card) {
+      const offset = card.offsetLeft - (track.clientWidth - card.clientWidth) / 2;
+      track.scrollTo({ left: Math.max(0, offset), behavior: "smooth" });
     }
   };
-
-  useEffect(() => {
-    if (!isHovered) {
-      startAutoSlide();
-    } else {
-      stopAutoSlide();
-    }
-    return () => stopAutoSlide();
-  }, [isHovered]);
 
   const goTo = (index) => {
-    setCurrentIndex(index % contributorsData.length);
+    const normalized = index % contributorsData.length;
+    setCurrentIndex(normalized);
+    scrollToIndex(normalized);
   };
+
+  const updateCurrentIndex = () => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const trackCenter = track.scrollLeft + track.clientWidth / 2;
+    const cards = Array.from(track.children);
+    const nearest = cards.reduce(
+      (best, card, idx) => {
+        const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+        const distance = Math.abs(cardCenter - trackCenter);
+        return distance < best.distance ? { index: idx, distance } : best;
+      },
+      { index: 0, distance: Infinity }
+    );
+
+    setCurrentIndex(nearest.index % contributorsData.length);
+  };
+
+  const handleScroll = () => {
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      updateCurrentIndex();
+      rafRef.current = null;
+    });
+  };
+
+  const handleTouchStart = (event) => {
+    const track = trackRef.current;
+    if (!track) return;
+    touchStartX.current = event.touches[0].pageX;
+    touchStartScroll.current = track.scrollLeft;
+  };
+
+  const handleTouchMove = (event) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const x = event.touches[0].pageX;
+    const walk = x - touchStartX.current;
+    track.scrollLeft = touchStartScroll.current - walk;
+  };
+
+
+
+  useEffect(() => {
+    updateCurrentIndex();
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const handleWheelEvent = (event) => {
+      if (!isHoveringRef.current) return;
+
+      const delta = event.deltaY;
+      const canScrollLeft = track.scrollLeft > 0;
+      const canScrollRight = track.scrollLeft + track.clientWidth < track.scrollWidth - 1;
+
+      if ((delta > 0 && canScrollRight) || (delta < 0 && canScrollLeft)) {
+        event.preventDefault();
+        event.stopPropagation();
+        track.scrollBy({ left: delta, behavior: "auto" });
+      }
+    };
+
+    track.addEventListener("wheel", handleWheelEvent, { passive: false });
+    return () => track.removeEventListener("wheel", handleWheelEvent);
+  }, []);
+
+  useEffect(() => {
+    if (autoplayRef.current) {
+      clearInterval(autoplayRef.current);
+    }
+
+    if (!isPaused) {
+      autoplayRef.current = setInterval(() => {
+        setCurrentIndex((prev) => {
+          const next = (prev + 1) % contributorsData.length;
+          scrollToIndex(next);
+          return next;
+        });
+      }, 3000);
+    }
+
+    return () => {
+      if (autoplayRef.current) {
+        clearInterval(autoplayRef.current);
+      }
+    };
+  }, [isPaused]);
 
   return (
     <section className="py-16 md:py-20 bg-gradient-to-b from-white to-blue-50/40 overflow-hidden">
@@ -65,25 +156,39 @@ export default function ContributorsCarousel() {
       </div>
 
       {/* Carousel Track */}
-      <div
-        className="relative"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
+      <div className="relative">
         {/* Left fade gradient */}
         <div className="absolute left-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
         {/* Right fade gradient */}
         <div className="absolute right-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-l from-blue-50/40 to-transparent z-10 pointer-events-none" />
 
         <div
-          className="flex gap-5 transition-transform duration-700 ease-in-out"
-          style={{
-            transform: `translateX(calc(-${currentIndex * (100 / 3)}% - ${currentIndex * 20 / 3}px))`,
-            paddingLeft: "1.1em",
+          ref={trackRef}
+          onMouseEnter={() => {
+            setIsPaused(true);
+            setIsHovering(true);
+            isHoveringRef.current = true;
           }}
+          onMouseLeave={() => {
+            setIsPaused(false);
+            setIsHovering(false);
+            isHoveringRef.current = false;
+          }}
+          onScroll={handleScroll}
+          onTouchStart={(e) => {
+            setIsPaused(true);
+            handleTouchStart(e);
+          }}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={() => {
+            setIsPaused(false);
+          }}
+          onTouchCancel={() => setIsPaused(false)}
+          className="relative cursor-grab select-none flex gap-5 overflow-x-auto hide-scrollbar scroll-smooth snap-x snap-mandatory touch-pan-x pb-6 px-4 md:px-6"
+          style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
         >
-          {items.map((contributor, index) => (
-            <CarouselCard key={`${contributor.id}-${index}`} contributor={contributor} />
+          {contributorsData.map((contributor) => (
+            <CarouselCard key={contributor.id} contributor={contributor} />
           ))}
         </div>
       </div>
@@ -94,11 +199,10 @@ export default function ContributorsCarousel() {
           <button
             key={index}
             onClick={() => goTo(index)}
-            className={`transition-all duration-300 rounded-full ${
-              currentIndex === index
-                ? "w-6 h-2.5 bg-header"
-                : "w-2.5 h-2.5 bg-gray-300 hover:bg-header/50"
-            }`}
+            className={`transition-all duration-300 rounded-full ${currentIndex === index
+              ? "w-6 h-2.5 bg-header"
+              : "w-2.5 h-2.5 bg-gray-300 hover:bg-header/50"
+              }`}
             aria-label={`Go to contributor ${index + 1}`}
           />
         ))}
