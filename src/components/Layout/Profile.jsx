@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSignOutAlt, faUserEdit, faSave, faTimes, faCloudUploadAlt } from "@fortawesome/free-solid-svg-icons";
+import { FaAngleRight } from "react-icons/fa6";
 
 import { useUpdateUserMutation, useUserImageUploadMutation } from "@/features/users/userApi";
 import { setCredentials, clearCredentials } from "@/features/auth/authSlice";
@@ -23,7 +24,7 @@ export default function Profile({ user, isOwnProfile }) {
   const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageSuccess, isError: isImageError, error: uploadError, reset: resetImage }] = useUserImageUploadMutation();
 
   const [editMode, setEditMode] = useState(false);
-  const [newSkill, setNewSkill] = useState("");
+  const [newSkill, setNewSkill] = useState({ skillName: "", experience: "" });
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [profile, setProfile] = useState({
@@ -80,24 +81,29 @@ export default function Profile({ user, isOwnProfile }) {
   };
 
   const handleAddSkill = () => {
-    const trimmedSkill = newSkill.trim();
-    if (!trimmedSkill) return;
+    const trimmedSkillName = newSkill.skillName.trim();
+    const trimmedExperience = newSkill.experience.trim();
+    
+    if (!trimmedSkillName || !trimmedExperience) return;
 
     setProfile((prev) => {
       const hasDuplicate = prev.skills.some(
-        (skill) => skill.trim().toLowerCase() === trimmedSkill.toLowerCase()
+        (skill) => skill.skillName.trim().toLowerCase() === trimmedSkillName.toLowerCase()
       );
       if (hasDuplicate) return prev;
 
-      return { ...prev, skills: [...prev.skills, trimmedSkill] };
+      return { 
+        ...prev, 
+        skills: [...prev.skills, { skillName: trimmedSkillName, experience: trimmedExperience }] 
+      };
     });
-    setNewSkill("");
+    setNewSkill({ skillName: "", experience: "" });
   };
 
   const handleRemoveSkill = (skillToRemove) => {
     setProfile((prev) => ({
       ...prev,
-      skills: prev.skills.filter((skill) => skill !== skillToRemove),
+      skills: prev.skills.filter((skill) => skill.skillName !== skillToRemove.skillName),
     }));
   };
 
@@ -185,32 +191,66 @@ export default function Profile({ user, isOwnProfile }) {
             <p className="text-blue-600 font-semibold uppercase text-sm tracking-widest mt-1">CPCCU Member</p>
           </div>
 
+          {/* Expertise & Skills Section - Matching Job Pipeline UI */}
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Expertise & Skills</h3>
-            <div className="flex flex-wrap gap-2">
-              {profile.skills.map((skill, i) => (
-                <span key={i} className="px-4 py-1.5 bg-blue-50 text-blue-700 text-sm font-bold rounded-full border border-blue-100 flex items-center gap-2">
-                  {skill}
-                  {editMode && (
-                    <button onClick={() => handleRemoveSkill(skill)} className="hover:text-red-500">
-                      <FontAwesomeIcon icon={faTimes} />
-                    </button>
-                  )}
-                </span>
-              ))}
+            <h3 className="text-lg md:text-xl font-bold text-blue-600 mb-6 flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+              Expertise & Skills
+            </h3>
+            
+            <div className="flex flex-col gap-3">
+              {profile.skills && profile.skills.length > 0 ? (
+                <ul className="flex flex-col gap-3">
+                  {profile.skills.map((skill, index) => (
+                    <li key={`${skill.skillName}-${index}`} className="flex items-start justify-between gap-2 ">
+                      <div className="flex items-start gap-2 flex-1">
+                        <FaAngleRight className="text-blue-600 mt-1 flex-shrink-0" />
+                        <div className="flex-1">
+                          <span className="font-semibold text-blue-500 ">{skill.skillName}: </span>
+                          <span className="text-gray-700">{skill.experience}</span>
+                        </div>
+                      </div>
+                      {editMode && (
+                        <button 
+                          onClick={() => handleRemoveSkill(skill)}
+                          className="text-red-500 hover:text-red-700 transition-colors flex-shrink-0 mt-1"
+                          aria-label="Remove skill"
+                        >
+                          <FontAwesomeIcon icon={faTimes} />
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 text-sm italic">No skills added yet</p>
+              )}
+              
               {editMode && (
-                <div className="flex w-full mt-4 gap-2">
+                <div className="mt-6 pt-6 border-t border-gray-200 flex flex-col gap-3">
                   <input 
-                    value={newSkill} 
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    placeholder="Add skill..." 
-                    className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400"
+                    value={newSkill.skillName} 
+                    onChange={(e) => setNewSkill({...newSkill, skillName: e.target.value})}
+                    placeholder="Skill name (e.g., React)" 
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400 transition-colors"
                   />
-                  <button onClick={handleAddSkill} aria-label="Add skill" className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold">+</button>
-                 </div>
-               )}
-             </div>
-           </div>
+                  <input 
+                    value={newSkill.experience} 
+                    onChange={(e) => setNewSkill({...newSkill, experience: e.target.value})}
+                    placeholder="Experience (e.g., 2+ years)" 
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400 transition-colors"
+                  />
+                  <button 
+                    onClick={handleAddSkill} 
+                    aria-label="Add skill" 
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
+                  >
+                    + Add Skill
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Right Column: Detailed Information */}
