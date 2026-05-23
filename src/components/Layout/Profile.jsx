@@ -202,11 +202,11 @@ export default function Profile({ user, isOwnProfile }) {
               {profile.skills && profile.skills.length > 0 ? (
                 <ul className="flex flex-col gap-3">
                   {profile.skills.map((skill, index) => (
-                    <li key={`${skill.skillName}-${index}`} className="flex items-start justify-between gap-2">
+                    <li key={`${skill.skillName}-${index}`} className="flex items-start justify-between gap-2 ">
                       <div className="flex items-start gap-2 flex-1">
                         <FaAngleRight className="text-blue-600 mt-1 flex-shrink-0" />
                         <div className="flex-1">
-                          <span className="font-semibold text-gray-900">{skill.skillName}: </span>
+                          <span className="font-semibold text-blue-500 ">{skill.skillName}: </span>
                           <span className="text-gray-700">{skill.experience}</span>
                         </div>
                       </div>
