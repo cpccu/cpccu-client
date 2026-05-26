@@ -16,36 +16,44 @@ This document provides a detailed overview of the technical architecture, direct
 
 ## 2. Directory Structure
 
-```text
+```
 src/
-├── app/                # Next.js App Router (Routes & Layouts)
-│   ├── (main)/         # Main site group (Header, NavBar, Footer)
-│   │   ├── alumni/     # Alumni page
-│   │   ├── blog/       # Blog listing and posts
-│   │   ├── certificate/# Certificate verification page
-│   │   ├── committee/  # Committee members page
-│   │   ├── profile/    # User profile routes
-│   │   └── ...         # Other public routes
-│   ├── login/          # Login page
-│   ├── signup/         # Registration page
-│   ├── verify/         # Public certificate verification
-│   └── redux/          # Redux Store & Provider configuration
-├── components/         # React Components
-│   ├── [DOMAIN]/       # Domain-specific UI (ABOUT, BLOG, EVENT, etc.)
-│   ├── ALERT/          # Feedback components (Success, Error, Popups)
-│   ├── Global/         # Sitewide UI (NavBar, Footer, GoToTop)
-│   ├── Layout/         # Page-level layout components
-│   └── PROFILE/        # Profile-specific UI and Modals
-├── features/           # Redux Slices & RTK Query APIs
-│   ├── auth/           # Authentication state and API
-│   ├── certificate/    # Certificate state and API
-│   ├── members/        # Member listing API
-│   ├── posts/          # Blog post API
-│   └── users/          # User management API
-├── Context/            # React Context Providers for scroll/UI state
-├── hooks/              # Custom React hooks (use-mobile, use-toast)
-├── lib/                # Shared utilities and static data
-└── services/           # Core API configuration (baseApi.js)
+├── app/
+│   ├── (main)/
+│   │   ├── alumni/
+│   │   ├── blog/
+│   │   ├── certificate/
+│   │   ├── committee/
+│   │   ├── profile/
+│   │   └── ... (contact, contributors, donators, event, gallery, history, job-pipeline, member, users)
+│   ├── login/
+│   ├── signup/
+│   ├── verify/
+│   └── redux/
+├── components/
+│   ├── ABOUT/
+│   ├── ALERT/
+│   ├── BLOG/
+│   ├── CERTIFICATE/
+│   ├── CONTACT/
+│   ├── CONTRIBUTORS/
+│   ├── DONATORS/
+│   ├── EVENT/
+│   ├── GALLERY/
+│   ├── Global/
+│   ├── Layout/
+│   └── PROFILE/
+├── features/
+│   ├── auth/
+│   ├── certificate/
+│   ├── members/
+│   ├── posts/
+│   └── users/
+├── Context/
+├── hooks/
+├── lib/
+└── services/
+
 ```
 
 ## 3. State Management & Data Flow
