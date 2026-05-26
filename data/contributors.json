@@ -1,25 +1,25 @@
 [
   {
     "id": 1,
-    "name": "mdsiaofficial",
-    "role": "Contributor",
-    "department": "CSE",
-    "batch": "60th",
-    "contribution": "Contributed 186 commits to the project",
-    "github": "https://github.com/mdsiaofficial",
-    "linkedin": "https://www.linkedin.com/in/mdsiaofficial/",
-    "avatar": "https://avatars.githubusercontent.com/u/22385106?v=4"
-  },
-  {
-    "id": 2,
     "name": "anisurrahmanfarazi17",
     "role": "Contributor",
     "department": "CSE",
     "batch": "67th",
-    "contribution": "Contributed 178 commits to the project",
+    "contribution": "Contributed 199 commits to the project",
     "github": "https://github.com/anisurrahmanfarazi17",
     "linkedin": "https://www.linkedin.com/in/anisurrahmanfarazi17/",
     "avatar": "https://avatars.githubusercontent.com/u/71831499?v=4"
+  },
+  {
+    "id": 2,
+    "name": "mdsiaofficial",
+    "role": "Contributor",
+    "department": "CSE",
+    "batch": "60th",
+    "contribution": "Contributed 187 commits to the project",
+    "github": "https://github.com/mdsiaofficial",
+    "linkedin": "https://www.linkedin.com/in/mdsiaofficial/",
+    "avatar": "https://avatars.githubusercontent.com/u/22385106?v=4"
   },
   {
     "id": 3,
@@ -82,7 +82,7 @@
     "role": "Contributor",
     "department": "CSE",
     "batch": "67th",
-    "contribution": "Contributed 3 commits to the project",
+    "contribution": "Contributed 5 commits to the project",
     "github": "https://github.com/Rifat-Shahariar",
     "linkedin": "https://linkedin.com",
     "avatar": "https://avatars.githubusercontent.com/u/234933937?v=4"
