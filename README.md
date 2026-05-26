@@ -48,7 +48,7 @@ For a detailed explanation of the architecture, see [ARCHITECTURE.md](./ARCHITEC
     ```
 
 3.  Set up environment variables:
-    Create a `.env.local` file in the root directory:
+    Create a `.env` file in the root directory:
     ```env
     NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
     ```
