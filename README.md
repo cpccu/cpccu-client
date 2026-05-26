@@ -2,7 +2,7 @@
 
 The official web portal for the Competitive Programming Camp at City University. This platform facilitates community engagement, member management, and certificate verification.
 
-[Live View](https://cpccu.club/) | [Figma Design](https://www.figma.com/design/PnjYkzpvTxndltEU6gCxfn/CPCCU-Portal) | [Committee Info](https://www.figma.com/design/Z2U5SItMdTcUEMJRKRFxqM/poster-for-cpccu)
+[Live View](https://cpccu.club/)
 
 ## 🚀 Features
 
