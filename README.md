@@ -1,58 +1,89 @@
-# Competitive Programming Camp City University - CPCCU
-[Live View](https://cpccu.club/)
+# CPCCU - Competitive Programming Camp City University
 
-[Committee Info](https://www.figma.com/design/Z2U5SItMdTcUEMJRKRFxqM/poster-for-cpccu?t=nIwwUf6S908cbrB9-1)
+The official web portal for the Competitive Programming Camp at City University. This platform facilitates community engagement, member management, and certificate verification.
 
-[Figma Design](https://www.figma.com/design/PnjYkzpvTxndltEU6gCxfn/CPCCU-Portal?t=nIwwUf6S908cbrB9-1)
+[Live View](https://cpccu.club/) | [Figma Design](https://www.figma.com/design/PnjYkzpvTxndltEU6gCxfn/CPCCU-Portal) | [Committee Info](https://www.figma.com/design/Z2U5SItMdTcUEMJRKRFxqM/poster-for-cpccu)
 
-[Content](https://docs.google.com/document/d/1HLcmyFrLobvaKXmtZ88-6vrPee5g-6hVEDZag_Cm2to/edit)
+## 🚀 Features
 
-# Desktop
-![image](https://github.com/cpccu/cpccu/assets/22385106/3da83b70-fee2-4dd3-907d-0d149353ea2b)
+*   **Member Management**: Profiles for club members with skill tracking and academic details.
+*   **Authentication**: Secure login and registration with email OTP verification.
+*   **Certificate System**: Robust verification system for club-issued certificates.
+*   **Dynamic Content**: Blog posts, event galleries, and contributor recognition.
+*   **Responsive UI**: Optimized for all devices using Tailwind CSS and Framer Motion.
+*   **Modern Stack**: Built with Next.js 15, React 19, and Redux Toolkit.
 
-# Laptop
-![image](https://github.com/cpccu/cpccu/assets/22385106/7cb34e48-10f9-4eb1-a9e3-bf81c237a7b1)
+## 🛠️ Tech Stack
 
-# Mobile
-![image](https://github.com/cpccu/cpccu/assets/22385106/12ca41bd-1382-448a-ad13-23584e1b7f94)
+*   **Frontend**: Next.js (App Router), React, Tailwind CSS
+*   **State**: Redux Toolkit, RTK Query
+*   **Animations**: Framer Motion
+*   **Icons**: FontAwesome, Lucide React
+*   **Package Manager**: npm / Bun
 
-# Mobile with navigation
-![image](https://github.com/cpccu/cpccu/assets/22385106/e8e0eadd-1c5f-4fef-af82-a4149df58197)
+## 📂 Project Structure
 
-https://i.ibb.co.com/Nm3q6c0/Artboard-1.png
-https://i.ibb.co.com/j3sTfZM/Artboard-1-1.png
-https://i.ibb.co.com/jyXyv28/Artboard-1-cir.png
-https://i.ibb.co.com/pWCpvsr/Artboard-1new.png
-https://i.ibb.co.com/6BFjFf7/Artboard-1new.png
+For a detailed explanation of the architecture, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-## project work init commands for newbies
+## 🚦 Getting Started
 
-This is a **Next.js 15** project with **Tailwind CSS 4**, using the App Router and `src` directory.
+### Prerequisites
 
-`npm install`
+*   Node.js (v18+)
+*   npm or [Bun](https://bun.sh/)
 
-`npm run dev` — start dev server at [http://localhost:3000](http://localhost:3000)
+### Installation
 
-`npm run build` — production build
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/cpccu/cpccu-client.git
+    cd cpccu-client
+    ```
 
-`npm run start` — run production server
+2.  Install dependencies:
+    ```bash
+    npm install
+    # OR
+    bun install
+    ```
 
-## Configure github
+3.  Set up environment variables:
+    Create a `.env.local` file in the root directory:
+    ```env
+    NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
+    ```
 
-git config --global user.email "you@example.com"
+### Running the Project
 
-git config --global user.name "Your Name"
+*   **Development Mode**:
+    ```bash
+    npm run dev
+    # OR
+    bun run dev
+    ```
+*   **Production Build**:
+    ```bash
+    npm run build
+    npm run start
+    ```
 
-## git commands for newbies
+## 📖 Documentation
 
-Add you all changes:
+*   [Architecture Overview](./ARCHITECTURE.md) - Deep dive into folder structure and data flow.
+*   [API Documentation](./API_DOCUMENTATION.md) - List of all integrated endpoints and data models.
 
-`git add .`
+## 🤝 Contributing
 
-Commit your changes with a message :
+We welcome contributions! Please follow these steps:
+1.  Fork the project.
+2.  Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4.  Push to the branch (`git push origin feature/AmazingFeature`).
+5.  Open a Pull Request.
 
-`git commit -m "write what you changes here"`
+## 📄 License
 
-Push you changes to branch:
+This project is licensed under the ISC License.
 
-`git push -u origin <branch-name>`
+---
+Developed with ❤️ by the **OSSCCU Team**.
