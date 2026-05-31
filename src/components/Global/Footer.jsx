@@ -21,8 +21,13 @@ export default function Footer() {
         <OrgLink />
       </main>
       {/* rights section start */}
-      <footer className="bg-header text-white/90 h-16 flex items-center justify-center text-center">
+      <footer className="bg-header text-white/90 h-16 flex flex-col items-center justify-center text-center">
         {currentYear} &copy;{InstituteInfo?.rights}
+        <br />
+
+          <a className="hover:underline" target="_blank" href="https://ossccu.pro.bd/">
+        {InstituteInfo?.developedBy}
+        </a>
       </footer>
       {/* rights section end */}
     </>
