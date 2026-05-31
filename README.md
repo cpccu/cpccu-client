@@ -1,11 +1,27 @@
-# Competitive Programming Camp City University - CPCCU
+# CPCCU - Competitive Programming Camp City University
+
+The official web portal for the Competitive Programming Camp at City University. This platform facilitates community engagement, member management, and certificate verification.
+
 [Live View](https://cpccu.club/)
 
-[Committee Info](https://www.figma.com/design/Z2U5SItMdTcUEMJRKRFxqM/poster-for-cpccu?t=nIwwUf6S908cbrB9-1)
+## 🚀 Features
 
-[Figma Design](https://www.figma.com/design/PnjYkzpvTxndltEU6gCxfn/CPCCU-Portal?t=nIwwUf6S908cbrB9-1)
+*   **Member Management**: Profiles for club members with skill tracking and academic details.
+*   **Authentication**: Secure login and registration with email OTP verification.
+*   **Certificate System**: Robust verification system for club-issued certificates.
+*   **Dynamic Content**: Blog posts, event galleries, and contributor recognition.
+*   **Responsive UI**: Optimized for all devices using Tailwind CSS and Framer Motion.
+*   **Modern Stack**: Built with Next.js 15, React 19, and Redux Toolkit.
 
-[Content](https://docs.google.com/document/d/1HLcmyFrLobvaKXmtZ88-6vrPee5g-6hVEDZag_Cm2to/edit)
+## 🛠️ Tech Stack
+
+*   **Frontend**: Next.js (App Router), React, Tailwind CSS
+*   **State**: Redux Toolkit, RTK Query
+*   **Animations**: Framer Motion
+*   **Icons**: FontAwesome, Lucide React
+*   **Package Manager**: npm / Bun
+
+## Preview
 
 # Desktop
 ![image](https://github.com/cpccu/cpccu/assets/22385106/3da83b70-fee2-4dd3-907d-0d149353ea2b)
@@ -19,40 +35,76 @@
 # Mobile with navigation
 ![image](https://github.com/cpccu/cpccu/assets/22385106/e8e0eadd-1c5f-4fef-af82-a4149df58197)
 
+# Logos
 https://i.ibb.co.com/Nm3q6c0/Artboard-1.png
 https://i.ibb.co.com/j3sTfZM/Artboard-1-1.png
 https://i.ibb.co.com/jyXyv28/Artboard-1-cir.png
 https://i.ibb.co.com/pWCpvsr/Artboard-1new.png
 https://i.ibb.co.com/6BFjFf7/Artboard-1new.png
 
-## project work init commands for newbies
+## 📂 Project Structure
 
-This is a **Next.js 15** project with **Tailwind CSS 4**, using the App Router and `src` directory.
+For a detailed explanation of the architecture, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-`npm install`
+## 🚦 Getting Started
 
-`npm run dev` — start dev server at [http://localhost:3000](http://localhost:3000)
+### Prerequisites
 
-`npm run build` — production build
+*   Node.js (v18+)
+*   npm or [Bun](https://bun.sh/)
 
-`npm run start` — run production server
+### Installation
 
-## Configure github
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/cpccu/cpccu-client.git
+    cd cpccu-client
+    ```
 
-git config --global user.email "you@example.com"
+2.  Install dependencies:
+    ```bash
+    npm install
+    # OR
+    bun install
+    ```
 
-git config --global user.name "Your Name"
+3.  Set up environment variables:
+    Create a `.env` file in the root directory:
+    ```env
+    NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
+    ```
 
-## git commands for newbies
+### Running the Project
 
-Add you all changes:
+*   **Development Mode**:
+    ```bash
+    npm run dev
+    # OR
+    bun run dev
+    ```
+*   **Production Build**:
+    ```bash
+    npm run build
+    npm run start
+    ```
 
-`git add .`
+## 📖 Documentation
 
-Commit your changes with a message :
+*   [Architecture Overview](./ARCHITECTURE.md) - Deep dive into folder structure and data flow.
+*   [API Documentation](./API_DOCUMENTATION.md) - List of all integrated endpoints and data models.
 
-`git commit -m "write what you changes here"`
+## 🤝 Contributing
 
-Push you changes to branch:
+We welcome contributions! Please follow these steps:
+1.  Fork the project.
+2.  Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4.  Push to the branch (`git push origin feature/AmazingFeature`).
+5.  Open a Pull Request.
 
-`git push -u origin <branch-name>`
+## 📄 License
+
+This project is licensed under the ISC License.
+
+---
+Collaborated & Developed with ❤️ by the [**Open Source Software Community City University**](https://ossccu.pro.bd/)
