@@ -4,35 +4,35 @@ import { Provider } from "react-redux";
 import { useEffect } from "react";
 import { store } from "./store";
 import {
+  clearCredentials,
   setCredentials,
   setHydrated,
 } from "@/features/auth/authSlice";
-import { fi } from "date-fns/locale";
+import { userApi } from "@/features/users/userApi";
 
 function AuthHydrator({ children }) {
   useEffect(() => {
-    const userString = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-
-    try {
-      if (userString && userString !== "undefined" && token) {
-        const user = JSON.parse(userString);
-        if (user) {
-          store.dispatch(
-            setCredentials({
-              user,
-              token,
-            })
-          );
-        }
-      }
-    } catch (error) {
-      console.error("Failed to parse user from localStorage:", error);
+    const hydrateSession = async () => {
       localStorage.removeItem("user");
       localStorage.removeItem("token");
-    } finally {
-      store.dispatch(setHydrated());
-    }
+
+      try {
+        const response = await store
+          .dispatch(
+            userApi.endpoints.fetchUsers.initiate(undefined, {
+              forceRefetch: true,
+            }),
+          )
+          .unwrap();
+        store.dispatch(setCredentials({ user: response.data }));
+      } catch (error) {
+        store.dispatch(clearCredentials());
+      } finally {
+        store.dispatch(setHydrated());
+      }
+    };
+
+    hydrateSession();
   }, []);
 
   return children;

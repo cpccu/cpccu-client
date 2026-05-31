@@ -1,26 +1,20 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-
-const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
+const baseUrl =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
 export const baseApi = createApi({
-  reducerPath: 'api',
-  baseQuery: fetchBaseQuery({ baseUrl,
-    credentials: 'include',
-    prepareHeaders: (headers, { getState, endpoint }) => {
-      const token = getState().auth.token;
+  reducerPath: "api",
+  baseQuery: fetchBaseQuery({
+    baseUrl,
+    credentials: "include",
+    prepareHeaders: (headers, { endpoint }) => {
       // For image uploads, we don't set Content-Type to let the browser set it with the boundary
-      if (endpoint !== 'userImageUpload') {
-        headers.set('Content-Type', 'application/json');
-      }
-      // Always set Authorization if token exists
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+      if (endpoint !== "userImageUpload") {
+        headers.set("Content-Type", "application/json");
       }
       return headers;
     },
   }),
-  tagTypes: ['Auth', 'Users', 'Posts'],
-  endpoints: () => ({})
+  tagTypes: ["Auth", "Users", "Posts"],
+  endpoints: () => ({}),
 });
-
-

@@ -13,7 +13,7 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials: (state, action) => {
-      const { user, token } = action.payload;
+      const { user, token = null } = action.payload;
 
       state.user = user;
       state.token = token;
@@ -21,10 +21,8 @@ const authSlice = createSlice({
       state.error = null;
       state.hydrated = true;
 
-      if (typeof window !== "undefined") {
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("token", token);
-      }
+      // Auth persistence is handled by backend HttpOnly cookies.
+      // Do not mirror tokens or sessions into localStorage.
     },
 
     clearCredentials: (state) => {

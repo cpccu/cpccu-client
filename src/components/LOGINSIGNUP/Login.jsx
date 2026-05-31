@@ -56,7 +56,6 @@ export default function Login() {
       dispatch(
         setCredentials({
           user: response.data.user,
-          token: response.data.token,
         }),
       );
 
