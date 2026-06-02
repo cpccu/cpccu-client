@@ -127,6 +127,15 @@
   },
   {
     "id": 15,
+    "name": "Foysal Ahammed Sami",
+    "batch": 62,
+    "designation": "",
+    "company": "",
+    "contribution": "Website Renewal Fee Contribution",
+    "avatar": "https://i.ibb.co/VTdP4kp/foysal.png"
+  },
+  {
+    "id": 16,
     "name": "Ahammed Zihad Khan",
     "batch": 62,
     "designation": "",
@@ -135,7 +144,7 @@
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=MdAbuTaherSaikat&backgroundColor=ffd5dc"
   },
   {
-    "id": 16,
+    "id": 17,
     "name": "Mohammad Sohag Mia",
     "batch": 63,
     "designation": "",
@@ -144,7 +153,7 @@
     "avatar": "https://i.ibb.co/xXhBfPX/IMG-20211208-180914.jpg"
   },
   {
-    "id": 17,
+    "id": 18,
     "name": "Rahul Roy Nipon",
     "batch": 63,
     "designation": "",
@@ -153,7 +162,7 @@
     "avatar": "https://i.ibb.co/t3x1BtD/Screenshot-2024-05-15-025744.png"
   },
   {
-    "id": 18,
+    "id": 19,
     "name": "Zahin Abdullah",
     "batch": 63,
     "designation": "",
@@ -162,7 +171,7 @@
     "avatar": "https://i.ibb.co.com/Vc2dY95L/IMG-6764-JPG.jpg"
   },
   {
-    "id": 19,
+    "id": 20,
     "name": "Md. Rasel Ahmed Rana",
     "batch": 63,
     "designation": "",
@@ -171,7 +180,7 @@
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=MdAbuTaherSaikat&backgroundColor=ffd5dc"
   },
   {
-    "id": 20,
+    "id": 21,
     "name": "Meherin Jahan",
     "batch": 63,
     "designation": "",
@@ -180,7 +189,7 @@
     "avatar": "https://i.ibb.co.com/ymH0M7HR/image.pngc"
   },
   {
-    "id": 21,
+    "id": 22,
     "name": "Mahboba Zzaman Tajmim",
     "batch": 64,
     "designation": "",
@@ -189,7 +198,7 @@
     "avatar": "https://i.ibb.co.com/ymH0M7HR/image.png"
   },
   {
-    "id": 22,
+    "id": 23,
     "name": "Moidul Islam Mahim",
     "batch": 64,
     "designation": "",
@@ -198,7 +207,7 @@
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=MdAbuTaherSaikat&backgroundColor=ffd5dc"
   },
   {
-    "id": 23,
+    "id": 24,
     "name": "Abdullah Rahman",
     "batch": 64,
     "designation": "",
@@ -207,7 +216,7 @@
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=MdAbuTaherSaikat&backgroundColor=ffd5dc"
   },
   {
-    "id": 24,
+    "id": 25,
     "name": "Md Labib Ibnus Salam",
     "batch": 65,
     "designation": "",
@@ -216,7 +225,7 @@
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=MdAbuTaherSaikat&backgroundColor=ffd5dc"
   },
   {
-    "id": 25,
+    "id": 26,
     "name": "Maimoona Hossain",
     "batch": 65,
     "designation": "",
@@ -225,7 +234,7 @@
     "avatar": "https://i.ibb.co.com/ymH0M7HR/image.png"
   },
   {
-    "id": 26,
+    "id": 27,
     "name": "Sabbir Azad",
     "batch": 65,
     "designation": "",
@@ -234,7 +243,7 @@
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=MdAbuTaherSaikat&backgroundColor=ffd5dc"
   },
   {
-    "id": 27,
+    "id": 28,
     "name": "Ebne Talha Bin Faruk",
     "batch": 65,
     "designation": "",
@@ -243,7 +252,7 @@
     "avatar": "https://i.ibb.co.com/xqLBzT7h/IMG-20240702-WA0000-Ebne-Talha-Bin-Faruk-Redoy.jpg"
   },
   {
-    "id": 28,
+    "id": 29,
     "name": "Md. Rihad Hasan Rasin",
     "batch": 63,
     "designation": "",
@@ -252,7 +261,7 @@
     "avatar": "https://i.ibb.co.com/TBLKcS8t/IMG-2447.jpg"
   },
   {
-    "id": 29,
+    "id": 30,
     "name": "Md. Rangu Mia",
     "batch": 64,
     "designation": "",
@@ -261,7 +270,7 @@
     "avatar": "https://i.ibb.co.com/7t4L6ny3/ranju.jpg"
   },
   {
-    "id": 30,
+    "id": 31,
     "name": "Md. Maruf",
     "batch": 66,
     "designation": "",
@@ -270,7 +279,7 @@
     "avatar": "https://i.ibb.co.com/Sw0KGwpC/MD-MA-R-UF.jpg"
   },
   {
-    "id": 31,
+    "id": 32,
     "name": "Anisur Rahman Farazi",
     "batch": 67,
     "designation": "",
@@ -279,12 +288,21 @@
     "avatar": "https://avatars.githubusercontent.com/u/71831499?v=4"
   },
   {
-    "id": 32,
+    "id": 33,
     "name": "Nabila Islam Samia",
     "batch": 67,
     "designation": "",
     "company": "",
     "contribution": "Website Renewal Fee Contribution",
     "avatar": "https://i.ibb.co.com/ymH0M7HR/image.png"
+  },
+  {
+    "id": 34,
+    "name": "Fuad Ahamed Rahim ",
+    "batch": 67,
+    "designation": "",
+    "company": "",
+    "contribution": "Website Renewal Fee Contribution",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=MdAbuTaherSaikat&backgroundColor=ffd5dc"
   }
 ]
