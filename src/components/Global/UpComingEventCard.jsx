@@ -153,7 +153,7 @@ function TimeBox({ date, endDate }) {
     };
   };
 
-  const [status, setStatus] = useState(() => getEventStatus());
+  const [status, setStatus] = useState(null);
 
   useEffect(() => {
     const update = () => setStatus(getEventStatus());
@@ -163,6 +163,18 @@ function TimeBox({ date, endDate }) {
 
     return () => clearInterval(timer);
   }, [date, endDate]);
+
+  if (!status) {
+    return (
+      <main className="flex gap-5">
+        <section className="flex flex-col items-center font-bold gap-1">
+          <div className="border text-center px-5 py-2 font-bold text-2xl rounded-xl bg-black/70">
+            Loading...
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   if (status.phase === "ended") {
     return (
