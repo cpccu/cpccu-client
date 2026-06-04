@@ -2,7 +2,7 @@ name: Update Contributors
 
 on:
   schedule:
-    - cron: '30 19 * * 1,4' # Runs every Tuesday and Friday at 01.30 Am BST (Bangladesh Standard Time)
+    - cron: '05 19 * * *' # Runs every day at 01.05 Am BST (Bangladesh Standard Time)
   workflow_dispatch: # Allows manual triggering
 
 permissions:
