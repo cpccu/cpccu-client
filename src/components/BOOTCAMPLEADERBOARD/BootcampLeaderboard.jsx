@@ -27,7 +27,9 @@ const columns = [
 ];
 
 async function fetchLeaderboard() {
-  const res = await fetch(`${API_BASE_URL}/bootcamp-leaderboard`);
+  const res = await fetch(`${API_BASE_URL}/bootcamp-leaderboard`, {
+    cache: "no-store",
+  });
 
   if (!res.ok) {
     throw new Error(`Leaderboard API error: ${res.status}`);
