@@ -15,6 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: release
           fetch-depth: 0
 
       - name: Set up Python
@@ -35,4 +36,4 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add data/contributors.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: auto-update contributors.json" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: auto-update contributors.json" && git push origin HEAD:release)
