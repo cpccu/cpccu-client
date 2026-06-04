@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import InstitudeInfo from "@/data/global/institude.json";
 
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_SHEETS_API_KEY;
-const SHEET_ID = process.env.NEXT_PUBLIC_BOOTCAMP_SHEET_ID;
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
 
 const columns = [
   { key: "rank", label: "Rank" },
@@ -27,53 +27,14 @@ const columns = [
 ];
 
 async function fetchLeaderboard() {
-  if (!API_KEY || !SHEET_ID) {
-    throw new Error(
-      "Google Sheets environment variables are not configured yet."
-    );
-  }
-
-  const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?key=${API_KEY}&fields=sheets.properties`;
-  const metaRes = await fetch(metaUrl);
-
-  if (!metaRes.ok) {
-    throw new Error(`Sheets API error: ${metaRes.status}`);
-  }
-
-  const meta = await metaRes.json();
-  const firstSheet = meta.sheets?.[0]?.properties?.title;
-
-  if (!firstSheet) {
-    throw new Error("Could not find any sheets in the spreadsheet.");
-  }
-
-  const range = encodeURIComponent(`${firstSheet}!A1:G100`);
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
-  const res = await fetch(url);
+  const res = await fetch(`${API_BASE_URL}/bootcamp-leaderboard`);
 
   if (!res.ok) {
-    throw new Error(`Sheets API error: ${res.status}`);
+    throw new Error(`Leaderboard API error: ${res.status}`);
   }
 
   const json = await res.json();
-  const rows = json.values ?? [];
-
-  if (rows.length < 2) {
-    return [];
-  }
-
-  return rows
-    .slice(1)
-    .filter((row) => row[0])
-    .map((row, index) => ({
-      name: row[0] ?? "",
-      batch: Number(row[1]) || 0,
-      attendance: Number(row[2]) || 0,
-      task: Number(row[3]) || 0,
-      contest: Number(row[4]) || 0,
-      total: Number(row[5]) || 0,
-      rank: Number(row[6]) || index + 1,
-    }));
+  return json.data ?? [];
 }
 
 function RankBadge({ rank }) {
@@ -351,9 +312,8 @@ export default function BootcampLeaderboard() {
               <p className="font-semibold">Failed to load data</p>
               <p className="mt-0.5 text-xs opacity-80">{error}</p>
               <p className="mt-2 text-xs opacity-80">
-                Add `NEXT_PUBLIC_GOOGLE_SHEETS_API_KEY` and
-                `NEXT_PUBLIC_BOOTCAMP_SHEET_ID` to the client environment to
-                connect the live sheet.
+                Add `GOOGLE_SHEETS_API_KEY` and `BOOTCAMP_SHEET_ID` to the
+                server environment to connect the live sheet.
               </p>
             </div>
             <button
@@ -570,16 +530,8 @@ export default function BootcampLeaderboard() {
             className="mx-auto mb-3 h-12 w-12 rounded-full object-cover opacity-70"
           />
           <p className="text-xs font-medium text-slate-500">
-            Competitive Programming Camp - City University
+            Competitive Programming Camp City University
           </p>
-          <a
-            href="https://cpccu.club"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 inline-block text-xs text-header hover:underline"
-          >
-            cpccu.club
-          </a>
         </footer>
       </section>
     </main>
