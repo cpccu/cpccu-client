@@ -5,7 +5,7 @@
     "role": "Contributor",
     "department": "CSE",
     "batch": "67th",
-    "contribution": "Contributed 234 commits to the project",
+    "contribution": "Contributed 238 commits to the project",
     "github": "https://github.com/anisurrahmanfarazi17",
     "linkedin": "https://www.linkedin.com/in/anisurrahmanfarazi17/",
     "avatar": "https://avatars.githubusercontent.com/u/71831499?v=4"
@@ -100,6 +100,17 @@
   },
   {
     "id": 10,
+    "name": "Redooyyy",
+    "role": "Contributor",
+    "department": "CSE",
+    "batch": "TBD",
+    "contribution": "Contributed 2 commits to the project",
+    "github": "https://github.com/Redooyyy",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://avatars.githubusercontent.com/u/122115413?v=4"
+  },
+  {
+    "id": 11,
     "name": "MH-Alok",
     "role": "Contributor",
     "department": "CSE",
@@ -110,7 +121,7 @@
     "avatar": "https://avatars.githubusercontent.com/u/207171962?v=4"
   },
   {
-    "id": 11,
+    "id": 12,
     "name": "abu-taher-saikat",
     "role": "Contributor",
     "department": "CSE",
