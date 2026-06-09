@@ -32,6 +32,7 @@ export const userApi = baseApi.injectEndpoints({
             method: 'PATCH',
             body: imageData,
         }),
+        invalidatesTags: ['Users'],
     }),
     deleteUser: builder.mutation({
         query: (id) => ({
@@ -39,6 +40,20 @@ export const userApi = baseApi.injectEndpoints({
             method: 'DELETE',
         }),
         invalidatesTags: (result, error, id) => [{ type: 'Users', id }],
+    }),
+    changePassword: builder.mutation({
+        query: (body) => ({
+            url: '/users/password',
+            method: 'PATCH',
+            body,
+        }),
+    }),
+    deleteOwnAccount: builder.mutation({
+        query: () => ({
+            url: '/users/user',
+            method: 'DELETE',
+        }),
+        invalidatesTags: ['Users', 'Auth'],
     }),
   }),
 });
@@ -51,4 +66,6 @@ export const {
     useUpdateUserMutation,
     useUserImageUploadMutation,
     useDeleteUserMutation,
+    useChangePasswordMutation,
+    useDeleteOwnAccountMutation,
 } = userApi;

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FaGithub, FaLinkedin, FaArrowRight } from "react-icons/fa";
 import contributorsData from "@/data/contributors.json";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicContributor } from "@/lib/public-content";
 
 export default function ContributorsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -15,6 +17,12 @@ export default function ContributorsCarousel() {
   const isHoveringRef = useRef(false);
   const touchStartX = useRef(0);
   const touchStartScroll = useRef(0);
+  const { data: contributorsResponse } = useGetPublicContentQuery("contributors");
+  const contributors = chooseLiveItems(
+    contributorsResponse,
+    contributorsData,
+    toPublicContributor
+  );
 
   const scrollToIndex = (index) => {
     const track = trackRef.current;
@@ -28,7 +36,7 @@ export default function ContributorsCarousel() {
   };
 
   const goTo = (index) => {
-    const normalized = index % contributorsData.length;
+    const normalized = index % contributors.length;
     setCurrentIndex(normalized);
     scrollToIndex(normalized);
   };
@@ -48,7 +56,7 @@ export default function ContributorsCarousel() {
       { index: 0, distance: Infinity }
     );
 
-    setCurrentIndex(nearest.index % contributorsData.length);
+    setCurrentIndex(nearest.index % contributors.length);
   };
 
   const handleScroll = () => {
@@ -73,8 +81,6 @@ export default function ContributorsCarousel() {
     const walk = x - touchStartX.current;
     track.scrollLeft = touchStartScroll.current - walk;
   };
-
-
 
   useEffect(() => {
     updateCurrentIndex();
@@ -115,7 +121,7 @@ export default function ContributorsCarousel() {
     if (!isPaused) {
       autoplayRef.current = setInterval(() => {
         setCurrentIndex((prev) => {
-          const next = (prev + 1) % contributorsData.length;
+          const next = (prev + 1) % contributors.length;
           scrollToIndex(next);
           return next;
         });
@@ -127,7 +133,7 @@ export default function ContributorsCarousel() {
         clearInterval(autoplayRef.current);
       }
     };
-  }, [isPaused]);
+  }, [contributors.length, isPaused]);
 
   return (
     <section className="py-16 md:py-20 bg-gradient-to-b from-white to-blue-50/40 overflow-hidden">
@@ -187,7 +193,7 @@ export default function ContributorsCarousel() {
           className="relative cursor-grab select-none flex gap-5 overflow-x-auto hide-scrollbar scroll-smooth snap-x snap-mandatory touch-pan-x pb-6 px-4 md:px-6"
           style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
         >
-          {contributorsData.map((contributor) => (
+          {contributors.map((contributor) => (
             <CarouselCard key={contributor.id} contributor={contributor} />
           ))}
         </div>
@@ -195,7 +201,7 @@ export default function ContributorsCarousel() {
 
       {/* Dot Indicators */}
       <div className="flex justify-center gap-2 mt-8">
-        {contributorsData.map((_, index) => (
+        {contributors.map((_, index) => (
           <button
             key={index}
             onClick={() => goTo(index)}
@@ -229,7 +235,7 @@ function CarouselCard({ contributor }) {
             onError={(e) => {
               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 contributor?.name
-              )}&background=3b60c9&color=fff&size=128`;
+               )}&background=3b60c9&color=fff&size=128`;
             }}
           />
         </div>

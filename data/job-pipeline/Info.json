@@ -86,37 +86,5 @@
             }
         ],
         "createdAt": "2026-03-01T09:18:27.410Z"
-    },
-    {
-        "id": 3,
-        "img": "https://avatars.githubusercontent.com/u/71831499?v=4",
-        "name": "Anisur Rahman Farazi",
-        "tag": "Social Media Manager & Event Coordinator",
-        "email": "anisurrahmanfarazi@gmail.com",
-        "phone": "+8801641088544",
-        "socials": {
-            "github": "https://github.com/anisurrahmanfarazi17",
-            "linkedin": "https://www.linkedin.com/in/anisurrahmanfarazi17/",
-            "portfolio": "#"
-        },
-        "skills": [
-            {
-                "skillName": "C, HTML & CSS",
-                "experience": "Possesses a strong foundation in programming and utilizes digital tools for content creation and management."
-            },
-            {
-                "skillName": "Social media management, Community strategy, Student engagement",
-                "experience": "Directed the club's social media strategy and digital presence to boost student engagement and drive community growth."
-            },
-            {
-                "skillName": "Project management, Event coordination, Goal planning",
-                "experience": "Organized and coordinated university-wide competitive programming and article writing contests, facilitating smooth operations and event execution."
-            },
-            {
-                "skillName": "Soft Skills: Strong communication skills, Teamwork and collaboration, Analytical thinking, Adaptability and learning",
-                "experience": "Leveraged strong communication and teamwork skills to collaborate with club members and university staff for event planning."
-            }
-        ],
-        "createdAt": "2026-03-01T09:18:27.410Z"
     }
 ]
