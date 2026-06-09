@@ -56,12 +56,12 @@ const VisitorCounter = () => {
                   end={totalCount}
                   duration={2.5}
                   useEasing={true}
-                  formattingFn={(value) => {
-                    if (value >= 1000) {
-                      return Math.floor(value / 1000) + "K+";
-                    }
-                    return value;
-                  }}
+                  // formattingFn={(value) => {
+                  //   if (value >= 1000) {
+                  //     return Math.floor(value / 1000) + "K+";
+                  //   }
+                  //   return value;
+                  // }}
                 />
               ) : (
                 "..."

@@ -103,3 +103,89 @@ body {
 .conText {
   @apply md:text-lg lg:text-[1.1rem] leading-7;
 }
+
+@keyframes bootcamp-shimmer-gold {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.bootcamp-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    hsl(43 95% 40%) 0%,
+    hsl(43 95% 55%) 40%,
+    hsl(43 95% 40%) 70%,
+    hsl(43 95% 30%) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: bootcamp-shimmer-gold 3s linear infinite;
+}
+
+.bootcamp-card-shadow {
+  box-shadow:
+    0 1px 3px hsl(222 47% 8% / 0.06),
+    0 4px 16px hsl(222 47% 8% / 0.04);
+}
+
+.bootcamp-rank-1-glow {
+  box-shadow:
+    0 4px 24px hsl(43 95% 50% / 0.2),
+    0 1px 4px hsl(43 95% 50% / 0.12);
+}
+
+.bootcamp-rank-2-glow {
+  box-shadow:
+    0 4px 20px hsl(220 12% 58% / 0.15),
+    0 1px 4px hsl(220 12% 58% / 0.1);
+}
+
+.bootcamp-rank-3-glow {
+  box-shadow:
+    0 4px 20px hsl(25 80% 46% / 0.15),
+    0 1px 4px hsl(25 80% 46% / 0.1);
+}
+
+.bootcamp-table-row {
+  transition: background-color 0.12s ease;
+}
+
+.bootcamp-table-row:hover {
+  background-color: hsl(224 57% 50% / 0.04);
+}
+
+@keyframes bootcamp-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.bootcamp-float {
+  animation: bootcamp-float 3.5s ease-in-out infinite;
+}
+
+@keyframes bootcamp-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 hsl(224 57% 50% / 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px hsl(224 57% 50% / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(224 57% 50% / 0);
+  }
+}
+
+.bootcamp-live-dot {
+  animation: bootcamp-pulse-ring 2s ease infinite;
+}
