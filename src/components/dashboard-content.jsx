@@ -2,7 +2,7 @@
 import { Users, Calendar, FileText, UserCheck, TrendingUp, TrendingDown, UserPlus, Mail, Award, Activity, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { dashboardStats, memberGrowthData, eventAttendanceData, postCategoryData, recentActivity, } from '@/lib/demo-data';
 import { useGetAdminOverviewQuery } from '@/features/admin/adminApi';
@@ -135,8 +135,7 @@ export function DashboardContent() {
             value: { label: 'Total Members', color: '#6366f1' },
             secondary: { label: 'New Members', color: '#22c55e' },
         }} className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={memberGrowthData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+              <AreaChart data={memberGrowthData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="fillValue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
@@ -153,8 +152,7 @@ export function DashboardContent() {
                   <ChartTooltip content={<ChartTooltipContent />}/>
                   <Area type="monotone" dataKey="value" stroke="#6366f1" fill="url(#fillValue)" strokeWidth={2}/>
                   <Area type="monotone" dataKey="secondary" stroke="#22c55e" fill="url(#fillSecondary)" strokeWidth={2}/>
-                </AreaChart>
-              </ResponsiveContainer>
+              </AreaChart>
             </ChartContainer>
           </CardContent>
         </Card>
@@ -169,15 +167,13 @@ export function DashboardContent() {
             <ChartContainer config={{
             value: { label: 'Attendance', color: '#6366f1' },
         }} className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={eventAttendanceData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+              <BarChart data={eventAttendanceData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border"/>
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} className="text-muted-foreground"/>
                   <YAxis tick={{ fontSize: 12 }} className="text-muted-foreground"/>
                   <ChartTooltip content={<ChartTooltipContent />}/>
                   <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]}/>
-                </BarChart>
-              </ResponsiveContainer>
+              </BarChart>
             </ChartContainer>
           </CardContent>
         </Card>
@@ -218,14 +214,12 @@ export function DashboardContent() {
             <ChartContainer config={{
             value: { label: 'Posts', color: '#6366f1' },
         }} className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+              <PieChart>
                   <Pie data={postCategoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value">
                     {postCategoryData.map((_, index) => (<Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]}/>))}
                   </Pie>
                   <ChartTooltip content={<ChartTooltipContent />}/>
-                </PieChart>
-              </ResponsiveContainer>
+              </PieChart>
             </ChartContainer>
             <div className="mt-4 flex flex-wrap justify-center gap-3">
               {postCategoryData.map((item, index) => (<div key={item.name} className="flex items-center gap-1.5">
