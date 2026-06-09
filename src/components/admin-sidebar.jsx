@@ -10,27 +10,30 @@ import { useRouter } from 'next/navigation';
 import { useLogoutMutation } from '@/features/auth/authApi';
 import { clearCredentials } from '@/features/auth/authSlice';
 const navItems = [
-    { title: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { title: 'Posts', href: '/admin/posts', icon: FileText },
-    { title: 'Members', href: '/admin/members', icon: Users },
-    { title: 'Events', href: '/admin/events', icon: Calendar },
-    { title: 'Gallery', href: '/admin/gallery', icon: ImageIcon },
-    { title: 'Certificates', href: '/admin/certificates', icon: Award },
-    { title: 'Contributors', href: '/admin/contributors', icon: GitPullRequest },
-    { title: 'Donators', href: '/admin/donators', icon: Heart },
-    { title: 'Developer Profiles', href: '/admin/jobs', icon: Briefcase },
-    { title: 'Contact Messages', href: '/admin/messages', icon: Mail },
-    { title: 'Site Statistics', href: '/admin/statistics', icon: BarChart3 },
+    { title: 'Dashboard', href: '/admin', icon: LayoutDashboard, roles: ['admin', 'moderator', 'mentor'] },
+    { title: 'Posts', href: '/admin/posts', icon: FileText, roles: ['admin', 'moderator'] },
+    { title: 'Members', href: '/admin/members', icon: Users, roles: ['admin', 'mentor'] },
+    { title: 'Events', href: '/admin/events', icon: Calendar, roles: ['admin', 'moderator'] },
+    { title: 'Gallery', href: '/admin/gallery', icon: ImageIcon, roles: ['admin', 'moderator'] },
+    { title: 'Certificates', href: '/admin/certificates', icon: Award, roles: ['admin', 'mentor'] },
+    { title: 'Contributors', href: '/admin/contributors', icon: GitPullRequest, roles: ['admin'] },
+    { title: 'Donators', href: '/admin/donators', icon: Heart, roles: ['admin'] },
+    { title: 'Developer Profiles', href: '/admin/jobs', icon: Briefcase, roles: ['admin'] },
+    { title: 'Contact Messages', href: '/admin/messages', icon: Mail, roles: ['admin'] },
+    { title: 'Site Statistics', href: '/admin/statistics', icon: BarChart3, roles: ['admin', 'moderator', 'mentor'] },
 ];
 const settingsItems = [
-    { title: 'Account Settings', href: '/admin/settings/account', icon: UserCog },
-    { title: 'System Settings', href: '/admin/settings/system', icon: Wrench },
+    { title: 'Account Settings', href: '/admin/settings/account', icon: UserCog, roles: ['admin', 'moderator', 'mentor'] },
+    { title: 'System Settings', href: '/admin/settings/system', icon: Wrench, roles: ['admin'] },
 ];
 export function AdminSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const dispatch = useDispatch();
     const user = useSelector((state) => state.auth.user);
+    const role = user?.roles?.role || 'member';
+    const visibleNavItems = navItems.filter((item) => item.roles.includes(role));
+    const visibleSettingsItems = settingsItems.filter((item) => item.roles.includes(role));
     const [logout] = useLogoutMutation();
     const handleLogout = async () => {
         await logout();
@@ -63,7 +66,7 @@ export function AdminSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => {
+              {visibleNavItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
             return (<SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
@@ -82,7 +85,7 @@ export function AdminSidebar() {
           <SidebarGroupLabel>System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsItems.map((item) => {
+              {visibleSettingsItems.map((item) => {
             const isActive = pathname === item.href;
             return (<SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
@@ -109,7 +112,7 @@ export function AdminSidebar() {
                   </Avatar>
                   <div className="flex flex-1 flex-col leading-tight">
                     <span className="text-sm font-medium">{user?.fullName || 'Administrator'}</span>
-                    <span className="text-xs text-sidebar-foreground/60">Administrator</span>
+                    <span className="text-xs capitalize text-sidebar-foreground/60">{role}</span>
                   </div>
                   <ChevronDown className="ml-auto size-4"/>
                 </SidebarMenuButton>

@@ -8,12 +8,20 @@ import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 const routeLabels = {
     '/admin': 'Dashboard',
+    '/admin/certificates': 'Certificates',
+    '/admin/contributors': 'Contributors',
+    '/admin/donators': 'Donators',
     '/admin/posts': 'Posts',
     '/admin/members': 'Members',
     '/admin/events': 'Events',
     '/admin/gallery': 'Gallery',
     '/admin/jobs': 'Job Pipeline',
+    '/admin/messages': 'Contact Messages',
+    '/admin/settings/account': 'Account Settings',
+    '/admin/settings/system': 'System Settings',
+    '/admin/statistics': 'Site Statistics',
 };
+const adminRoles = ['admin', 'moderator', 'mentor'];
 export default function AdminLayout({ children }) {
     const pathname = usePathname();
     const router = useRouter();
@@ -30,7 +38,7 @@ export default function AdminLayout({ children }) {
     if (!user) {
         return null;
     }
-    if (user.roles?.role !== 'admin') {
+    if (!adminRoles.includes(user.roles?.role)) {
         return (<main className="flex min-h-svh items-center justify-center bg-background p-6">
         <section className="w-full max-w-lg rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
           <h1 className="text-2xl font-bold">Admin access required</h1>
