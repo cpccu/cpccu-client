@@ -3,9 +3,12 @@
 import DonatorCard from "@/components/DONATORS/DonatorCard";
 import DonatorsData from "@/data/donators.json";
 import { FaHeart } from "react-icons/fa";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicDonator } from "@/lib/public-content";
 
 export default function DonatorsPage() {
-
+  const { data: donatorsResponse } = useGetPublicContentQuery("donators");
+  const donators = chooseLiveItems(donatorsResponse, DonatorsData, toPublicDonator);
 
   return (
     <main className="bg-white py-16 md:py-20">
@@ -32,7 +35,7 @@ export default function DonatorsPage() {
       {/* Donators Grid */}
       <section className="padding">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {DonatorsData.map((donator) => (
+          {donators.map((donator) => (
             <DonatorCard key={donator.id} donator={donator} />
           ))}
         </div>

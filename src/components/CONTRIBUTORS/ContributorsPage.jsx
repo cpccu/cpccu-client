@@ -3,8 +3,16 @@
 import { FaCode, FaHeart, FaGithub } from "react-icons/fa";
 import ContributorCard from "./ContributorCard";
 import contributorsData from "@/data/contributors.json";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicContributor } from "@/lib/public-content";
 
 export default function ContributorsPage() {
+  const { data: contributorsResponse } = useGetPublicContentQuery("contributors");
+  const contributors = chooseLiveItems(
+    contributorsResponse,
+    contributorsData,
+    toPublicContributor,
+  );
   return (
     <main className="min-h-screen bg-white">
       {/* Hero Banner */}
@@ -48,7 +56,7 @@ const cpccu = buildCPCCU();
       {/* Stats Bar */}
       <section className="bg-gray-50 border-b border-gray-200 padding py-6">
         <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16">
-          <StatItem label="Total Contributors" value={contributorsData.length} />
+          <StatItem label="Total Contributors" value={contributors.length} />
           {/* <StatItem label="Lines of Code" value="10k+" /> */}
         </div>
       </section>
@@ -66,7 +74,7 @@ const cpccu = buildCPCCU();
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {contributorsData.map((contributor) => (
+          {contributors.map((contributor) => (
             <ContributorCard key={contributor.id} contributor={contributor} />
           ))}
         </div>

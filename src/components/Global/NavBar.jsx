@@ -150,6 +150,13 @@ export default function NavBar() {
           <NavItem setOpen={setOpen} />
 
           <div className="mt-auto p-8 lg:hidden border-t border-gray-50">
+            {user?.data?.roles?.role === "admin" && (
+              <Link href="/admin" onClick={() => setOpen(false)}>
+                <button className="mb-3 w-full bg-emerald-700 text-white flex items-center justify-center gap-2 py-4 rounded-xl font-bold shadow-lg active:scale-95 transition-all">
+                  Admin Panel
+                </button>
+              </Link>
+            )}
             {!user?.data && (
               <Link href="/login" onClick={() => setOpen(false)}>
                 <button className="w-full bg-header text-white flex items-center justify-center gap-2 py-4 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all">

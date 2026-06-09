@@ -7,14 +7,13 @@ import {
   setCredentials,
   setHydrated,
 } from "@/features/auth/authSlice";
-import { fi } from "date-fns/locale";
 
 function AuthHydrator({ children }) {
   useEffect(() => {
-    const userString = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-
     try {
+      const userString = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
+
       if (userString && userString !== "undefined" && token) {
         const user = JSON.parse(userString);
         if (user) {
