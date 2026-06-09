@@ -76,8 +76,6 @@ export default function ContributorsCarousel() {
     track.scrollLeft = touchStartScroll.current - walk;
   };
 
-
-
   useEffect(() => {
     updateCurrentIndex();
     return () => {
@@ -197,7 +195,7 @@ export default function ContributorsCarousel() {
 
       {/* Dot Indicators */}
       <div className="flex justify-center gap-2 mt-8">
-        {contributors.map((_, index) => (
+        {contributorsData.map((_, index) => (
           <button
             key={index}
             onClick={() => goTo(index)}
@@ -231,7 +229,7 @@ function CarouselCard({ contributor }) {
             onError={(e) => {
               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 contributor?.name
-              )}&background=3b60c9&color=fff&size=128`;
+               )}&background=3b60c9&color=fff&size=128`;
             }}
           />
         </div>

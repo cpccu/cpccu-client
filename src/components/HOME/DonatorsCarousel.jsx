@@ -195,7 +195,7 @@ export default function DonatorsCarousel() {
 
       {/* Dot Indicators */}
       <div className="flex justify-center gap-2 mt-8">
-        {donators.map((_, index) => (
+        {donatorsData.map((_, index) => (
           <button
             key={index}
             onClick={() => goTo(index)}
@@ -229,7 +229,7 @@ function CarouselCard({ donator }) {
             onError={(e) => {
               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 donator?.name
-              )}&background=3b60c9&color=fff&size=128`;
+               )}&background=3b60c9&color=fff&size=128`;
             }}
           />
         </div>
