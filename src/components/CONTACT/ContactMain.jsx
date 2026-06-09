@@ -2,16 +2,37 @@
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import ContactScroll from "@/Context/ContactScroll/ContactScroll";
+import { useSendContactMessageMutation } from "@/features/contact/contactApi";
 
 export default function ContactMain() {
   const { setTarget } = useContext(ContactScroll);
+  const [sendContactMessage, { isLoading, isSuccess }] = useSendContactMessageMutation();
+  const [formData, setFormData] = useState({
+    email: "",
+    message: "",
+    name: "",
+    subject: "",
+  });
   //add the target for scroll one time
 
   useEffect(() => {
     setTarget("contactTarget");
   }, []);
+
+  const handleChange = (event) => {
+    setFormData((current) => ({
+      ...current,
+      [event.target.name]: event.target.value,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    await sendContactMessage(formData).unwrap();
+    setFormData({ email: "", message: "", name: "", subject: "" });
+  };
 
   return (
     <main
@@ -28,7 +49,7 @@ export default function ContactMain() {
         ></iframe>
       </section>
       <section className="w-full border bg-white">
-        <form className="p-5 lg:p-8 xl:p-12 flex flex-col gap-5 ">
+        <form onSubmit={handleSubmit} className="p-5 lg:p-8 xl:p-12 flex flex-col gap-5 ">
           <section className="flex items-center gap-2">
             <div className="w-full">
               <label htmlFor="name" className="font-semibold">
@@ -38,7 +59,11 @@ export default function ContactMain() {
                 className="border px-4 py-3 w-full bg-header/10 "
                 type="text"
                 id="name"
+                name="name"
+                onChange={handleChange}
                 placeholder="Enter your name"
+                required
+                value={formData.name}
               />
             </div>
 
@@ -50,7 +75,11 @@ export default function ContactMain() {
                 className="border px-4 py-3 w-full bg-header/10 "
                 type="email"
                 id="email"
+                name="email"
+                onChange={handleChange}
                 placeholder="Enter your email"
+                required
+                value={formData.email}
               />
             </div>
           </section>
@@ -62,7 +91,11 @@ export default function ContactMain() {
               className="px-4 py-3 border w-full bg-header/10"
               type="text"
               id="subject"
+              name="subject"
+              onChange={handleChange}
               placeholder="subject"
+              required
+              value={formData.subject}
             />
           </div>
 
@@ -74,15 +107,20 @@ export default function ContactMain() {
               className="border px-4 py-3 bg-header/10 w-full"
               rows={12}
               id="message"
+              name="message"
+              onChange={handleChange}
               placeholder="Enter your message"
+              required
+              value={formData.message}
             ></textarea>
           </div>
           <div className="flex justify-center">
             <button className="bg-header flex items-center justify-center gap-3 px-3 py-2 hover:bg-header-hover trans">
-              <h1 className="font-bold text-white">Send</h1>
+              <h1 className="font-bold text-white">{isLoading ? "Sending..." : "Send"}</h1>
               <FontAwesomeIcon className=" text-white" icon={faPaperPlane} />
             </button>
           </div>
+          {isSuccess && <p className="font-semibold text-emerald-700">Message sent.</p>}
         </form>
       </section>
     </main>

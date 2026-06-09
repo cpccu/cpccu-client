@@ -1,15 +1,18 @@
 "use client";
 
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import UpComingEventCard from "@/components/Global/UpComingEventCard";
 import Data from "@/data/upcomingEvent.json";
 import EventScroll from "@/Context/EventScroll/EventScroll";
 import Pagination from "@/components/Global/Pagination";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicEvent } from "@/lib/public-content";
 
 export default function NoticeSection() {
   const { setScrollTarget } = useContext(EventScroll);
   const [currentPage, setCurrentPage] = useState(0);
-  const [rows, setRows] = useState([]);
+  const { data: eventsResponse } = useGetPublicContentQuery("events");
+  const events = chooseLiveItems(eventsResponse, Data, toPublicEvent);
 
   useEffect(() => {
     setScrollTarget("eventMain");
@@ -17,12 +20,11 @@ export default function NoticeSection() {
 
   const pageItem = 4;
 
-  useEffect(() => {
+  const rows = useMemo(() => {
     const startIdx = currentPage * pageItem;
     const endIdx = startIdx + pageItem;
-    const rows = Data.slice(startIdx, endIdx);
-    setRows(rows);
-  }, [Data, currentPage, pageItem]);
+    return events.slice(startIdx, endIdx);
+  }, [events, currentPage, pageItem]);
 
   return (
     <section className="bg-responsibility">
@@ -42,7 +44,7 @@ export default function NoticeSection() {
       {/* start pagination  */}
       <Pagination
         currentPage={currentPage}
-        pageCount={Math.ceil(Data.length / pageItem)}
+        pageCount={Math.ceil(events.length / pageItem)}
         onPageChange={setCurrentPage}
       />
       {/* end pagination */}

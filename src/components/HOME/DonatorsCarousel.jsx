@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FaGlobe, FaLinkedin, FaArrowRight } from "react-icons/fa";
 import donatorsData from "@/data/donators.json";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicDonator } from "@/lib/public-content";
 
 export default function DonatorsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -193,7 +195,7 @@ export default function DonatorsCarousel() {
 
       {/* Dot Indicators */}
       <div className="flex justify-center gap-2 mt-8">
-        {donatorsData.map((_, index) => (
+        {donators.map((_, index) => (
           <button
             key={index}
             onClick={() => goTo(index)}

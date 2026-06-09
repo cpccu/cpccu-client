@@ -1,16 +1,26 @@
 "use client";
 
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import GalleryCard from "@/components/Global/GalleryCard";
 import GalleryScroll from "@/Context/GalleryScroll/GalleryScroll";
 import Data from "@/data/GalleryBodyCard.json";
 import Pagination from "@/components/Global/Pagination";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicGalleryItem } from "@/lib/public-content";
 
 export default function GalleryMain() {
   const { setScrollTarget } = useContext(GalleryScroll);
 
   const [currentPage, setCurrentPage] = useState(0);
-  const [rows, setRows] = useState([]);
+  const { data: galleryResponse } = useGetPublicContentQuery("gallery");
+  const liveGalleryItems = chooseLiveItems(galleryResponse, [], toPublicGalleryItem);
+  const gallerySections = liveGalleryItems.length
+    ? [{
+        header: "CPCCU Gallery",
+        conText: "Photos managed from the CPCCU admin panel.",
+        element: liveGalleryItems,
+      }]
+    : Data;
 
   useEffect(() => {
     setScrollTarget("gallery");
@@ -18,12 +28,11 @@ export default function GalleryMain() {
 
   const pageItem = 4;
 
-  useEffect(() => {
+  const rows = useMemo(() => {
     const startIdx = currentPage * pageItem;
     const endIdx = startIdx + pageItem;
-    const rows = Data.slice(startIdx, endIdx);
-    setRows(rows);
-  }, [currentPage]);
+    return gallerySections.slice(startIdx, endIdx);
+  }, [currentPage, gallerySections]);
 
   return (
     <>
@@ -39,7 +48,7 @@ export default function GalleryMain() {
       {/* start pagination  */}
       <Pagination
         currentPage={currentPage}
-        pageCount={Math.ceil(Data.length / pageItem)}
+        pageCount={Math.ceil(gallerySections.length / pageItem)}
         onPageChange={setCurrentPage}
       />
       {/* end pagination */}

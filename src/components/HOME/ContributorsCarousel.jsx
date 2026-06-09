@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FaGithub, FaLinkedin, FaArrowRight } from "react-icons/fa";
 import contributorsData from "@/data/contributors.json";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicContributor } from "@/lib/public-content";
 
 export default function ContributorsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -195,7 +197,7 @@ export default function ContributorsCarousel() {
 
       {/* Dot Indicators */}
       <div className="flex justify-center gap-2 mt-8">
-        {contributorsData.map((_, index) => (
+        {contributors.map((_, index) => (
           <button
             key={index}
             onClick={() => goTo(index)}

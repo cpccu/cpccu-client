@@ -7,10 +7,14 @@ import UpComingEventCard from "@/components/Global/UpComingEventCard.jsx";
 import "./Event.css";
 import cn from "@/lib/cn.js";
 import data from "@/data/upcomingEvent.json";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicEvent } from "@/lib/public-content";
 
 const EventLayout = ({ clName }) => {
   const slider = useRef(null);
   const [slidePx, setSlidePx] = useState(0);
+  const { data: eventsResponse } = useGetPublicContentQuery("events");
+  const events = chooseLiveItems(eventsResponse, data, toPublicEvent);
 
   const goLeft = () => {
     if (slider.current) {
@@ -26,8 +30,8 @@ const EventLayout = ({ clName }) => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (data) {
-        setSlidePx(slider.current.scrollWidth / data.length);
+      if (events.length && slider.current) {
+        setSlidePx(slider.current.scrollWidth / events.length);
       }
     };
 
@@ -36,15 +40,15 @@ const EventLayout = ({ clName }) => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [data]);
+  }, [events.length]);
 
   useEffect(() => {
-    if (data) {
-      setSlidePx(slider.current.scrollWidth / data.length);
+    if (events.length && slider.current) {
+      setSlidePx(slider.current.scrollWidth / events.length);
     }
-  }, [data]);
+  }, [events.length]);
 
-  return data ? (
+  return events.length ? (
     <div
       className={cn(
         "text-white bg-header relative z-30 p-5 md:p-10 lg:p-12",
@@ -55,7 +59,7 @@ const EventLayout = ({ clName }) => {
         ref={slider}
         className="flex overflow-x-auto EventScroll scroll-smooth snap-mandatory snap-x"
       >
-        {data.map((item, index) => (
+        {events.map((item, index) => (
           <div key={index} className="w-full shrink-0 snap-center">
             <UpComingEventCard data={item} />
           </div>
@@ -77,7 +81,7 @@ const EventLayout = ({ clName }) => {
         </button>
       </section>
 
-      {data.map((item, index) => (
+      {events.map((item, index) => (
         <React.Fragment key={index}>
           {item?.date < new Date() ? (
             <section className="absolute -top-12 lg:-top-8 left-0 right-0 flex items-center justify-center lg:justify-end">
