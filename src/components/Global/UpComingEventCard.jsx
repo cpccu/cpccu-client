@@ -9,7 +9,7 @@ const UpComingEventCard = ({ data, clName }) => {
     <main
       className={cn(
         "relative grid md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 mxl:grid-cols-8 mmmxl:grid-cols-10 gap-7 lg:gap-5 mmmxl:gap-10 cursor-default overflow-hidden",
-        clName
+        clName,
       )}
     >
       {/* Picture Section */}
@@ -26,17 +26,23 @@ const UpComingEventCard = ({ data, clName }) => {
 
       {/* Content Section */}
       <section className="h-full md:col-span-3 lg:col-span-3 xl:col-span-5 mxl:col-span-5 mmmxl:col-span-4 flex flex-col items-start gap-4">
-        <TimeBox date={data?.date} />
-        <h1 className="text-2xl lg:text-3xl xl:text-4xl  font-semibold lg:line-clamp-none">{`"`}
-          {data?.eventHeadLine1}{`"`}
+        <TimeBox date={data?.date} endDate={data?.endDate} />
+        <h1 className="text-2xl lg:text-3xl xl:text-4xl  font-semibold lg:line-clamp-none">
+          {`"`}
+          {data?.eventHeadLine1}
+          {`"`}
         </h1>
-        <p className="font-[450] text-xl lg:line-clamp-3">{data?.textContext}</p>
+        <p className="font-[450] text-xl lg:line-clamp-3">
+          {data?.textContext}
+        </p>
 
         {/* reward */}
         <h1 className="text-3xl hidden lg:block font-semibold lg:line-clamp-1">
           {data?.eventHeadLine2}
         </h1>
-        <p className="font-[450] text-2xl hidden lg:block lg:line-clamp-3">{data?.reward}</p>
+        <p className="font-[450] text-2xl hidden lg:block lg:line-clamp-3">
+          {data?.reward}
+        </p>
 
         <h1 className="text-2xl hidden lg:hidden mmmxl:hidden font-semibold lg:line-clamp-1">
           {data?.eventHeadLine3}
@@ -79,8 +85,6 @@ const UpComingEventCard = ({ data, clName }) => {
             </button>
           </Link>
         ) : null}
-
-
       </section>
 
       {/* 3rd column - only for mmmxl - 1750px and up */}
@@ -106,7 +110,6 @@ const UpComingEventCard = ({ data, clName }) => {
         </p>
       </section>
 
-
       {/* Content Section End */}
     </main>
   );
@@ -114,12 +117,34 @@ const UpComingEventCard = ({ data, clName }) => {
 
 export default UpComingEventCard;
 
-function TimeBox({ date }) {
-  const calculateTimeLeft = () => {
-    const difference = +new Date(date) - +new Date();
+function TimeBox({ date, endDate }) {
+  const getEventStatus = () => {
+    const startTime = new Date(date).getTime();
+    const endTime = new Date(endDate || date).getTime();
+    const now = Date.now();
 
-    if (difference <= 0) return null;
+    if (!Number.isFinite(startTime) || !Number.isFinite(endTime)) {
+      return { phase: "ended", timeLeft: null };
+    }
 
+    if (now >= startTime && now <= endTime) {
+      return {
+        phase: "running",
+        timeLeft: getTimeLeft(endTime - now),
+      };
+    }
+
+    if (now < startTime) {
+      return {
+        phase: "remaining",
+        timeLeft: getTimeLeft(startTime - now),
+      };
+    }
+
+    return { phase: "ended", timeLeft: null };
+  };
+
+  const getTimeLeft = (difference) => {
     return {
       days: Math.floor(difference / (1000 * 60 * 60 * 24)),
       hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
@@ -128,18 +153,30 @@ function TimeBox({ date }) {
     };
   };
 
-  const [timeLeft, setTimeLeft] = useState(null);
+  const [status, setStatus] = useState(null);
 
   useEffect(() => {
-    const update = () => setTimeLeft(calculateTimeLeft());
+    const update = () => setStatus(getEventStatus());
 
     update();
     const timer = setInterval(update, 1000);
 
     return () => clearInterval(timer);
-  }, [date]);
+  }, [date, endDate]);
 
-  if (!timeLeft) {
+  if (!status) {
+    return (
+      <main className="flex gap-5">
+        <section className="flex flex-col items-center font-bold gap-1">
+          <div className="border text-center px-5 py-2 font-bold text-2xl rounded-xl bg-black/70">
+            Loading...
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (status.phase === "ended") {
     return (
       <main className="flex gap-5">
         <section className="flex flex-col items-center font-bold gap-1">
@@ -151,7 +188,9 @@ function TimeBox({ date }) {
     );
   }
 
+  const { timeLeft } = status;
   const { days, hours, minutes, seconds } = timeLeft;
+  const phaseLabel = status.phase === "running" ? "Running" : "Remaining";
 
   return (
     <main className="flex gap-5">
@@ -183,7 +222,7 @@ function TimeBox({ date }) {
         </div>
       </section>
 
-      <p className="self-end font-bold text-xl hidden lg:block">Remaining</p>
+      <p className="self-end font-bold text-xl hidden lg:block">{phaseLabel}</p>
     </main>
   );
 }
