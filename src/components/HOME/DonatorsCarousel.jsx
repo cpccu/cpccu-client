@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FaGlobe, FaLinkedin, FaArrowRight } from "react-icons/fa";
 import donatorsData from "@/data/donators.json";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicDonator } from "@/lib/public-content";
 
 export default function DonatorsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -227,7 +229,7 @@ function CarouselCard({ donator }) {
             onError={(e) => {
               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 donator?.name
-              )}&background=3b60c9&color=fff&size=128`;
+               )}&background=3b60c9&color=fff&size=128`;
             }}
           />
         </div>

@@ -26,12 +26,20 @@ export default function Header() {
       {/* Right side: Auth Buttons (Same Design as Previous) */}
       <div className="flex gap-3 items-center font-semibold text-sm">
         {user ? (
-          /* Show ONLY Profile button if logged in */
-          <LinkNext href={`/profile/${user._id}`}>
-            <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition-all">
-              Profile
-            </button>
-          </LinkNext>
+          <>
+            {user?.roles?.role === "admin" && (
+              <LinkNext href="/admin">
+                <button className="bg-emerald-600 text-white px-6 py-2 rounded-full font-bold hover:bg-emerald-700 transition-all">
+                  Admin
+                </button>
+              </LinkNext>
+            )}
+            <LinkNext href={`/profile/${user._id}`}>
+              <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition-all">
+                Profile
+              </button>
+            </LinkNext>
+          </>
         ) : (
           /* Show Login and Signup buttons if logged out */
           <>

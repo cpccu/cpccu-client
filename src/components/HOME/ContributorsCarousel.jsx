@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FaGithub, FaLinkedin, FaArrowRight } from "react-icons/fa";
 import contributorsData from "@/data/contributors.json";
+import { useGetPublicContentQuery } from "@/features/content/contentApi";
+import { chooseLiveItems, toPublicContributor } from "@/lib/public-content";
 
 export default function ContributorsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -73,8 +75,6 @@ export default function ContributorsCarousel() {
     const walk = x - touchStartX.current;
     track.scrollLeft = touchStartScroll.current - walk;
   };
-
-
 
   useEffect(() => {
     updateCurrentIndex();
@@ -229,7 +229,7 @@ function CarouselCard({ contributor }) {
             onError={(e) => {
               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 contributor?.name
-              )}&background=3b60c9&color=fff&size=128`;
+               )}&background=3b60c9&color=fff&size=128`;
             }}
           />
         </div>
