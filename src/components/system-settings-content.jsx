@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Save, Globe, Bell, Shield, Palette, Clock } from 'lucide-react';
+import { Save, Globe, Bell, Shield, Palette, Clock, Search, Wrench } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,21 @@ export function SystemSettingsContent() {
     const [appearance, setAppearance] = useState({
         theme: 'system',
         compactMode: false,
+        primaryColor: '#3b82f6',
+        logoUrl: '/assets/logo/cpccu.png',
+        occasionTheme: 'default',
+    });
+    const [siteMetadata, setSiteMetadata] = useState({
+        seoTitle: 'CPCCU Programming Club',
+        seoDescription: 'Competitive Programming Camp at City University',
+        contactEmail: 'cpccu@cityuniversity.edu.bd',
+        facebookUrl: '',
+        githubUrl: '',
+        linkedinUrl: '',
+    });
+    const [maintenance, setMaintenance] = useState({
+        enabled: false,
+        message: 'CPCCU is performing scheduled maintenance.',
     });
     const { data: settingsResponse } = useGetAdminSystemSettingsQuery();
     const [updateSettings] = useUpdateAdminSystemSettingsMutation();
@@ -41,9 +56,11 @@ export function SystemSettingsContent() {
         if (settings?.notifications && Object.keys(settings.notifications).length) setNotifications(settings.notifications);
         if (settings?.security && Object.keys(settings.security).length) setSecurity(settings.security);
         if (settings?.appearance && Object.keys(settings.appearance).length) setAppearance(settings.appearance);
+        if (settings?.siteMetadata && Object.keys(settings.siteMetadata).length) setSiteMetadata(settings.siteMetadata);
+        if (settings?.maintenance && Object.keys(settings.maintenance).length) setMaintenance(settings.maintenance);
     }, [settingsResponse]);
     const handleSave = async () => {
-        await updateSettings({ general, notifications, security, appearance });
+        await updateSettings({ general, notifications, security, appearance, siteMetadata, maintenance });
         showSuccessAlert('Settings Saved', 'System settings have been updated.');
     };
     return (<div className="flex flex-col gap-6">
@@ -98,6 +115,42 @@ export function SystemSettingsContent() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Search className="mr-2 inline size-4"/>
+            Site Metadata
+          </CardTitle>
+          <CardDescription>SEO, contact, and social links used by the public website.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="seo-title">SEO Title</Label>
+            <Input id="seo-title" value={siteMetadata.seoTitle} onChange={(e) => setSiteMetadata(prev => ({ ...prev, seoTitle: e.target.value }))}/>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="contact-email">Contact Email</Label>
+            <Input id="contact-email" value={siteMetadata.contactEmail} onChange={(e) => setSiteMetadata(prev => ({ ...prev, contactEmail: e.target.value }))}/>
+          </div>
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <Label htmlFor="seo-description">SEO Description</Label>
+            <Input id="seo-description" value={siteMetadata.seoDescription} onChange={(e) => setSiteMetadata(prev => ({ ...prev, seoDescription: e.target.value }))}/>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="facebook-url">Facebook URL</Label>
+            <Input id="facebook-url" value={siteMetadata.facebookUrl} onChange={(e) => setSiteMetadata(prev => ({ ...prev, facebookUrl: e.target.value }))}/>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="github-url">GitHub URL</Label>
+            <Input id="github-url" value={siteMetadata.githubUrl} onChange={(e) => setSiteMetadata(prev => ({ ...prev, githubUrl: e.target.value }))}/>
+          </div>
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <Label htmlFor="linkedin-url">LinkedIn URL</Label>
+            <Input id="linkedin-url" value={siteMetadata.linkedinUrl} onChange={(e) => setSiteMetadata(prev => ({ ...prev, linkedinUrl: e.target.value }))}/>
           </div>
         </CardContent>
       </Card>
@@ -166,22 +219,71 @@ export function SystemSettingsContent() {
       <Card>
         <CardHeader>
           <CardTitle>
+            <Wrench className="mr-2 inline size-4"/>
+            Maintenance Mode
+          </CardTitle>
+          <CardDescription>Temporarily show a maintenance message on the public site.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Enable Maintenance Mode</p>
+              <p className="text-xs text-muted-foreground">Use this during deployments or emergency updates.</p>
+            </div>
+            <Switch checked={maintenance.enabled} onCheckedChange={(v) => setMaintenance(prev => ({ ...prev, enabled: v }))}/>
+          </div>
+          <Separator />
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="maintenance-message">Maintenance Message</Label>
+            <Input id="maintenance-message" value={maintenance.message} onChange={(e) => setMaintenance(prev => ({ ...prev, message: e.target.value }))}/>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>
             <Palette className="mr-2 inline size-4"/>
             Appearance
           </CardTitle>
-          <CardDescription>Theme and display preferences for the admin panel.</CardDescription>
+          <CardDescription>Theme, logo, and special occasion styling.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label>Theme</Label>
-            <Select value={appearance.theme} onValueChange={(v) => setAppearance(prev => ({ ...prev, theme: v }))}>
-              <SelectTrigger className="w-full sm:w-[200px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
-                <SelectItem value="system">System</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label>Theme</Label>
+              <Select value={appearance.theme} onValueChange={(v) => setAppearance(prev => ({ ...prev, theme: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">Light</SelectItem>
+                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Occasion Theme</Label>
+              <Select value={appearance.occasionTheme} onValueChange={(v) => setAppearance(prev => ({ ...prev, occasionTheme: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default</SelectItem>
+                  <SelectItem value="eid">EID Special</SelectItem>
+                  <SelectItem value="contest">Contest Week</SelectItem>
+                  <SelectItem value="freshers">Freshers Welcome</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="primary-color">Primary Color</Label>
+              <div className="flex gap-2">
+                <Input id="primary-color" type="color" value={appearance.primaryColor} onChange={(e) => setAppearance(prev => ({ ...prev, primaryColor: e.target.value }))} className="w-16 p-1"/>
+                <Input value={appearance.primaryColor} onChange={(e) => setAppearance(prev => ({ ...prev, primaryColor: e.target.value }))}/>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="logo-url">Logo URL</Label>
+              <Input id="logo-url" value={appearance.logoUrl} onChange={(e) => setAppearance(prev => ({ ...prev, logoUrl: e.target.value }))}/>
+            </div>
           </div>
           <Separator />
           <div className="flex items-center justify-between">

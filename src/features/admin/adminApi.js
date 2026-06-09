@@ -7,7 +7,10 @@ export const adminApi = baseApi.injectEndpoints({
       providesTags: ["AdminOverview"],
     }),
     getAdminMembers: builder.query({
-      query: () => "/admin/members",
+      query: (params) => ({
+        url: "/admin/members",
+        params,
+      }),
       providesTags: ["AdminMembers"],
     }),
     createAdminMember: builder.mutation({
@@ -34,9 +37,12 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: ["AdminOverview", "AdminMembers", "Users"],
     }),
     getAdminContent: builder.query({
-      query: (resource) => `/admin/content/${resource}`,
-      providesTags: (result, error, resource) => [
-        { type: "AdminContent", id: resource },
+      query: ({ resource, params } = {}) => ({
+        url: `/admin/content/${resource}`,
+        params,
+      }),
+      providesTags: (result, error, arg) => [
+        { type: "AdminContent", id: arg?.resource || arg },
       ],
     }),
     createAdminContent: builder.mutation({

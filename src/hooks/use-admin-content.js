@@ -15,14 +15,15 @@ const normalizeItem = (item) => ({
 
 export default function useAdminContent(resource, fallback) {
   const [items, setItems] = useState(fallback);
-  const { data, error, isLoading } = useGetAdminContentQuery(resource);
+  const { data, error, isLoading } = useGetAdminContentQuery({ resource });
   const [createContent] = useCreateAdminContentMutation();
   const [updateContent] = useUpdateAdminContentMutation();
   const [deleteContent] = useDeleteAdminContentMutation();
 
   useEffect(() => {
     if (data?.data) {
-      setItems(data.data.map(normalizeItem));
+      const rows = Array.isArray(data.data) ? data.data : data.data.items;
+      setItems((rows || []).map(normalizeItem));
     }
   }, [data]);
 

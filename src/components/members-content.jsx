@@ -1,16 +1,16 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Mail, Shield, UserCheck, UserX } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, Mail, Shield, UserCheck, UserX } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AdminDataTable } from '@/components/admin-data-table';
 import { demoMembers } from '@/lib/demo-data';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
@@ -145,6 +145,74 @@ export function MembersContent() {
         showSuccessAlert('Approved', `${member.name}'s membership has been approved.`);
     };
     const getInitials = (name) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+    const columns = [
+        {
+            key: 'member',
+            header: 'Member',
+            accessor: (member) => `${member.name} ${member.email}`,
+            cell: (member) => (<div className="flex items-center gap-3">
+              <Avatar className="size-8">
+                <AvatarFallback className="bg-primary/10 text-primary text-xs">{getInitials(member.name)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{member.name}</p>
+                <p className="text-xs text-muted-foreground">{member.email}</p>
+              </div>
+            </div>),
+        },
+        {
+            key: 'department',
+            header: 'Department',
+            accessor: 'department',
+            cellClassName: 'hidden md:table-cell text-muted-foreground',
+            className: 'hidden md:table-cell',
+        },
+        {
+            key: 'role',
+            header: 'Role',
+            accessor: 'role',
+            cell: (member) => <Badge variant="outline" className={`capitalize ${roleStyles[member.role] || ''}`}>{member.role}</Badge>,
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            accessor: 'status',
+            cell: (member) => <Badge variant="outline" className={`capitalize ${statusStyles[member.status] || ''}`}>{member.status}</Badge>,
+        },
+        {
+            key: 'joinedAt',
+            header: 'Joined',
+            accessor: (member) => formatDate(member.joinedAt),
+            cellClassName: 'hidden lg:table-cell text-muted-foreground',
+            className: 'hidden lg:table-cell',
+        },
+        {
+            key: 'actions',
+            header: <span className="sr-only">Actions</span>,
+            export: false,
+            className: 'w-[50px]',
+            cell: (member) => (<DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-8">
+                  <MoreHorizontal className="size-4"/>
+                  <span className="sr-only">Actions</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => openEdit(member)}>
+                  <Pencil className="mr-2 size-4"/> Edit
+                </DropdownMenuItem>
+                {member.status === 'pending' && (<DropdownMenuItem onClick={() => handleApprove(member)}>
+                    <UserCheck className="mr-2 size-4"/> Approve
+                  </DropdownMenuItem>)}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleDelete(member)} className="text-destructive">
+                  <Trash2 className="mr-2 size-4"/> Remove
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>),
+        },
+    ];
     return (<div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -177,14 +245,15 @@ export function MembersContent() {
           </Card>))}
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/>
-              <Input placeholder="Search members..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9"/>
-            </div>
+      <AdminDataTable
+        columns={columns}
+        rows={filtered}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search members..."
+        exportFileName="cpccu-members.csv"
+        emptyText="No members found."
+        toolbar={<>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Role"/>
@@ -207,76 +276,8 @@ export function MembersContent() {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead className="hidden md:table-cell">Department</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden lg:table-cell">Joined</TableHead>
-                <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 ? (<TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">No members found.</TableCell>
-                </TableRow>) : (filtered.map((member) => (<TableRow key={member.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="size-8">
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs">{getInitials(member.name)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">{member.email}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">{member.department}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`capitalize ${roleStyles[member.role] || ''}`}>{member.role}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`capitalize ${statusStyles[member.status] || ''}`}>{member.status}</Badge>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell text-muted-foreground">
-                      {formatDate(member.joinedAt)}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="size-8">
-                            <MoreHorizontal className="size-4"/>
-                            <span className="sr-only">Actions</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(member)}>
-                            <Pencil className="mr-2 size-4"/> Edit
-                          </DropdownMenuItem>
-                          {member.status === 'pending' && (<DropdownMenuItem onClick={() => handleApprove(member)}>
-                              <UserCheck className="mr-2 size-4"/> Approve
-                            </DropdownMenuItem>)}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleDelete(member)} className="text-destructive">
-                            <Trash2 className="mr-2 size-4"/> Remove
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>)))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          </>}
+      />
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
