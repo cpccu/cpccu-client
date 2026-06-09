@@ -56,9 +56,9 @@ export function EventsContent() {
     });
     const filtered = useMemo(() => {
         return events.filter((e) => {
-            const matchesSearch = e.title.toLowerCase().includes(search.toLowerCase()) ||
-                e.location.toLowerCase().includes(search.toLowerCase()) ||
-                e.organizer.toLowerCase().includes(search.toLowerCase());
+            const matchesSearch = (e.title || '').toLowerCase().includes(search.toLowerCase()) ||
+                (e.location || '').toLowerCase().includes(search.toLowerCase()) ||
+                (e.organizer || '').toLowerCase().includes(search.toLowerCase());
             const matchesStatus = statusFilter === 'all' || e.status === statusFilter;
             const matchesType = typeFilter === 'all' || e.type === typeFilter;
             return matchesSearch && matchesStatus && matchesType;
@@ -88,12 +88,12 @@ export function EventsContent() {
         setFormData({
             title: event.title,
             description: event.description,
-            date: event.date.slice(0, 16),
-            endDate: event.endDate.slice(0, 16),
+            date: event.date ? event.date.slice(0, 16) : '',
+            endDate: event.endDate ? event.endDate.slice(0, 16) : '',
             location: event.location,
             type: event.type,
             status: event.status,
-            capacity: event.capacity,
+            capacity: event.capacity || 0,
             reward: event.reward || '',
             registrationLink: event.registrationLink || '',
             contestLink: event.contestLink || '',
@@ -107,8 +107,8 @@ export function EventsContent() {
             const updatedEvent = {
                 ...editingEvent,
                 ...formData,
-                date: new Date(formData.date).toISOString(),
-                endDate: new Date(formData.endDate).toISOString(),
+                date: new Date(formData.date || Date.now()).toISOString(),
+                endDate: new Date(formData.endDate || formData.date || Date.now()).toISOString(),
                 reward: formData.reward || undefined,
                 registrationLink: formData.registrationLink || undefined,
                 contestLink: formData.contestLink || undefined,
@@ -122,8 +122,8 @@ export function EventsContent() {
             const newEvent = {
                 title: formData.title,
                 description: formData.description,
-                date: new Date(formData.date).toISOString(),
-                endDate: new Date(formData.endDate).toISOString(),
+                date: new Date(formData.date || Date.now()).toISOString(),
+                endDate: new Date(formData.endDate || formData.date || Date.now()).toISOString(),
                 location: formData.location,
                 type: formData.type,
                 status: formData.status,
@@ -159,6 +159,20 @@ export function EventsContent() {
           <Plus className="size-4"/>
           New Event
         </Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+            { label: 'Upcoming', value: events.filter((event) => event.status === 'upcoming').length },
+            { label: 'Ongoing', value: events.filter((event) => event.status === 'ongoing').length },
+            { label: 'Completed', value: events.filter((event) => event.status === 'completed').length },
+            { label: 'Total Capacity', value: events.reduce((sum, event) => sum + (Number(event.capacity) || 0), 0) },
+        ].map((stat) => (<Card key={stat.label}>
+            <CardContent className="pt-4">
+              <p className="text-xl font-bold">{stat.value.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
+            </CardContent>
+          </Card>))}
       </div>
 
       {/* Filters */}

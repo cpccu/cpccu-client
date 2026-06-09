@@ -32,8 +32,8 @@ export function GalleryContent() {
     });
     const filtered = useMemo(() => {
         return items.filter((item) => {
-            const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) ||
-                item.description.toLowerCase().includes(search.toLowerCase());
+            const matchesSearch = (item.title || '').toLowerCase().includes(search.toLowerCase()) ||
+                (item.description || '').toLowerCase().includes(search.toLowerCase());
             const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
             return matchesSearch && matchesCategory;
         });
@@ -95,6 +95,20 @@ export function GalleryContent() {
           <Plus className="size-4"/>
           Upload Photo
         </Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+            { label: 'Total Media', value: items.length },
+            { label: 'Featured', value: items.filter((item) => item.featured).length },
+            { label: 'Event Photos', value: items.filter((item) => item.category === 'events').length },
+            { label: 'Competition Photos', value: items.filter((item) => item.category === 'competitions').length },
+        ].map((stat) => (<Card key={stat.label}>
+            <CardContent className="pt-4">
+              <p className="text-xl font-bold">{stat.value.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
+            </CardContent>
+          </Card>))}
       </div>
 
       {/* Filters */}

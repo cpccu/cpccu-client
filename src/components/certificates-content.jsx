@@ -1,19 +1,20 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Search, Plus, MoreHorizontal, Award, Edit2, Trash2, Eye, Download, Copy, Check } from 'lucide-react';
+import { Plus, MoreHorizontal, Award, Edit2, Trash2, Eye, Download, Copy, Check, Upload } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { demoCertificates } from '@/lib/demo-data';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import { useCreateAdminCertificateMutation, useDeleteAdminCertificateMutation, useGetAdminCertificatesQuery, useUpdateAdminCertificateMutation } from '@/features/admin/adminApi';
+import { AdminDataTable } from '@/components/admin-data-table';
 const placementConfig = {
     '1st': { label: '1st Place', variant: 'default' },
     '2nd': { label: '2nd Place', variant: 'secondary' },
@@ -30,8 +31,10 @@ export function CertificatesContent() {
     const [searchQuery, setSearchQuery] = useState('');
     const [placementFilter, setPlacementFilter] = useState('all');
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
     const [editingCert, setEditingCert] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
+    const [bulkCsv, setBulkCsv] = useState('');
     const [formData, setFormData] = useState({
         recipientName: '',
         recipientStudentId: '',
@@ -144,6 +147,93 @@ export function CertificatesContent() {
             certificateWindow.addEventListener('load', () => certificateWindow.print());
         }
     };
+    const handleBulkIssue = async () => {
+        const rows = bulkCsv
+            .split('\n')
+            .map((row) => row.trim())
+            .filter(Boolean)
+            .map((row) => row.split(',').map((cell) => cell.trim()));
+        const dataRows = rows[0]?.[0]?.toLowerCase().includes('name') ? rows.slice(1) : rows;
+        await Promise.all(dataRows.map(([recipientName, recipientId, contestName, placement = 'participant'], index) => {
+            const normalizedPlacement = placement.toLowerCase();
+            const certificateType = normalizedPlacement.includes('2')
+                ? 'runner-up'
+                : normalizedPlacement.includes('3')
+                    ? '2nd-runner-up'
+                    : normalizedPlacement.includes('winner') || normalizedPlacement.includes('1')
+                        ? 'winner'
+                        : 'participation';
+            return createCertificate({
+                certificateId: `CPCCU-${new Date().getFullYear()}-${String(certificates.length + index + 1).padStart(3, '0')}`,
+                recipientName,
+                recipientId,
+                contestName,
+                contestType: 'programming-contest',
+                certificateType,
+                issueDate: new Date().toISOString(),
+                description: `${recipientName} received a CPCCU certificate for ${contestName}.`,
+            });
+        }));
+        setBulkDialogOpen(false);
+        setBulkCsv('');
+        showSuccessAlert('Bulk Issued', `${dataRows.length} certificates have been queued.`);
+    };
+    const columns = [
+        {
+            key: 'certificateId',
+            header: 'Certificate ID',
+            accessor: 'certificateId',
+            cell: (cert) => (<div className="flex items-center gap-2">
+              <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
+                {cert.certificateId}
+              </code>
+              <Button variant="ghost" size="icon" className="size-6" onClick={() => handleCopyId(cert.certificateId)}>
+                {copiedId === cert.certificateId ? (<Check className="size-3 text-green-500"/>) : (<Copy className="size-3"/>)}
+              </Button>
+            </div>),
+        },
+        { key: 'recipientName', header: 'Recipient', accessor: 'recipientName', cellClassName: 'font-medium' },
+        { key: 'recipientStudentId', header: 'Student ID', accessor: 'recipientStudentId', cellClassName: 'text-muted-foreground' },
+        { key: 'eventName', header: 'Event', accessor: 'eventName' },
+        {
+            key: 'placement',
+            header: 'Placement',
+            accessor: 'placement',
+            cell: (cert) => <Badge variant={placementConfig[cert.placement]?.variant || 'outline'}>{placementConfig[cert.placement]?.label || cert.placement}</Badge>,
+        },
+        { key: 'issuedAt', header: 'Issued Date', accessor: (cert) => formatDate(cert.issuedAt), cellClassName: 'text-muted-foreground' },
+        {
+            key: 'actions',
+            header: '',
+            export: false,
+            className: 'w-12',
+            cell: (cert) => (<DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-8">
+                  <MoreHorizontal className="size-4"/>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleOpenDialog(cert)}>
+                  <Edit2 className="mr-2 size-4"/>
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openCertificate(cert.certificateId)}>
+                  <Eye className="mr-2 size-4"/>
+                  View
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openCertificate(cert.certificateId, true)}>
+                  <Download className="mr-2 size-4"/>
+                  Download
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(cert.id)}>
+                  <Trash2 className="mr-2 size-4"/>
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>),
+        },
+    ];
     return (<div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Certificate Management</h1>
@@ -197,111 +287,46 @@ export function CertificatesContent() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle>Issued Certificates</CardTitle>
-              <CardDescription>Manage all certificates issued by CPCCU</CardDescription>
-            </div>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="mr-2 size-4"/>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Issued Certificates</h2>
+            <p className="text-sm text-muted-foreground">Manage all certificates issued by CPCCU</p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => setBulkDialogOpen(true)} className="gap-2">
+              <Upload className="size-4"/>
+              Bulk Issue
+            </Button>
+            <Button onClick={() => handleOpenDialog()} className="gap-2">
+              <Plus className="size-4"/>
               Issue Certificate
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex flex-col gap-4 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/>
-              <Input placeholder="Search by name, ID, or event..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9"/>
-            </div>
-            <Select value={placementFilter} onValueChange={setPlacementFilter}>
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue placeholder="Placement"/>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Placements</SelectItem>
-                <SelectItem value="1st">1st Place</SelectItem>
-                <SelectItem value="2nd">2nd Place</SelectItem>
-                <SelectItem value="3rd">3rd Place</SelectItem>
-                <SelectItem value="participant">Participant</SelectItem>
-                <SelectItem value="completion">Completion</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Certificate ID</TableHead>
-                  <TableHead>Recipient</TableHead>
-                  <TableHead>Student ID</TableHead>
-                  <TableHead>Event</TableHead>
-                  <TableHead>Placement</TableHead>
-                  <TableHead>Issued Date</TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCerts.length === 0 ? (<TableRow>
-                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                      No certificates found
-                    </TableCell>
-                  </TableRow>) : (filteredCerts.map((cert) => (<TableRow key={cert.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
-                            {cert.certificateId}
-                          </code>
-                          <Button variant="ghost" size="icon" className="size-6" onClick={() => handleCopyId(cert.certificateId)}>
-                            {copiedId === cert.certificateId ? (<Check className="size-3 text-green-500"/>) : (<Copy className="size-3"/>)}
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{cert.recipientName}</TableCell>
-                      <TableCell className="text-muted-foreground">{cert.recipientStudentId}</TableCell>
-                      <TableCell>{cert.eventName}</TableCell>
-                      <TableCell>
-                        <Badge variant={placementConfig[cert.placement].variant}>
-                          {placementConfig[cert.placement].label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{formatDate(cert.issuedAt)}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreHorizontal className="size-4"/>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleOpenDialog(cert)}>
-                              <Edit2 className="mr-2 size-4"/>
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openCertificate(cert.certificateId)}>
-                              <Eye className="mr-2 size-4"/>
-                              View
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openCertificate(cert.certificateId, true)}>
-                              <Download className="mr-2 size-4"/>
-                              Download
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(cert.id)}>
-                              <Trash2 className="mr-2 size-4"/>
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>)))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+        <AdminDataTable
+          columns={columns}
+          rows={filteredCerts}
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search by name, ID, or event..."
+          exportFileName="cpccu-certificates.csv"
+          emptyText="No certificates found"
+          toolbar={<Select value={placementFilter} onValueChange={setPlacementFilter}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="Placement"/>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Placements</SelectItem>
+              <SelectItem value="1st">1st Place</SelectItem>
+              <SelectItem value="2nd">2nd Place</SelectItem>
+              <SelectItem value="3rd">3rd Place</SelectItem>
+              <SelectItem value="participant">Participant</SelectItem>
+              <SelectItem value="completion">Completion</SelectItem>
+            </SelectContent>
+          </Select>}
+        />
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
@@ -341,6 +366,31 @@ export function CertificatesContent() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSave}>{editingCert ? 'Update' : 'Issue Certificate'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bulk Issue Certificates</DialogTitle>
+            <DialogDescription>
+              Paste CSV rows as name, student ID, event name, placement.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 py-4">
+            <Label htmlFor="bulk-csv">Certificate CSV</Label>
+            <Textarea
+              id="bulk-csv"
+              value={bulkCsv}
+              onChange={(event) => setBulkCsv(event.target.value)}
+              rows={8}
+              placeholder={'recipientName,recipientId,contestName,placement\nRahul Roy Nipon,2022-1-60-001,CPCCU Contest 3,1st'}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleBulkIssue} disabled={!bulkCsv.trim()}>Issue Batch</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

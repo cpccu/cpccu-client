@@ -1,11 +1,12 @@
 'use client';
-import { Users, Calendar, FileText, UserCheck, TrendingUp, TrendingDown, UserPlus, Mail } from 'lucide-react';
+import { Users, Calendar, FileText, UserCheck, TrendingUp, TrendingDown, UserPlus, Mail, Award, Activity, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { dashboardStats, memberGrowthData, eventAttendanceData, postCategoryData, recentActivity, } from '@/lib/demo-data';
 import { useGetAdminOverviewQuery } from '@/features/admin/adminApi';
+import { useSelector } from 'react-redux';
 const PIE_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444'];
 const activityIcons = {
     member_joined: <UserPlus className="size-4"/>,
@@ -16,6 +17,7 @@ const activityIcons = {
 };
 export function DashboardContent() {
     const { data: overviewResponse } = useGetAdminOverviewQuery();
+    const user = useSelector((state) => state.auth.user);
     const liveStats = { ...dashboardStats, ...overviewResponse?.data };
     const stats = [
         {
@@ -51,10 +53,36 @@ export function DashboardContent() {
             description: 'published profiles',
         },
     ];
+    const operations = [
+        {
+            label: 'Pending Members',
+            value: liveStats.pendingMembers || 0,
+            icon: Users,
+            tone: 'text-warning',
+        },
+        {
+            label: 'Unread Messages',
+            value: liveStats.unreadMessages || 0,
+            icon: Mail,
+            tone: 'text-primary',
+        },
+        {
+            label: 'Certificates Issued',
+            value: liveStats.totalCertificates || 0,
+            icon: Award,
+            tone: 'text-success',
+        },
+        {
+            label: 'System Health',
+            value: 'Stable',
+            icon: ShieldCheck,
+            tone: 'text-success',
+        },
+    ];
     return (<div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-balance">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back, Ananya. Here is an overview of your club.</p>
+        <p className="text-muted-foreground">Welcome back, {user?.fullName || 'Administrator'}. Here is the CPCCU command center.</p>
       </div>
 
       {/* Stats Cards */}
@@ -74,6 +102,25 @@ export function DashboardContent() {
             </CardContent>
           </Card>))}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="size-4"/>
+            Live Operations
+          </CardTitle>
+          <CardDescription>Immediate signals for member governance, communication, certificates, and platform status.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {operations.map((item) => (<div key={item.label} className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <p className="text-sm text-muted-foreground">{item.label}</p>
+                <p className="text-xl font-semibold">{typeof item.value === 'number' ? item.value.toLocaleString() : item.value}</p>
+              </div>
+              <item.icon className={`size-5 ${item.tone}`}/>
+            </div>))}
+        </CardContent>
+      </Card>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
