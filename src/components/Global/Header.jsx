@@ -6,9 +6,12 @@ import { useSelector } from "react-redux";
 import { IoMailOpenOutline } from "react-icons/io5";
 import InstitudeInfo from "@/data/global/institude.json";
 
+const adminPanelRoles = ["admin", "moderator", "mentor"];
+
 export default function Header() {
   // 1. Get the logged-in user from Redux
   const user = useSelector((state) => state.auth.user);
+  const canOpenAdminPanel = adminPanelRoles.includes(user?.roles?.role);
 
   return (
     <header className="bg-blue-950 hidden md:flex text-white justify-between items-center px-12 py-2">
@@ -27,7 +30,7 @@ export default function Header() {
       <div className="flex gap-3 items-center font-semibold text-sm">
         {user ? (
           <>
-            {user?.roles?.role === "admin" && (
+            {canOpenAdminPanel && (
               <LinkNext href="/admin">
                 <button className="bg-emerald-600 text-white px-6 py-2 rounded-full font-bold hover:bg-emerald-700 transition-all">
                   Admin

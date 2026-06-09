@@ -23,6 +23,7 @@ const statusStyles = {
 const roleStyles = {
     admin: 'bg-primary/15 text-primary border-primary/30',
     moderator: 'bg-chart-2/15 text-chart-2 border-chart-2/30',
+    mentor: 'bg-warning/15 text-warning-foreground border-warning/30',
     member: 'bg-secondary text-secondary-foreground border-border',
 };
 export function MembersContent() {
@@ -51,9 +52,9 @@ export function MembersContent() {
     useEffect(() => {
         if (membersResponse?.data) {
             setMembers(membersResponse.data.map((member) => ({
-                id: member._id,
-                name: member.fullName,
-                email: member.email,
+                id: member._id || member.id,
+                name: member.fullName || member.name || 'Unnamed member',
+                email: member.email || '',
                 avatar: member.avatar || '',
                 role: member.roles?.role || 'member',
                 status: member.isValid ? 'active' : 'pending',
@@ -68,9 +69,9 @@ export function MembersContent() {
     }, [membersResponse]);
     const filtered = useMemo(() => {
         return members.filter((m) => {
-            const matchesSearch = m.name.toLowerCase().includes(search.toLowerCase()) ||
-                m.email.toLowerCase().includes(search.toLowerCase()) ||
-                m.department.toLowerCase().includes(search.toLowerCase());
+            const matchesSearch = (m.name || '').toLowerCase().includes(search.toLowerCase()) ||
+                (m.email || '').toLowerCase().includes(search.toLowerCase()) ||
+                (m.department || '').toLowerCase().includes(search.toLowerCase());
             const matchesRole = roleFilter === 'all' || m.role === roleFilter;
             const matchesStatus = statusFilter === 'all' || m.status === statusFilter;
             return matchesSearch && matchesRole && matchesStatus;
@@ -90,7 +91,7 @@ export function MembersContent() {
             status: member.status,
             department: member.department,
             phone: member.phone,
-            skills: member.skills.join(', '),
+            skills: (member.skills || []).join(', '),
             batch: member.batch || '',
             uniID: member.uniID || '',
             password: '',
@@ -144,7 +145,7 @@ export function MembersContent() {
         await updateAdminMember({ id: member.id, isValid: true });
         showSuccessAlert('Approved', `${member.name}'s membership has been approved.`);
     };
-    const getInitials = (name) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+    const getInitials = (name) => (name || 'Member').split(' ').map(n => n[0]).join('').toUpperCase();
     const columns = [
         {
             key: 'member',
@@ -262,6 +263,7 @@ export function MembersContent() {
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="moderator">Moderator</SelectItem>
+                <SelectItem value="mentor">Mentor</SelectItem>
                 <SelectItem value="member">Member</SelectItem>
               </SelectContent>
             </Select>
@@ -319,6 +321,7 @@ export function MembersContent() {
                   <SelectContent>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="moderator">Moderator</SelectItem>
+                    <SelectItem value="mentor">Mentor</SelectItem>
                     <SelectItem value="member">Member</SelectItem>
                   </SelectContent>
                 </Select>

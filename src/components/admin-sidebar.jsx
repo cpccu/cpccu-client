@@ -1,7 +1,7 @@
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, FileText, Users, Calendar, Image as ImageIcon, Briefcase, Settings, LogOut, ChevronDown, Code2, UserCog, Wrench, Mail, Award, GitPullRequest, Heart, BarChart3, } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Calendar, Image as ImageIcon, Briefcase, Settings, LogOut, ChevronDown, Code2, UserCog, Wrench, Mail, Award, GitPullRequest, Heart, BarChart3, Home, } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from '@/components/ui/dropdown-menu';
@@ -103,6 +103,14 @@ export function AdminSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Back to website">
+              <Link href="/">
+                <Home className="size-4"/>
+                <span>Back to Website</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
