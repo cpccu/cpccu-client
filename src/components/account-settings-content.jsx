@@ -15,7 +15,6 @@ import { clearCredentials, setCredentials } from '@/features/auth/authSlice';
 import { useChangePasswordMutation, useDeleteOwnAccountMutation, useUpdateUserMutation, useUserImageUploadMutation } from '@/features/users/userApi';
 export function AccountSettingsContent() {
     const user = useSelector((state) => state.auth.user);
-    const token = useSelector((state) => state.auth.token);
     const dispatch = useDispatch();
     const router = useRouter();
     const imageInputRef = useRef(null);
@@ -57,7 +56,7 @@ export function AccountSettingsContent() {
             bio: profile.bio,
             section: profile.department,
         }).unwrap();
-        dispatch(setCredentials({ user: response.data, token }));
+        dispatch(setCredentials({ user: response.data }));
         showSuccessAlert('Profile Updated', 'Your account details have been saved.');
     };
     const handlePasswordChange = async () => {
@@ -79,7 +78,7 @@ export function AccountSettingsContent() {
         const imageData = new FormData();
         imageData.append('image', image);
         const response = await userImageUpload({ key: 'avatar', imageData }).unwrap();
-        dispatch(setCredentials({ user: response.data, token }));
+        dispatch(setCredentials({ user: response.data }));
         setProfile((current) => ({ ...current, avatar: response.data.avatar || current.avatar }));
         event.target.value = '';
         showSuccessAlert('Photo Updated', 'Your profile photo has been uploaded.');

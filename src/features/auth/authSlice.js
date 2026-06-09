@@ -2,7 +2,6 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   user: null,
-  token: null,
   loading: false,
   error: null,
   hydrated: false,
@@ -13,10 +12,9 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials: (state, action) => {
-      const { user, token = null } = action.payload;
+      const { user } = action.payload;
 
       state.user = user;
-      state.token = token;
       state.loading = false;
       state.error = null;
       state.hydrated = true;
@@ -27,15 +25,9 @@ const authSlice = createSlice({
 
     clearCredentials: (state) => {
       state.user = null;
-      state.token = null;
       state.loading = false;
       state.error = null;
       state.hydrated = true;
-
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-      }
     },
 
     setHydrated: (state) => {
