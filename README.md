@@ -85,16 +85,13 @@ We welcome contributions! Please follow these steps:
 ## Preview
 
 # Desktop
-![image](<img width="1905" height="908" alt="image" src="public/desktop_ss.png" />
-)
+![image](https://res.cloudinary.com/dfspekq6u/image/upload/v1781070746/desktop_ss_fosk3x.png)
 
 # Laptop
-![image](<img width="1034" height="644" alt="image" src="public/laptop_ss.png" />
-)
+![image](https://res.cloudinary.com/dfspekq6u/image/upload/v1781070746/laptop_ss_vilzut.png)
 
 # Mobile
-![image](<img width="363" height="770" alt="image" src="public/mobile_ss.png" />
-)
+![image](https://res.cloudinary.com/dfspekq6u/image/upload/v1781070745/mobile_ss_od0z5y.png)
 
 
 # Logos
