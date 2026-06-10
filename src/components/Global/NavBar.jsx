@@ -13,8 +13,11 @@ import { faSignInAlt } from "@fortawesome/free-solid-svg-icons";
 import Data from "@/data/global/navBar.json";
 import { useFetchUsersQuery } from "@/features/users/userApi";
 
+const adminPanelRoles = ["admin", "moderator", "mentor"];
+
 export default function NavBar() {
   const { data: user, isLoading, isError } = useFetchUsersQuery();
+  const canOpenAdminPanel = adminPanelRoles.includes(user?.data?.roles?.role);
   const router = useRouter();
   const [fixed, setFixed] = useState(false);
   const [open, setOpen] = useState(false);
@@ -150,7 +153,7 @@ export default function NavBar() {
           <NavItem setOpen={setOpen} />
 
           <div className="mt-auto p-8 lg:hidden border-t border-gray-50">
-            {user?.data?.roles?.role === "admin" && (
+            {canOpenAdminPanel && (
               <Link href="/admin" onClick={() => setOpen(false)}>
                 <button className="mb-3 w-full bg-emerald-700 text-white flex items-center justify-center gap-2 py-4 rounded-xl font-bold shadow-lg active:scale-95 transition-all">
                   Admin Panel
