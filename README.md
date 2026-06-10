@@ -85,15 +85,15 @@ We welcome contributions! Please follow these steps:
 ## Preview
 
 # Desktop
-![image](<img width="1905" height="908" alt="image" src="https://github.com/user-attachments/assets/438c3581-f5de-4222-babb-ffad10b1f7b4" />
+![image](<img width="1905" height="908" alt="image" src="public/desktop_ss.png" />
 )
 
 # Laptop
-![image](<img width="1034" height="644" alt="image" src="https://github.com/user-attachments/assets/6993822c-1bd4-436c-80a6-1fc143924b53" />
+![image](<img width="1034" height="644" alt="image" src="public/laptop_ss.png" />
 )
 
 # Mobile
-![image](<img width="363" height="770" alt="image" src="https://github.com/user-attachments/assets/7e931bbc-70af-48d4-958c-8e40306efd98" />
+![image](<img width="363" height="770" alt="image" src="public/mobile_ss.png" />
 )
 
 
