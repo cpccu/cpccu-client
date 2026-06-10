@@ -12,7 +12,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { demoEvents } from '@/lib/demo-data';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
@@ -33,7 +32,7 @@ const typeLabels = {
     contest: 'Contest',
 };
 export function EventsContent() {
-    const { items: events, createItem, updateItem, deleteItem } = useAdminContent('events', demoEvents);
+    const { items: events, createItem, updateItem, deleteItem } = useAdminContent('events', []);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [typeFilter, setTypeFilter] = useState('all');
