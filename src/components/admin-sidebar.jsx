@@ -1,7 +1,7 @@
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, FileText, Users, Calendar, Image as ImageIcon, Briefcase, Settings, LogOut, ChevronDown, Code2, UserCog, Wrench, Mail, Award, GitPullRequest, Heart, BarChart3, Home, } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Calendar, Image as ImageIcon, Briefcase, Settings, LogOut, ChevronDown, Code2, UserCog, Wrench, Mail, Award, GitPullRequest, Heart, BarChart3, Home, UserRoundCog, } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from '@/components/ui/dropdown-menu';
@@ -13,6 +13,7 @@ const navItems = [
     { title: 'Dashboard', href: '/admin', icon: LayoutDashboard, roles: ['admin', 'moderator', 'mentor'] },
     { title: 'Posts', href: '/admin/posts', icon: FileText, roles: ['admin', 'moderator'] },
     { title: 'Members', href: '/admin/members', icon: Users, roles: ['admin', 'mentor'] },
+    { title: 'Committees', href: '/admin/committees', icon: UserRoundCog, roles: ['admin'] },
     { title: 'Events', href: '/admin/events', icon: Calendar, roles: ['admin', 'moderator'] },
     { title: 'Gallery', href: '/admin/gallery', icon: ImageIcon, roles: ['admin', 'moderator'] },
     { title: 'Certificates', href: '/admin/certificates', icon: Award, roles: ['admin', 'mentor'] },

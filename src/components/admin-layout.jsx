@@ -9,6 +9,7 @@ import { useSelector } from 'react-redux';
 const routeLabels = {
     '/admin': 'Dashboard',
     '/admin/certificates': 'Certificates',
+    '/admin/committees': 'Committees',
     '/admin/contributors': 'Contributors',
     '/admin/donators': 'Donators',
     '/admin/posts': 'Posts',
