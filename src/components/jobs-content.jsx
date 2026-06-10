@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { demoProfiles } from '@/lib/demo-data';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
@@ -25,7 +24,7 @@ const statusIcons = {
     rejected: <XCircle className="size-3.5"/>,
 };
 export function JobsContent() {
-    const { items: profiles, updateItem, deleteItem } = useAdminContent('profiles', demoProfiles);
+    const { items: profiles, updateItem, deleteItem } = useAdminContent('profiles', []);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [activeTab, setActiveTab] = useState('all');

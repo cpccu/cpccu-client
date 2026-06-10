@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AdminDataTable } from '@/components/admin-data-table';
-import { demoMembers } from '@/lib/demo-data';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import { useCreateAdminMemberMutation, useDeleteAdminMemberMutation, useGetAdminMembersQuery, useUpdateAdminMemberMutation } from '@/features/admin/adminApi';
@@ -27,7 +26,7 @@ const roleStyles = {
     member: 'bg-secondary text-secondary-foreground border-border',
 };
 export function MembersContent() {
-    const [members, setMembers] = useState(demoMembers);
+    const [members, setMembers] = useState([]);
     const { data: membersResponse } = useGetAdminMembersQuery();
     const [createAdminMember] = useCreateAdminMemberMutation();
     const [deleteAdminMember] = useDeleteAdminMemberMutation();
