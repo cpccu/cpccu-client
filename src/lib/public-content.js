@@ -27,20 +27,21 @@ export const toPublicEvent = (event) => ({
   id: event._id || event.id,
   img: event.image,
   alt: event.title,
-  eventHeadLine1: event.title,
+  eventHeadLine1: event.eventHeadLine1 || event.title,
   textContext: event.description,
-  eventHeadLine2: "Reward",
+  eventHeadLine2: event.eventHeadLine2 || "Reward",
   reward: event.reward || "Organized by CPCCU",
-  eventHeadLine3: "Event Details",
-  rules1: event.location ? `Location: ${event.location}` : "Hosted by CPCCU",
-  rules2: event.organizer ? `Organizer: ${event.organizer}` : "",
-  rules3: event.type ? `Type: ${event.type}` : "",
-  rules4: event.status ? `Status: ${event.status}` : "",
-  btnText: event.registrationLink ? "Register" : event.contestLink ? "Open Event" : "",
-  btnLink: event.registrationLink || event.contestLink || event.meetLink || "",
-  btnText1: event.contestLink ? "Contest Link" : "",
-  btnLink1: event.contestLink || "",
+  eventHeadLine3: event.eventHeadLine3 || "Event Details",
+  rules1: event.rules1 || (event.location ? `Location: ${event.location}` : "Hosted by CPCCU"),
+  rules2: event.rules2 || (event.organizer ? `Organizer: ${event.organizer}` : ""),
+  rules3: event.rules3 || (event.type ? `Type: ${event.type}` : ""),
+  rules4: event.rules4 || (event.status ? `Status: ${event.status}` : ""),
+  btnText: event.btnText || (event.registrationLink ? "Register" : event.contestLink ? "Open Event" : ""),
+  btnLink: event.btnLink || event.registrationLink || event.contestLink || event.meetLink || "",
+  btnText1: event.btnText1 || (event.contestLink ? "Contest Link" : ""),
+  btnLink1: event.btnLink1 || event.contestLink || "",
   date: event.date,
+  endDate: event.endDate,
 });
 
 export const toPublicGalleryItem = (item) => ({
@@ -49,4 +50,23 @@ export const toPublicGalleryItem = (item) => ({
   tag: `all ${item.category || "event"}`,
   header: item.title,
   date: new Date(item.uploadedAt || item.createdAt || Date.now()).toLocaleDateString(),
+});
+
+export const toPublicDeveloperProfile = (profile) => ({
+  id: profile._id || profile.id,
+  img: profile.photoUrl,
+  name: profile.name,
+  tag: profile.title,
+  email: profile.email,
+  phone: profile.phone,
+  socials: {
+    github: profile.githubUrl,
+    linkedin: profile.linkedinUrl,
+    portfolio: profile.portfolioUrl,
+  },
+  skills: (profile.skills || []).map((skill) => ({
+    skillName: skill.skillName || skill.name,
+    experience: skill.experience || skill.description,
+  })),
+  createdAt: profile.memberSince || profile.submittedAt || profile.createdAt,
 });
