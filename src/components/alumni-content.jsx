@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { MoreHorizontal, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Briefcase, GraduationCap, Layers, MoreHorizontal, Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { AdminImageUploadField } from '@/components/admin-image-upload-field';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,8 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { AdminDataTable } from '@/components/admin-data-table';
 import useAdminContent from '@/hooks/use-admin-content';
 import { showDeleteConfirm, showSuccessAlert } from '@/lib/alerts';
 
@@ -49,6 +51,7 @@ const jobTextToObject = (text) =>
 export function AlumniContent() {
   const { items: alumni, createItem, updateItem, deleteItem } = useAdminContent('alumni', []);
   const [search, setSearch] = useState('');
+  const [batchFilter, setBatchFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAlumni, setEditingAlumni] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -57,9 +60,21 @@ export function AlumniContent() {
     const needle = search.toLowerCase();
     return alumni.filter((item) =>
       [item.name, item.position, item.batch, item.technology, item.email]
-        .some((value) => (value || '').toLowerCase().includes(needle))
+        .some((value) => (value || '').toLowerCase().includes(needle)) &&
+      (batchFilter === 'all' || item.batch === batchFilter)
     );
-  }, [alumni, search]);
+  }, [alumni, batchFilter, search]);
+
+  const stats = useMemo(() => ({
+    total: alumni.length,
+    batches: new Set(alumni.map((item) => item.batch).filter(Boolean)).size,
+    technologies: new Set(alumni.map((item) => item.technology).filter(Boolean)).size,
+    withJobs: alumni.filter((item) => item.job && Object.keys(item.job).length > 0).length,
+  }), [alumni]);
+  const batchOptions = useMemo(
+    () => [...new Set(alumni.map((item) => item.batch).filter(Boolean))],
+    [alumni]
+  );
 
   const openCreate = () => {
     setEditingAlumni(null);
@@ -125,40 +140,6 @@ export function AlumniContent() {
     }
   };
 
-  const columns = [
-    { key: 'order', header: 'Order', accessor: 'order' },
-    { key: 'name', header: 'Name', accessor: 'name', cellClassName: 'font-medium' },
-    { key: 'position', header: 'Position', accessor: 'position' },
-    { key: 'batch', header: 'Batch', accessor: 'batch' },
-    { key: 'technology', header: 'Technology', accessor: 'technology' },
-    { key: 'email', header: 'Email', accessor: 'email' },
-    {
-      key: 'actions',
-      header: '',
-      export: false,
-      cell: (item) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-8">
-              <MoreHorizontal className="size-4" />
-              <span className="sr-only">Actions</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => openEdit(item)}>
-              <Pencil className="mr-2 size-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleDelete(item)} className="text-destructive">
-              <Trash2 className="mr-2 size-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ];
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -172,15 +153,103 @@ export function AlumniContent() {
         </Button>
       </div>
 
-      <AdminDataTable
-        columns={columns}
-        rows={filtered}
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search alumni..."
-        exportFileName="alumni.csv"
-        emptyText="No alumni found."
-      />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          { label: 'Total Alumni', value: stats.total, icon: Users },
+          { label: 'Batches', value: stats.batches, icon: GraduationCap },
+          { label: 'Technologies', value: stats.technologies, icon: Layers },
+          { label: 'Job Records', value: stats.withJobs, icon: Briefcase },
+        ].map((stat) => (
+          <Card key={stat.label}>
+            <CardContent className="flex items-center gap-3 pt-4">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <stat.icon className="size-4" />
+              </div>
+              <div>
+                <p className="text-xl font-bold">{stat.value.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <div className="flex flex-col gap-3 border-b p-4 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="Search alumni..." value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" />
+            </div>
+            <Select value={batchFilter} onValueChange={setBatchFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Batch" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Alumni</SelectItem>
+                {batchOptions.map((batch) => (
+                  <SelectItem key={batch} value={batch}>{batch}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Alumni</TableHead>
+                  <TableHead>Position</TableHead>
+                  <TableHead>Batch</TableHead>
+                  <TableHead>Technology</TableHead>
+                  <TableHead className="hidden md:table-cell">Contact</TableHead>
+                  <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">No alumni found.</TableCell>
+                  </TableRow>
+                ) : filtered.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="size-9 overflow-hidden rounded-full border bg-muted">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.img || item.avatar || '/assets/avatar/default-avatar.png'} alt={item.name} className="size-full object-cover" />
+                        </div>
+                        <p className="font-medium">{item.name}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{item.position || '-'}</TableCell>
+                    <TableCell><Badge variant="outline">{item.batch || 'N/A'}</Badge></TableCell>
+                    <TableCell className="text-muted-foreground">{item.technology || '-'}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">{item.email || item.phone || '-'}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="size-8">
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(item)}>
+                            <Pencil className="mr-2 size-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDelete(item)} className="text-destructive">
+                            <Trash2 className="mr-2 size-4" /> Remove
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[720px]">

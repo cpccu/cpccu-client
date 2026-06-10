@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSignOutAlt, faUserEdit, faSave, faTimes, faCloudUploadAlt } from "@fortawesome/free-solid-svg-icons";
 import { FaAngleRight } from "react-icons/fa6";
 
-import { useFetchUsersQuery, useRequestJobPipelineProfileMutation, useUpdateUserMutation, useUserImageUploadMutation } from "@/features/users/userApi";
+import { useFetchUsersQuery, useRemoveJobPipelineProfileMutation, useRequestJobPipelineProfileMutation, useUpdateUserMutation, useUserImageUploadMutation } from "@/features/users/userApi";
 import { setCredentials, clearCredentials } from "@/features/auth/authSlice";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
@@ -23,8 +23,10 @@ export default function Profile({ user, isOwnProfile }) {
   const [updateUser, { isLoading: isUpdating, isSuccess: isUpdateSuccess, isError: isUpdateError, reset: resetUpdate }] = useUpdateUserMutation();
   const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageSuccess, isError: isImageError, error: uploadError, reset: resetImage }] = useUserImageUploadMutation();
   const [requestJobPipelineProfile, { isLoading: isRequestingJobPipeline, isSuccess: isJobPipelineSuccess, isError: isJobPipelineError, reset: resetJobPipeline }] = useRequestJobPipelineProfileMutation();
+  const [removeJobPipelineProfile, { isLoading: isRemovingJobPipeline }] = useRemoveJobPipelineProfileMutation();
   const { data: currentUserResponse } = useFetchUsersQuery(undefined, {
     skip: !isOwnProfile || !token,
+    pollingInterval: 5000,
     refetchOnMountOrArgChange: true,
   });
 
@@ -102,6 +104,24 @@ export default function Profile({ user, isOwnProfile }) {
       }
     } catch (error) {
       console.error("Job pipeline request failed:", error);
+    }
+  };
+
+  const handleJobPipelineRemove = async () => {
+    try {
+      const res = await removeJobPipelineProfile().unwrap();
+      if (res?.data?.user) {
+        dispatch(setCredentials({
+          user: res.data.user,
+          token,
+        }));
+        setProfile(prev => ({
+          ...prev,
+          jobPipelineStatus: res.data.user.jobPipelineStatus || "hidden",
+        }));
+      }
+    } catch (error) {
+      console.error("Job pipeline remove failed:", error);
     }
   };
 
@@ -193,19 +213,32 @@ export default function Profile({ user, isOwnProfile }) {
                 <FontAwesomeIcon icon={editMode ? faSave : faUserEdit} />
                 {editMode ? (isUpdating ? "Saving..." : "Save Changes") : "Edit Profile"}
               </button>
-              <button
-                onClick={handleJobPipelineRequest}
-                disabled={isRequestingJobPipeline || profile.jobPipelineStatus === "pending" || profile.jobPipelineStatus === "approved"}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition-all disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {profile.jobPipelineStatus === "approved"
-                  ? "Shown in Job Pipeline"
-                  : profile.jobPipelineStatus === "pending"
+              {profile.jobPipelineStatus === "approved" ? (
+                <div className="flex flex-1 flex-col gap-2 md:flex-none md:flex-row">
+                  <span className="flex items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 font-bold text-emerald-700">
+                    Shown in Job Pipeline
+                  </span>
+                  <button
+                    onClick={handleJobPipelineRemove}
+                    disabled={isRemovingJobPipeline}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isRemovingJobPipeline ? "Removing..." : "Remove"}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleJobPipelineRequest}
+                  disabled={isRequestingJobPipeline || profile.jobPipelineStatus === "pending"}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {profile.jobPipelineStatus === "pending"
                     ? "Job Pipeline Pending"
                     : isRequestingJobPipeline
                       ? "Requesting..."
                       : "Show in Job Pipeline"}
-              </button>
+                </button>
+              )}
             </>
           )}
         </div>
@@ -238,6 +271,8 @@ export default function Profile({ user, isOwnProfile }) {
                   alt="Avatar" 
                   width={176} 
                   height={176} 
+                  priority
+                  loading="eager"
                   className="object-cover w-full h-full"
                 />
               </div>

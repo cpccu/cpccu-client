@@ -42,6 +42,13 @@ export const userApi = baseApi.injectEndpoints({
         }),
         invalidatesTags: ['Users', { type: 'PublicContent', id: 'profiles' }],
     }),
+    removeJobPipelineProfile: builder.mutation({
+        query: () => ({
+            url: 'users/job-pipeline-request',
+            method: 'DELETE',
+        }),
+        invalidatesTags: ['Users', { type: 'PublicContent', id: 'profiles' }],
+    }),
     deleteUser: builder.mutation({
         query: (id) => ({
             url: `/users/${id}`,
@@ -74,6 +81,7 @@ export const {
     useUpdateUserMutation,
     useUserImageUploadMutation,
     useRequestJobPipelineProfileMutation,
+    useRemoveJobPipelineProfileMutation,
     useDeleteUserMutation,
     useChangePasswordMutation,
     useDeleteOwnAccountMutation,
