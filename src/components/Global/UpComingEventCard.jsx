@@ -13,9 +13,9 @@ const UpComingEventCard = ({ data, clName }) => {
       )}
     >
       {/* Picture Section */}
-      <section className="md:col-span-3 lg:col-span-4 xl:col-span-3 mxl:col-span-3 mmmxl:col-span-3 md:h-[20rem] lg:h-[28rem]  mxl:h-auto mmmxl:h-[26rem] xl:h-auto overflow-hidden">
+      <section className="md:col-span-3 lg:col-span-4 xl:col-span-3 mxl:col-span-3 mmmxl:col-span-3 overflow-hidden">
         <img
-          className="h-full w-full object-cover"
+          className="h-auto max-h-[28rem] min-h-[14rem] w-full object-cover"
           src={data?.img}
           alt={data?.alt}
         />

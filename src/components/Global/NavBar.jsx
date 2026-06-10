@@ -13,7 +13,7 @@ import { faSignInAlt } from "@fortawesome/free-solid-svg-icons";
 import Data from "@/data/global/navBar.json";
 import { useSelector } from "react-redux";
 
-const adminPanelRoles = ["admin", "moderator", "mentor"];
+const adminPanelRoles = ["admin"];
 
 export default function NavBar() {
   const currentUser = useSelector((state) => state.auth.user);
