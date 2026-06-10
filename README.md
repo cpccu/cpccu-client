@@ -21,26 +21,6 @@ The official web portal for the Competitive Programming Camp at City University.
 *   **Icons**: FontAwesome, Lucide React
 *   **Package Manager**: npm / Bun
 
-## Preview
-
-# Desktop
-![image](https://github.com/cpccu/cpccu/assets/22385106/3da83b70-fee2-4dd3-907d-0d149353ea2b)
-
-# Laptop
-![image](https://github.com/cpccu/cpccu/assets/22385106/7cb34e48-10f9-4eb1-a9e3-bf81c237a7b1)
-
-# Mobile
-![image](https://github.com/cpccu/cpccu/assets/22385106/12ca41bd-1382-448a-ad13-23584e1b7f94)
-
-# Mobile with navigation
-![image](https://github.com/cpccu/cpccu/assets/22385106/e8e0eadd-1c5f-4fef-af82-a4149df58197)
-
-# Logos
-https://i.ibb.co.com/Nm3q6c0/Artboard-1.png
-https://i.ibb.co.com/j3sTfZM/Artboard-1-1.png
-https://i.ibb.co.com/jyXyv28/Artboard-1-cir.png
-https://i.ibb.co.com/pWCpvsr/Artboard-1new.png
-https://i.ibb.co.com/6BFjFf7/Artboard-1new.png
 
 ## 📂 Project Structure
 
@@ -101,6 +81,24 @@ We welcome contributions! Please follow these steps:
 3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
 4.  Push to the branch (`git push origin feature/AmazingFeature`).
 5.  Open a Pull Request.
+
+## Preview
+
+# Desktop
+![image](<img width="1905" height="908" alt="image" src="https://github.com/user-attachments/assets/438c3581-f5de-4222-babb-ffad10b1f7b4" />
+)
+
+# Laptop
+![image](<img width="1034" height="644" alt="image" src="https://github.com/user-attachments/assets/6993822c-1bd4-436c-80a6-1fc143924b53" />
+)
+
+# Mobile
+![image](<img width="363" height="770" alt="image" src="https://github.com/user-attachments/assets/7e931bbc-70af-48d4-958c-8e40306efd98" />
+)
+
+
+# Logos
+https://i.ibb.co.com/Nm3q6c0/Artboard-1.png
 
 ## 📄 License
 
