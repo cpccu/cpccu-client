@@ -11,12 +11,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { demoContributors } from '@/lib/demo-data';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
 export function ContributorsContent() {
-    const { items: contributors, createItem, updateItem, deleteItem } = useAdminContent('contributors', demoContributors);
+    const { items: contributors, createItem, updateItem, deleteItem } = useAdminContent('contributors', []);
     const [searchQuery, setSearchQuery] = useState('');
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingContributor, setEditingContributor] = useState(null);
@@ -33,6 +32,7 @@ export function ContributorsContent() {
         c.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.role.toLowerCase().includes(searchQuery.toLowerCase()));
     const totalCommits = contributors.reduce((sum, c) => sum + c.commits, 0);
+    const topContributor = [...contributors].sort((a, b) => b.commits - a.commits)[0];
     const handleOpenDialog = (contributor) => {
         if (contributor) {
             setEditingContributor(contributor);
@@ -110,7 +110,7 @@ export function ContributorsContent() {
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Avg Commits</span>
-              <span className="text-2xl font-bold">{Math.round(totalCommits / contributors.length)}</span>
+              <span className="text-2xl font-bold">{contributors.length ? Math.round(totalCommits / contributors.length) : 0}</span>
             </div>
           </CardContent>
         </Card>
@@ -119,7 +119,7 @@ export function ContributorsContent() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Top Contributor</span>
               <span className="text-lg font-bold truncate max-w-[100px]">
-                {contributors.sort((a, b) => b.commits - a.commits)[0]?.username}
+                {topContributor?.username || '-'}
               </span>
             </div>
           </CardContent>
