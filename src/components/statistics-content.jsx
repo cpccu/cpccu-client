@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { siteStatistics } from '@/lib/demo-data';
 import { showSuccessAlert } from '@/lib/alerts';
 import { useGetAdminStatisticsQuery, useUpdateAdminStatisticsMutation } from '@/features/admin/adminApi';
 const statConfigs = [
@@ -19,7 +18,16 @@ const statConfigs = [
     { key: 'winnersRecognized', label: 'Winners Recognized', icon: BarChart3, color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
 ];
 export function StatisticsContent() {
-    const [stats, setStats] = useState(siteStatistics);
+    const [stats, setStats] = useState({
+        members: 0,
+        photos: 0,
+        events: 0,
+        awards: 0,
+        totalVisitors: 0,
+        certificatesIssued: 0,
+        contestsHeld: 0,
+        winnersRecognized: 0,
+    });
     const [isEditing, setIsEditing] = useState(false);
     const [editValues, setEditValues] = useState(siteStatistics);
     const { data: statisticsResponse } = useGetAdminStatisticsQuery();

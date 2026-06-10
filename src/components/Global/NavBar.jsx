@@ -17,7 +17,8 @@ const adminPanelRoles = ["admin", "moderator", "mentor"];
 
 export default function NavBar() {
   const { data: user, isLoading, isError } = useFetchUsersQuery();
-  const canOpenAdminPanel = adminPanelRoles.includes(user?.data?.roles?.role);
+  const currentUser = user?.data?._id ? user.data : null;
+  const canOpenAdminPanel = adminPanelRoles.includes(currentUser?.roles?.role);
   const router = useRouter();
   const [fixed, setFixed] = useState(false);
   const [open, setOpen] = useState(false);
@@ -160,7 +161,7 @@ export default function NavBar() {
                 </button>
               </Link>
             )}
-            {!user?.data && (
+            {!currentUser && (
               <Link href="/login" onClick={() => setOpen(false)}>
                 <button className="w-full bg-header text-white flex items-center justify-center gap-2 py-4 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all">
                   <FontAwesomeIcon icon={faSignInAlt} />

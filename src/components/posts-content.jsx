@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { demoPosts } from '@/lib/demo-data';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
@@ -21,7 +20,7 @@ const statusStyles = {
     archived: 'bg-muted text-muted-foreground border-border',
 };
 export function PostsContent() {
-    const { items: posts, createItem, updateItem, deleteItem } = useAdminContent('posts', demoPosts);
+    const { items: posts, createItem, updateItem, deleteItem } = useAdminContent('posts', []);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [categoryFilter, setCategoryFilter] = useState('all');
