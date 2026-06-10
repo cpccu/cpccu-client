@@ -1,7 +1,6 @@
 'use client';
 
 import { ImageUp, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUploadAdminImageMutation } from '@/features/admin/adminApi';
@@ -55,13 +54,17 @@ export function AdminImageUploadField({
       ) : null}
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder="Cloudinary URL or existing image URL" />
-        <Button type="button" variant="outline" className="gap-2" disabled={isLoading} asChild>
-          <label htmlFor={id} className="cursor-pointer">
-            {isLoading ? <Loader2 className="size-4 animate-spin" /> : <ImageUp className="size-4" />}
-            Upload
-          </label>
-        </Button>
-        <input id={id} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+        <label
+          htmlFor={isLoading ? undefined : id}
+          className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors ${
+            isLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-accent hover:text-accent-foreground'
+          }`}
+          aria-disabled={isLoading}
+        >
+          {isLoading ? <Loader2 className="size-4 animate-spin" /> : <ImageUp className="size-4" />}
+          Upload
+        </label>
+        <input id={id} type="file" accept="image/*" className="sr-only" disabled={isLoading} onChange={handleUpload} />
       </div>
     </div>
   );
