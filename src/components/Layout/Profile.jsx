@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSignOutAlt, faUserEdit, faSave, faTimes, faCloudUploadAlt } from "@fortawesome/free-solid-svg-icons";
 import { FaAngleRight } from "react-icons/fa6";
 
-import { useRequestJobPipelineProfileMutation, useUpdateUserMutation, useUserImageUploadMutation } from "@/features/users/userApi";
+import { useFetchUsersQuery, useRequestJobPipelineProfileMutation, useUpdateUserMutation, useUserImageUploadMutation } from "@/features/users/userApi";
 import { setCredentials, clearCredentials } from "@/features/auth/authSlice";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
@@ -23,6 +23,10 @@ export default function Profile({ user, isOwnProfile }) {
   const [updateUser, { isLoading: isUpdating, isSuccess: isUpdateSuccess, isError: isUpdateError, reset: resetUpdate }] = useUpdateUserMutation();
   const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageSuccess, isError: isImageError, error: uploadError, reset: resetImage }] = useUserImageUploadMutation();
   const [requestJobPipelineProfile, { isLoading: isRequestingJobPipeline, isSuccess: isJobPipelineSuccess, isError: isJobPipelineError, reset: resetJobPipeline }] = useRequestJobPipelineProfileMutation();
+  const { data: currentUserResponse } = useFetchUsersQuery(undefined, {
+    skip: !isOwnProfile || !token,
+    refetchOnMountOrArgChange: true,
+  });
 
   const [editMode, setEditMode] = useState(false);
   const [newSkill, setNewSkill] = useState({ skillName: "", experience: "" });
@@ -127,6 +131,31 @@ export default function Profile({ user, isOwnProfile }) {
       skills: prev.skills.filter((skill) => skill.skillName !== skillToRemove.skillName),
     }));
   };
+
+  useEffect(() => {
+    const freshUser = currentUserResponse?.data;
+
+    if (freshUser && isOwnProfile) {
+      dispatch(setCredentials({
+        user: freshUser,
+        token,
+      }));
+      setProfile({
+        avatar: freshUser.avatar || "",
+        fullName: freshUser.fullName || "",
+        email: freshUser.email || "",
+        phone: freshUser.phone || "",
+        github: freshUser.github || "",
+        linkedin: freshUser.linkedin || "",
+        portfolio: freshUser.portfolio || "",
+        jobPipelineStatus: freshUser.jobPipelineStatus || "hidden",
+        skills: freshUser.skills || [],
+        uniID: freshUser.uniID || "",
+        batch: freshUser.batch || "",
+        section: freshUser.section || "",
+      });
+    }
+  }, [currentUserResponse, dispatch, isOwnProfile, token]);
 
   useEffect(() => {
     if (isUpdateSuccess || isUpdateError || isImageSuccess || isImageError || isJobPipelineSuccess || isJobPipelineError) {

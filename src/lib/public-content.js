@@ -23,6 +23,19 @@ export const toPublicDonator = (donator) => ({
   avatar: donator.avatarUrl,
 });
 
+export const toPublicAlumni = (alumni) => ({
+  id: alumni._id || alumni.id,
+  img: alumni.img || alumni.avatar,
+  name: alumni.name,
+  position: alumni.position,
+  batch: alumni.batch,
+  technology: alumni.technology,
+  job: alumni.job || {},
+  email: alumni.email,
+  phone: alumni.phone,
+  socials: alumni.socials || {},
+});
+
 export const toPublicEvent = (event) => ({
   id: event._id || event.id,
   img: event.image,
