@@ -48,19 +48,19 @@ const UpComingEventCard = ({ data, clName }) => {
           {data?.eventHeadLine3}
         </h1>
         <p className="font-[450] hidden lg:hidden mmmxl:hidden  lg:line-clamp-3">
-          {" -> "}
+          {" 🔶 "}
           {data?.rules1}
         </p>
         <p className="font-[450] hidden lg:hidden mmmxl:hidden  lg:line-clamp-3">
-          {" -> "}
+          {" 🔶 "}
           {data?.rules2}
         </p>
         <p className="font-[450] hidden lg:hidden mmmxl:hidden  lg:line-clamp-3">
-          {" -> "}
+          {" 🔶 "}
           {data?.rules3}
         </p>
         <p className="font-[450] hidden lg:hidden mmmxl:hidden  lg:line-clamp-3">
-          {" -> "}
+          {" 🔶 "}
           {data?.rules4}
         </p>
 
@@ -93,19 +93,19 @@ const UpComingEventCard = ({ data, clName }) => {
           {data?.eventHeadLine3}
         </h1>
         <p className="font-[450] text-xl hidden lg:hidden  mmmxl:block py-3lg:line-clamp-3">
-          {" ⛔ "}
+          {" 🔶 "}
           {data?.rules1}
         </p>
         <p className="font-[450] text-xl hidden lg:hidden  mmmxl:block py-3 lg:line-clamp-3">
-          {" ❌ "}
+          {" 🔶 "}
           {data?.rules2}
         </p>
         <p className="font-[450] text-xl hidden lg:hidden mmmxl:block py-3 lg:line-clamp-3">
-          {" 🚫 "}
+          {" 🔶 "}
           {data?.rules3}
         </p>
         <p className="font-[450] text-xl hidden lg:hidden mmmxl:block py-3 lg:line-clamp-3">
-          {" ✅ "}
+          {" 🔶 "}
           {data?.rules4}
         </p>
       </section>
