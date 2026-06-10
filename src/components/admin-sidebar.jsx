@@ -1,7 +1,7 @@
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, FileText, Users, Calendar, Image as ImageIcon, Briefcase, Settings, LogOut, ChevronDown, Code2, UserCog, Wrench, Mail, Award, GitPullRequest, Heart, BarChart3, Home, UserRoundCog, } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Calendar, Image as ImageIcon, Briefcase, Settings, LogOut, ChevronDown, Code2, UserCog, Wrench, Mail, Award, GitPullRequest, Heart, BarChart3, Home, UserRoundCog, GraduationCap, ScrollText, } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from '@/components/ui/dropdown-menu';
@@ -13,6 +13,7 @@ const navItems = [
     { title: 'Dashboard', href: '/admin', icon: LayoutDashboard, roles: ['admin', 'moderator', 'mentor'] },
     { title: 'Posts', href: '/admin/posts', icon: FileText, roles: ['admin', 'moderator'] },
     { title: 'Members', href: '/admin/members', icon: Users, roles: ['admin', 'mentor'] },
+    { title: 'Alumni', href: '/admin/alumni', icon: GraduationCap, roles: ['admin'] },
     { title: 'Committees', href: '/admin/committees', icon: UserRoundCog, roles: ['admin'] },
     { title: 'Events', href: '/admin/events', icon: Calendar, roles: ['admin', 'moderator'] },
     { title: 'Gallery', href: '/admin/gallery', icon: ImageIcon, roles: ['admin', 'moderator'] },
@@ -20,6 +21,7 @@ const navItems = [
     { title: 'Contributors', href: '/admin/contributors', icon: GitPullRequest, roles: ['admin'] },
     { title: 'Donators', href: '/admin/donators', icon: Heart, roles: ['admin'] },
     { title: 'Developer Profiles', href: '/admin/jobs', icon: Briefcase, roles: ['admin'] },
+    { title: 'Audit Logs', href: '/admin/audit-logs', icon: ScrollText, roles: ['admin'] },
     { title: 'Contact Messages', href: '/admin/messages', icon: Mail, roles: ['admin'] },
     { title: 'Site Statistics', href: '/admin/statistics', icon: BarChart3, roles: ['admin', 'moderator', 'mentor'] },
 ];
