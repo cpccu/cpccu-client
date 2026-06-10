@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AdminDataTable } from '@/components/admin-data-table';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
@@ -34,6 +35,7 @@ export function MembersContent() {
     const [search, setSearch] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [selectedIds, setSelectedIds] = useState([]);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingMember, setEditingMember] = useState(null);
     const [formData, setFormData] = useState({
@@ -144,8 +146,36 @@ export function MembersContent() {
         await updateAdminMember({ id: member.id, isValid: true });
         showSuccessAlert('Approved', `${member.name}'s membership has been approved.`);
     };
+    const toggleSelected = (id) => {
+        setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+    };
+    const toggleAllFiltered = () => {
+        const filteredIds = filtered.map((member) => member.id);
+        const allSelected = filteredIds.every((id) => selectedIds.includes(id));
+        setSelectedIds(allSelected ? selectedIds.filter((id) => !filteredIds.includes(id)) : [...new Set([...selectedIds, ...filteredIds])]);
+    };
+    const handleBulkApprove = async () => {
+        await Promise.all(selectedIds.map((id) => updateAdminMember({ id, isValid: true })));
+        setSelectedIds([]);
+        showSuccessAlert('Approved', 'Selected members have been approved.');
+    };
+    const handleBulkDelete = async () => {
+        const result = await showDeleteConfirm('selected members');
+        if (result.isConfirmed) {
+            await Promise.all(selectedIds.map((id) => deleteAdminMember(id)));
+            setSelectedIds([]);
+            showSuccessAlert('Removed', 'Selected members have been removed.');
+        }
+    };
     const getInitials = (name) => (name || 'Member').split(' ').map(n => n[0]).join('').toUpperCase();
     const columns = [
+        {
+            key: 'select',
+            header: <Checkbox checked={filtered.length > 0 && filtered.every((member) => selectedIds.includes(member.id))} onCheckedChange={toggleAllFiltered} aria-label="Select all members" />,
+            export: false,
+            className: 'w-[42px]',
+            cell: (member) => <Checkbox checked={selectedIds.includes(member.id)} onCheckedChange={() => toggleSelected(member.id)} aria-label={`Select ${member.name}`} />,
+        },
         {
             key: 'member',
             header: 'Member',
@@ -254,6 +284,10 @@ export function MembersContent() {
         exportFileName="cpccu-members.csv"
         emptyText="No members found."
         toolbar={<>
+            {selectedIds.length > 0 && (<>
+              <Button variant="outline" onClick={handleBulkApprove}>Approve {selectedIds.length}</Button>
+              <Button variant="destructive" onClick={handleBulkDelete}>Remove {selectedIds.length}</Button>
+            </>)}
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Role"/>

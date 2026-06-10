@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
+import { AdminImageUploadField } from '@/components/admin-image-upload-field';
 export function DonatorsContent() {
     const { items: donators, createItem, updateItem, deleteItem } = useAdminContent('donators', []);
     const [searchQuery, setSearchQuery] = useState('');
@@ -229,10 +230,13 @@ export function DonatorsContent() {
               <Label>Name</Label>
               <Input value={formData.name} onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))} placeholder="Full name"/>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label>Avatar URL (Optional)</Label>
-              <Input value={formData.avatarUrl} onChange={(e) => setFormData((prev) => ({ ...prev, avatarUrl: e.target.value }))} placeholder="Profile image URL"/>
-            </div>
+            <AdminImageUploadField
+              id="donator-avatar"
+              label="Avatar"
+              folder="cpccu/donators"
+              value={formData.avatarUrl}
+              onChange={(value) => setFormData((prev) => ({ ...prev, avatarUrl: value }))}
+            />
             <div className="flex flex-col gap-2">
               <Label>Contribution Description</Label>
               <Input value={formData.contribution} onChange={(e) => setFormData((prev) => ({ ...prev, contribution: e.target.value }))} placeholder="e.g. Website Renewal Fee Contribution"/>

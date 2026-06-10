@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
+import { AdminImageUploadField } from '@/components/admin-image-upload-field';
 export function GalleryContent() {
     const { items, createItem, updateItem, deleteItem } = useAdminContent('gallery', []);
     const [search, setSearch] = useState('');
@@ -272,10 +273,13 @@ export function GalleryContent() {
               <Label htmlFor="g-desc">Description</Label>
               <Textarea id="g-desc" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} placeholder="Brief description..." rows={2}/>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="g-url">Image URL</Label>
-              <Input id="g-url" value={formData.imageUrl} onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))} placeholder="https://images.unsplash.com/..."/>
-            </div>
+            <AdminImageUploadField
+              id="g-url"
+              label="Gallery Image"
+              folder="cpccu/gallery"
+              value={formData.imageUrl}
+              onChange={(value) => setFormData(prev => ({ ...prev, imageUrl: value }))}
+            />
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>Category</Label>

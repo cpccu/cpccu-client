@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { showDeleteConfirm, showSuccessAlert } from '@/lib/alerts';
 import useAdminContent from '@/hooks/use-admin-content';
+import { AdminImageUploadField } from '@/components/admin-image-upload-field';
 
 const emptyForm = {
   name: '',
@@ -224,9 +225,14 @@ export function CommitteeContent() {
               <Label>Phone</Label>
               <Input value={formData.phone} onChange={(event) => setFormData((prev) => ({ ...prev, phone: event.target.value }))} />
             </div>
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <Label>Image URL</Label>
-              <Input value={formData.avatar} onChange={(event) => setFormData((prev) => ({ ...prev, avatar: event.target.value }))} />
+            <div className="sm:col-span-2">
+              <AdminImageUploadField
+                id="committee-avatar"
+                label="Committee Photo"
+                folder="cpccu/committees"
+                value={formData.avatar}
+                onChange={(value) => setFormData((prev) => ({ ...prev, avatar: value }))}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label>Committee Type</Label>

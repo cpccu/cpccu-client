@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
+import { AdminImageUploadField } from '@/components/admin-image-upload-field';
 export function ContributorsContent() {
     const { items: contributors, createItem, updateItem, deleteItem } = useAdminContent('contributors', []);
     const [searchQuery, setSearchQuery] = useState('');
@@ -257,10 +258,13 @@ export function ContributorsContent() {
               <Label>Role</Label>
               <Input value={formData.role} onChange={(e) => setFormData((prev) => ({ ...prev, role: e.target.value }))} placeholder="e.g. Lead Developer, Frontend Developer"/>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label>Avatar URL</Label>
-              <Input value={formData.avatarUrl} onChange={(e) => setFormData((prev) => ({ ...prev, avatarUrl: e.target.value }))} placeholder="Profile image URL"/>
-            </div>
+            <AdminImageUploadField
+              id="contributor-avatar"
+              label="Avatar"
+              folder="cpccu/contributors"
+              value={formData.avatarUrl}
+              onChange={(value) => setFormData((prev) => ({ ...prev, avatarUrl: value }))}
+            />
             <div className="flex flex-col gap-2">
               <Label>GitHub URL</Label>
               <Input value={formData.githubUrl} onChange={(e) => setFormData((prev) => ({ ...prev, githubUrl: e.target.value }))} placeholder="https://github.com/username"/>

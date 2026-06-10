@@ -14,7 +14,7 @@ export function SystemSettingsContent() {
     const [general, setGeneral] = useState({
         siteName: 'CPCCU Programming Club',
         siteUrl: 'https://cpccu.club',
-        timezone: 'Asia/Kolkata',
+        timezone: 'Asia/Dhaka',
         language: 'en',
     });
     const [notifications, setNotifications] = useState({
@@ -96,6 +96,7 @@ export function SystemSettingsContent() {
               <Select value={general.timezone} onValueChange={(v) => setGeneral(prev => ({ ...prev, timezone: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="Asia/Dhaka">Asia/Dhaka (BST)</SelectItem>
                   <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST)</SelectItem>
                   <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
                   <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>

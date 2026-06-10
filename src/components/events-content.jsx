@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
+import { AdminImageUploadField } from '@/components/admin-image-upload-field';
 const statusStyles = {
     upcoming: 'bg-primary/15 text-primary border-primary/30',
     ongoing: 'bg-success/15 text-success border-success/30',
@@ -52,6 +53,7 @@ export function EventsContent() {
         contestLink: '',
         meetLink: '',
         vjudgeGroupLink: '',
+        image: '',
     });
     const filtered = useMemo(() => {
         return events.filter((e) => {
@@ -79,6 +81,7 @@ export function EventsContent() {
             contestLink: '',
             meetLink: '',
             vjudgeGroupLink: '',
+            image: '',
         });
         setDialogOpen(true);
     };
@@ -98,6 +101,7 @@ export function EventsContent() {
             contestLink: event.contestLink || '',
             meetLink: event.meetLink || '',
             vjudgeGroupLink: event.vjudgeGroupLink || '',
+            image: event.image || '',
         });
         setDialogOpen(true);
     };
@@ -113,6 +117,7 @@ export function EventsContent() {
                 contestLink: formData.contestLink || undefined,
                 meetLink: formData.meetLink || undefined,
                 vjudgeGroupLink: formData.vjudgeGroupLink || undefined,
+                image: formData.image || '',
             };
             await updateItem(editingEvent.id, updatedEvent);
             showSuccessAlert('Event Updated', `"${formData.title}" has been updated.`);
@@ -135,6 +140,7 @@ export function EventsContent() {
                 contestLink: formData.contestLink || undefined,
                 meetLink: formData.meetLink || undefined,
                 vjudgeGroupLink: formData.vjudgeGroupLink || undefined,
+                image: formData.image || '',
             };
             await createItem(newEvent);
             showSuccessAlert('Event Created', `"${formData.title}" has been created.`);
@@ -340,6 +346,13 @@ export function EventsContent() {
                 <Label htmlFor="event-loc">Location</Label>
                 <Input id="event-loc" value={formData.location} onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))} placeholder="Main Auditorium, Block A or Online"/>
               </div>
+              <AdminImageUploadField
+                id="event-image"
+                label="Event Image"
+                folder="cpccu/events"
+                value={formData.image}
+                onChange={(value) => setFormData(prev => ({ ...prev, image: value }))}
+              />
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>Type</Label>
