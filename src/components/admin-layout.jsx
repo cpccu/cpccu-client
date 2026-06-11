@@ -8,7 +8,10 @@ import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 const routeLabels = {
     '/admin': 'Dashboard',
+    '/admin/alumni': 'Alumni',
+    '/admin/audit-logs': 'Audit Logs',
     '/admin/certificates': 'Certificates',
+    '/admin/committees': 'Committees',
     '/admin/contributors': 'Contributors',
     '/admin/donators': 'Donators',
     '/admin/posts': 'Posts',

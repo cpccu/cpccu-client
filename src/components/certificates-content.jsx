@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { demoCertificates } from '@/lib/demo-data';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import { useCreateAdminCertificateMutation, useDeleteAdminCertificateMutation, useGetAdminCertificatesQuery, useUpdateAdminCertificateMutation } from '@/features/admin/adminApi';
@@ -23,7 +22,7 @@ const placementConfig = {
     completion: { label: 'Completion', variant: 'outline' },
 };
 export function CertificatesContent() {
-    const [certificates, setCertificates] = useState(demoCertificates);
+    const [certificates, setCertificates] = useState([]);
     const { data: certificatesResponse } = useGetAdminCertificatesQuery();
     const [createCertificate] = useCreateAdminCertificateMutation();
     const [updateCertificate] = useUpdateAdminCertificateMutation();

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, MapPin, Users, CalendarDays, Gift, ExternalLink, Link2 } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, MapPin, CalendarDays, Gift, ExternalLink, Link2, ListOrdered } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,13 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { demoEvents } from '@/lib/demo-data';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
+import { AdminImageUploadField } from '@/components/admin-image-upload-field';
 const statusStyles = {
     upcoming: 'bg-primary/15 text-primary border-primary/30',
     ongoing: 'bg-success/15 text-success border-success/30',
@@ -33,7 +32,7 @@ const typeLabels = {
     contest: 'Contest',
 };
 export function EventsContent() {
-    const { items: events, createItem, updateItem, deleteItem } = useAdminContent('events', demoEvents);
+    const { items: events, createItem, updateItem, deleteItem } = useAdminContent('events', []);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [typeFilter, setTypeFilter] = useState('all');
@@ -47,12 +46,20 @@ export function EventsContent() {
         location: '',
         type: 'workshop',
         status: 'upcoming',
-        capacity: 50,
+        eventHeadLine1: '',
+        eventHeadLine2: 'Reward',
+        eventHeadLine3: 'Rules',
         reward: '',
-        registrationLink: '',
-        contestLink: '',
-        meetLink: '',
-        vjudgeGroupLink: '',
+        rules1: '',
+        rules2: '',
+        rules3: '',
+        rules4: '',
+        btnText: '',
+        btnLink: '',
+        btnText1: '',
+        btnLink1: '',
+        order: 0,
+        image: '',
     });
     const filtered = useMemo(() => {
         return events.filter((e) => {
@@ -74,12 +81,20 @@ export function EventsContent() {
             location: '',
             type: 'workshop',
             status: 'upcoming',
-            capacity: 50,
+            eventHeadLine1: '',
+            eventHeadLine2: 'Reward',
+            eventHeadLine3: 'Rules',
             reward: '',
-            registrationLink: '',
-            contestLink: '',
-            meetLink: '',
-            vjudgeGroupLink: '',
+            rules1: '',
+            rules2: '',
+            rules3: '',
+            rules4: '',
+            btnText: '',
+            btnLink: '',
+            btnText1: '',
+            btnLink1: '',
+            order: events.length,
+            image: '',
         });
         setDialogOpen(true);
     };
@@ -93,12 +108,20 @@ export function EventsContent() {
             location: event.location,
             type: event.type,
             status: event.status,
-            capacity: event.capacity || 0,
+            eventHeadLine1: event.eventHeadLine1 || event.title || '',
+            eventHeadLine2: event.eventHeadLine2 || 'Reward',
+            eventHeadLine3: event.eventHeadLine3 || 'Rules',
             reward: event.reward || '',
-            registrationLink: event.registrationLink || '',
-            contestLink: event.contestLink || '',
-            meetLink: event.meetLink || '',
-            vjudgeGroupLink: event.vjudgeGroupLink || '',
+            rules1: event.rules1 || '',
+            rules2: event.rules2 || '',
+            rules3: event.rules3 || '',
+            rules4: event.rules4 || '',
+            btnText: event.btnText || event.registrationText || '',
+            btnLink: event.btnLink || event.registrationLink || '',
+            btnText1: event.btnText1 || event.contestText || '',
+            btnLink1: event.btnLink1 || event.contestLink || '',
+            order: Number(event.order) || 0,
+            image: event.image || '',
         });
         setDialogOpen(true);
     };
@@ -109,11 +132,20 @@ export function EventsContent() {
                 ...formData,
                 date: new Date(formData.date || Date.now()).toISOString(),
                 endDate: new Date(formData.endDate || formData.date || Date.now()).toISOString(),
+                eventHeadLine1: formData.eventHeadLine1 || formData.title,
+                eventHeadLine2: formData.eventHeadLine2 || 'Reward',
+                eventHeadLine3: formData.eventHeadLine3 || 'Rules',
                 reward: formData.reward || undefined,
-                registrationLink: formData.registrationLink || undefined,
-                contestLink: formData.contestLink || undefined,
-                meetLink: formData.meetLink || undefined,
-                vjudgeGroupLink: formData.vjudgeGroupLink || undefined,
+                rules1: formData.rules1 || '',
+                rules2: formData.rules2 || '',
+                rules3: formData.rules3 || '',
+                rules4: formData.rules4 || '',
+                btnText: formData.btnText || '',
+                btnLink: formData.btnLink || '',
+                btnText1: formData.btnText1 || '',
+                btnLink1: formData.btnLink1 || '',
+                order: Number(formData.order) || 0,
+                image: formData.image || '',
             };
             await updateItem(editingEvent.id, updatedEvent);
             showSuccessAlert('Event Updated', `"${formData.title}" has been updated.`);
@@ -127,15 +159,21 @@ export function EventsContent() {
                 location: formData.location,
                 type: formData.type,
                 status: formData.status,
-                capacity: formData.capacity,
-                registered: 0,
                 organizer: 'CPCCU',
-                image: '',
+                eventHeadLine1: formData.eventHeadLine1 || formData.title,
+                eventHeadLine2: formData.eventHeadLine2 || 'Reward',
+                eventHeadLine3: formData.eventHeadLine3 || 'Rules',
                 reward: formData.reward || undefined,
-                registrationLink: formData.registrationLink || undefined,
-                contestLink: formData.contestLink || undefined,
-                meetLink: formData.meetLink || undefined,
-                vjudgeGroupLink: formData.vjudgeGroupLink || undefined,
+                rules1: formData.rules1 || '',
+                rules2: formData.rules2 || '',
+                rules3: formData.rules3 || '',
+                rules4: formData.rules4 || '',
+                btnText: formData.btnText || '',
+                btnLink: formData.btnLink || '',
+                btnText1: formData.btnText1 || '',
+                btnLink1: formData.btnLink1 || '',
+                order: Number(formData.order) || 0,
+                image: formData.image || '',
             };
             await createItem(newEvent);
             showSuccessAlert('Event Created', `"${formData.title}" has been created.`);
@@ -166,7 +204,7 @@ export function EventsContent() {
             { label: 'Upcoming', value: events.filter((event) => event.status === 'upcoming').length },
             { label: 'Ongoing', value: events.filter((event) => event.status === 'ongoing').length },
             { label: 'Completed', value: events.filter((event) => event.status === 'completed').length },
-            { label: 'Total Capacity', value: events.reduce((sum, event) => sum + (Number(event.capacity) || 0), 0) },
+            { label: 'Total Events', value: events.length },
         ].map((stat) => (<Card key={stat.label}>
             <CardContent className="pt-4">
               <p className="text-xl font-bold">{stat.value.toLocaleString()}</p>
@@ -222,8 +260,7 @@ export function EventsContent() {
           </CardContent>
         </Card>) : (<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((event) => {
-                const fillPercent = event.capacity > 0 ? (event.registered / event.capacity) * 100 : 0;
-                const hasLinks = event.registrationLink || event.contestLink || event.meetLink || event.vjudgeGroupLink;
+                const hasLinks = event.btnLink || event.btnLink1;
                 return (<Card key={event.id} className="flex flex-col">
                 <CardHeader className="flex flex-row items-start justify-between pb-3">
                   <div className="flex-1 min-w-0">
@@ -266,8 +303,8 @@ export function EventsContent() {
                       <span className="truncate">{event.location}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Users className="size-3.5 shrink-0"/>
-                      <span>Organizer: {event.organizer}</span>
+                      <ListOrdered className="size-3.5 shrink-0"/>
+                      <span>Display order: {Number(event.order) || 0}</span>
                     </div>
                     {event.reward && (<div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                         <Gift className="size-3.5 shrink-0"/>
@@ -275,32 +312,19 @@ export function EventsContent() {
                       </div>)}
                   </div>
                   {hasLinks && (<div className="flex flex-wrap gap-1.5 pt-1">
-                      {event.registrationLink && (<Button variant="outline" size="sm" className="h-6 px-2 text-xs" asChild>
-                          <a href={event.registrationLink} target="_blank" rel="noopener noreferrer">
+                      {event.btnLink && (<Button variant="outline" size="sm" className="h-6 px-2 text-xs" asChild>
+                          <a href={event.btnLink} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="mr-1 size-3"/>
-                            Register
+                            {event.btnText || 'Open Link'}
                           </a>
                         </Button>)}
-                      {event.contestLink && (<Button variant="outline" size="sm" className="h-6 px-2 text-xs" asChild>
-                          <a href={event.contestLink} target="_blank" rel="noopener noreferrer">
+                      {event.btnLink1 && (<Button variant="outline" size="sm" className="h-6 px-2 text-xs" asChild>
+                          <a href={event.btnLink1} target="_blank" rel="noopener noreferrer">
                             <Link2 className="mr-1 size-3"/>
-                            Contest
-                          </a>
-                        </Button>)}
-                      {event.vjudgeGroupLink && (<Button variant="outline" size="sm" className="h-6 px-2 text-xs" asChild>
-                          <a href={event.vjudgeGroupLink} target="_blank" rel="noopener noreferrer">
-                            <Link2 className="mr-1 size-3"/>
-                            Vjudge
+                            {event.btnText1 || 'Open Link'}
                           </a>
                         </Button>)}
                     </div>)}
-                  <div className="mt-auto pt-3">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-                      <span>{event.registered} / {event.capacity} registered</span>
-                      <span>{Math.round(fillPercent)}%</span>
-                    </div>
-                    <Progress value={fillPercent} className="h-1.5"/>
-                  </div>
                 </CardContent>
               </Card>);
             })}
@@ -314,14 +338,19 @@ export function EventsContent() {
             <DialogDescription>{editingEvent ? 'Update event details.' : 'Fill in the details for a new event.'}</DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="links">Links & Rewards</TabsTrigger>
+              <TabsTrigger value="rules">Rules</TabsTrigger>
+              <TabsTrigger value="links">Buttons & Rewards</TabsTrigger>
             </TabsList>
             <TabsContent value="basic" className="flex flex-col gap-4 pt-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="event-title">Title</Label>
                 <Input id="event-title" value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} placeholder="Event title"/>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="event-headline">Card Headline</Label>
+                <Input id="event-headline" value={formData.eventHeadLine1} onChange={(e) => setFormData(prev => ({ ...prev, eventHeadLine1: e.target.value }))} placeholder="Optional public card headline"/>
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="event-desc">Description</Label>
@@ -341,7 +370,14 @@ export function EventsContent() {
                 <Label htmlFor="event-loc">Location</Label>
                 <Input id="event-loc" value={formData.location} onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))} placeholder="Main Auditorium, Block A or Online"/>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <AdminImageUploadField
+                id="event-image"
+                label="Event Image"
+                folder="cpccu/events"
+                value={formData.image}
+                onChange={(value) => setFormData(prev => ({ ...prev, image: value }))}
+              />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="flex flex-col gap-2">
                   <Label>Type</Label>
                   <Select value={formData.type} onValueChange={(v) => setFormData(prev => ({ ...prev, type: v }))}>
@@ -371,31 +407,54 @@ export function EventsContent() {
                   </Select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="event-cap">Capacity</Label>
-                  <Input id="event-cap" type="number" value={formData.capacity} onChange={(e) => setFormData(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}/>
+                  <Label htmlFor="event-order">Display Order</Label>
+                  <Input id="event-order" type="number" value={formData.order} onChange={(e) => setFormData(prev => ({ ...prev, order: parseInt(e.target.value) || 0 }))}/>
                 </div>
               </div>
             </TabsContent>
+            <TabsContent value="rules" className="flex flex-col gap-4 pt-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="event-rules-heading">Rules Heading</Label>
+                <Input id="event-rules-heading" value={formData.eventHeadLine3} onChange={(e) => setFormData(prev => ({ ...prev, eventHeadLine3: e.target.value }))} placeholder="Rules"/>
+              </div>
+              {[1, 2, 3, 4].map((ruleNumber) => (
+                <div key={ruleNumber} className="flex flex-col gap-2">
+                  <Label htmlFor={`event-rule-${ruleNumber}`}>Rule {ruleNumber}</Label>
+                  <Input
+                    id={`event-rule-${ruleNumber}`}
+                    value={formData[`rules${ruleNumber}`]}
+                    onChange={(e) => setFormData(prev => ({ ...prev, [`rules${ruleNumber}`]: e.target.value }))}
+                    placeholder={`Rule ${ruleNumber}`}
+                  />
+                </div>
+              ))}
+            </TabsContent>
             <TabsContent value="links" className="flex flex-col gap-4 pt-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="event-reward-heading">Reward Heading</Label>
+                <Input id="event-reward-heading" value={formData.eventHeadLine2} onChange={(e) => setFormData(prev => ({ ...prev, eventHeadLine2: e.target.value }))} placeholder="Reward"/>
+              </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="event-reward">Reward / Prize (Optional)</Label>
                 <Input id="event-reward" value={formData.reward} onChange={(e) => setFormData(prev => ({ ...prev, reward: e.target.value }))} placeholder="e.g. Winners will get certificates and prizes"/>
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="event-registration">Registration Link (Optional)</Label>
-                <Input id="event-registration" value={formData.registrationLink} onChange={(e) => setFormData(prev => ({ ...prev, registrationLink: e.target.value }))} placeholder="https://forms.google.com/..."/>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="event-contest">Contest Link (Optional)</Label>
-                <Input id="event-contest" value={formData.contestLink} onChange={(e) => setFormData(prev => ({ ...prev, contestLink: e.target.value }))} placeholder="https://vjudge.net/contest/..."/>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="event-vjudge">Vjudge Group Link (Optional)</Label>
-                <Input id="event-vjudge" value={formData.vjudgeGroupLink} onChange={(e) => setFormData(prev => ({ ...prev, vjudgeGroupLink: e.target.value }))} placeholder="https://vjudge.net/group/..."/>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="event-meet">Google Meet / Online Link (Optional)</Label>
-                <Input id="event-meet" value={formData.meetLink} onChange={(e) => setFormData(prev => ({ ...prev, meetLink: e.target.value }))} placeholder="https://meet.google.com/..."/>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="event-button-text">Button 1 Text</Label>
+                  <Input id="event-button-text" value={formData.btnText} onChange={(e) => setFormData(prev => ({ ...prev, btnText: e.target.value }))} placeholder="Contest Link"/>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="event-button-link">Button 1 Link</Label>
+                  <Input id="event-button-link" value={formData.btnLink} onChange={(e) => setFormData(prev => ({ ...prev, btnLink: e.target.value }))} placeholder="https://..."/>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="event-button-text-2">Button 2 Text</Label>
+                  <Input id="event-button-text-2" value={formData.btnText1} onChange={(e) => setFormData(prev => ({ ...prev, btnText1: e.target.value }))} placeholder="Group Link"/>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="event-button-link-2">Button 2 Link</Label>
+                  <Input id="event-button-link-2" value={formData.btnLink1} onChange={(e) => setFormData(prev => ({ ...prev, btnLink1: e.target.value }))} placeholder="https://..."/>
+                </div>
               </div>
             </TabsContent>
           </Tabs>

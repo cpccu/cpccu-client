@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { demoProfiles } from '@/lib/demo-data';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
@@ -25,7 +24,7 @@ const statusIcons = {
     rejected: <XCircle className="size-3.5"/>,
 };
 export function JobsContent() {
-    const { items: profiles, updateItem, deleteItem } = useAdminContent('profiles', demoProfiles);
+    const { items: profiles, updateItem, deleteItem } = useAdminContent('profiles', []);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [activeTab, setActiveTab] = useState('all');
@@ -33,10 +32,11 @@ export function JobsContent() {
     const [detailOpen, setDetailOpen] = useState(false);
     const filtered = useMemo(() => {
         return profiles.filter((p) => {
-            const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-                p.title.toLowerCase().includes(search.toLowerCase()) ||
-                p.skills.some(s => s.name.toLowerCase().includes(search.toLowerCase())) ||
-                p.department.toLowerCase().includes(search.toLowerCase());
+            const normalizedSearch = search.toLowerCase();
+            const matchesSearch = (p.name || '').toLowerCase().includes(normalizedSearch) ||
+                (p.title || '').toLowerCase().includes(normalizedSearch) ||
+                (p.skills || []).some(s => (s.name || s.skillName || '').toLowerCase().includes(normalizedSearch)) ||
+                (p.department || '').toLowerCase().includes(normalizedSearch);
             const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
             const matchesTab = activeTab === 'all' || p.status === activeTab;
             return matchesSearch && matchesStatus && matchesTab;
@@ -183,16 +183,16 @@ export function JobsContent() {
                     <Mail className="size-4 shrink-0"/>
                     <span className="truncate">{detailProfile.email}</span>
                   </div>
-                  <a href={detailProfile.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors">
+                  {detailProfile.githubUrl && (<a href={detailProfile.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors">
                     <Github className="size-4 shrink-0"/>
                     <span className="truncate">{detailProfile.githubUrl.replace('https://', '')}</span>
                     <ExternalLink className="size-3 shrink-0 text-muted-foreground"/>
-                  </a>
-                  <a href={detailProfile.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors">
+                  </a>)}
+                  {detailProfile.linkedinUrl && (<a href={detailProfile.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors">
                     <Linkedin className="size-4 shrink-0"/>
                     <span className="truncate">{detailProfile.linkedinUrl.replace('https://', '')}</span>
                     <ExternalLink className="size-3 shrink-0 text-muted-foreground"/>
-                  </a>
+                  </a>)}
                   {detailProfile.portfolioUrl && (<a href={detailProfile.portfolioUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors">
                       <Globe className="size-4 shrink-0"/>
                       <span className="truncate">{detailProfile.portfolioUrl.replace('https://', '')}</span>
@@ -205,11 +205,11 @@ export function JobsContent() {
               <div className="flex flex-col gap-3">
                 <h4 className="text-sm font-semibold">Skills</h4>
                 <div className="flex flex-col gap-2.5">
-                  {detailProfile.skills.map((skill) => (<div key={skill.name} className="flex items-start gap-2">
+                  {(detailProfile.skills || []).map((skill) => (<div key={skill.name || skill.skillName} className="flex items-start gap-2">
                       <ChevronRight className="size-4 shrink-0 mt-0.5 text-primary"/>
                       <div>
-                        <span className="text-sm font-medium">{skill.name}:</span>
-                        <span className="text-sm text-muted-foreground ml-1">{skill.description}</span>
+                        <span className="text-sm font-medium">{skill.name || skill.skillName}:</span>
+                        <span className="text-sm text-muted-foreground ml-1">{skill.description || skill.experience}</span>
                       </div>
                     </div>))}
                 </div>
@@ -309,12 +309,12 @@ function ProfileCard({ profile, onApprove, onReject, onRevert, onRemove, onViewD
             </div>
           </div>
           <div className="mt-1.5 flex items-center gap-2">
-            <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="GitHub profile" className="text-foreground hover:text-primary transition-colors">
+            {profile.githubUrl && (<a href={profile.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="GitHub profile" className="text-foreground hover:text-primary transition-colors">
               <Github className="size-4"/>
-            </a>
-            <a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile" className="text-foreground hover:text-primary transition-colors">
+            </a>)}
+            {profile.linkedinUrl && (<a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile" className="text-foreground hover:text-primary transition-colors">
               <Linkedin className="size-4"/>
-            </a>
+            </a>)}
             {profile.portfolioUrl && (<a href={profile.portfolioUrl} target="_blank" rel="noopener noreferrer" aria-label="Portfolio website" className="text-foreground hover:text-primary transition-colors">
                 <Globe className="size-4"/>
               </a>)}
@@ -325,8 +325,8 @@ function ProfileCard({ profile, onApprove, onReject, onRevert, onRemove, onViewD
       {/* Skills Row */}
       <div className="border-t bg-muted/30 px-5 py-3">
         <div className="flex flex-wrap gap-1.5">
-          {profile.skills.map((skill) => (<Badge key={skill.name} variant="secondary" className="text-xs font-normal">
-              {skill.name}
+          {(profile.skills || []).map((skill) => (<Badge key={skill.name || skill.skillName} variant="secondary" className="text-xs font-normal">
+              {skill.name || skill.skillName}
             </Badge>))}
         </div>
       </div>

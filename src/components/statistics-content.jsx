@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { siteStatistics } from '@/lib/demo-data';
 import { showSuccessAlert } from '@/lib/alerts';
 import { useGetAdminStatisticsQuery, useUpdateAdminStatisticsMutation } from '@/features/admin/adminApi';
 const statConfigs = [
@@ -15,13 +14,27 @@ const statConfigs = [
     { key: 'awards', label: 'Total Awards', icon: Award, color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
     { key: 'totalVisitors', label: 'Total Visitors', icon: Eye, color: 'text-pink-500', bgColor: 'bg-pink-500/10' },
     { key: 'certificatesIssued', label: 'Certificates Issued', icon: FileCheck, color: 'text-teal-500', bgColor: 'bg-teal-500/10' },
+    { key: 'certificateVerifications', label: 'Certificate Verifications', icon: Eye, color: 'text-cyan-500', bgColor: 'bg-cyan-500/10' },
+    { key: 'failedCertificateVerifications', label: 'Failed Verifications', icon: Eye, color: 'text-red-500', bgColor: 'bg-red-500/10' },
     { key: 'contestsHeld', label: 'Contests Held', icon: Trophy, color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
     { key: 'winnersRecognized', label: 'Winners Recognized', icon: BarChart3, color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
 ];
+const emptyStatistics = {
+    members: 0,
+    photos: 0,
+    events: 0,
+    awards: 0,
+    totalVisitors: 0,
+    certificatesIssued: 0,
+    certificateVerifications: 0,
+    failedCertificateVerifications: 0,
+    contestsHeld: 0,
+    winnersRecognized: 0,
+};
 export function StatisticsContent() {
-    const [stats, setStats] = useState(siteStatistics);
+    const [stats, setStats] = useState(emptyStatistics);
     const [isEditing, setIsEditing] = useState(false);
-    const [editValues, setEditValues] = useState(siteStatistics);
+    const [editValues, setEditValues] = useState(emptyStatistics);
     const { data: statisticsResponse } = useGetAdminStatisticsQuery();
     const [updateStatistics] = useUpdateAdminStatisticsMutation();
     useEffect(() => {
