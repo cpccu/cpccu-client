@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic';
+import AdminLayout from '@/components/admin-layout';
 import { TablePageSkeleton } from '@/components/page-skeleton';
 
 const AlumniContent = dynamic(
@@ -7,5 +8,9 @@ const AlumniContent = dynamic(
 );
 
 export default function AlumniPage() {
-  return <AlumniContent />;
+  return (
+    <AdminLayout>
+      <AlumniContent />
+    </AdminLayout>
+  );
 }

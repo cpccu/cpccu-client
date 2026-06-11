@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic';
+import AdminLayout from '@/components/admin-layout';
 import { TablePageSkeleton } from '@/components/page-skeleton';
 
 const AuditLogsContent = dynamic(
@@ -7,5 +8,9 @@ const AuditLogsContent = dynamic(
 );
 
 export default function AuditLogsPage() {
-  return <AuditLogsContent />;
+  return (
+    <AdminLayout>
+      <AuditLogsContent />
+    </AdminLayout>
+  );
 }
