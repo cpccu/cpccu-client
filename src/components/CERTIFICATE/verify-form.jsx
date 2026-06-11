@@ -71,14 +71,20 @@ export function VerifyForm() {
 
       const certificateData = res?.data?.data;
 
-      if (!certificateData) {
+      const certificateResults = Array.isArray(certificateData)
+        ? certificateData
+        : certificateData
+          ? [certificateData]
+          : [];
+
+      if (!certificateResults.length) {
         setError("Certificate not found.");
         setResults([]);
         setSearched(true);
         return;
       }
 
-      setResults([certificateData]);
+      setResults(certificateResults);
       setSearched(true);
     } catch (err) {
       setError("Something went wrong. Please try again.");

@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import AboutCard from "@/components/ABOUT/AboutCard";
 import PreviousCommitteeData from "@/data/PreviousCommittee.json";
 import { FaChevronDown } from "react-icons/fa";
 
-export default function PreviousCommittee() {
+export default function PreviousCommittee({ data = PreviousCommitteeData }) {
   const [expandedYear, setExpandedYear] = useState(null);
 
   const toggleYear = (year) => {
@@ -33,7 +32,7 @@ export default function PreviousCommittee() {
       {/* Timeline Accordion */}
       <section className="padding">
         <div className="max-w-7xl mx-auto space-y-6">
-          {PreviousCommitteeData.map((yearData, index) => (
+          {data.map((yearData, index) => (
             <div
               key={index}
               className="border border-gray-200 rounded-2xl overflow-hidden hover:border-header/50 transition-all duration-300 shadow-sm"

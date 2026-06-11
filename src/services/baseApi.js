@@ -9,7 +9,7 @@ export const baseApi = createApi({
     prepareHeaders: (headers, { getState, endpoint }) => {
       const token = getState().auth.token;
       // For image uploads, we don't set Content-Type to let the browser set it with the boundary
-      if (endpoint !== 'userImageUpload') {
+      if (!['userImageUpload', 'uploadAdminImage'].includes(endpoint)) {
         headers.set('Content-Type', 'application/json');
       }
       // Always set Authorization if token exists

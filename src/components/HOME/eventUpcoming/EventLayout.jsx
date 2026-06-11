@@ -15,6 +15,8 @@ const EventLayout = ({ clName }) => {
   const [slidePx, setSlidePx] = useState(0);
   const { data: eventsResponse } = useGetPublicContentQuery("events");
   const events = chooseLiveItems(eventsResponse, data, toPublicEvent);
+  const firstEventStart = events[0]?.date ? new Date(events[0].date).getTime() : 0;
+  const sectionLabel = firstEventStart && firstEventStart > Date.now() ? "Upcoming Event" : "Recent Event";
 
   const goLeft = () => {
     if (slider.current) {
@@ -81,23 +83,11 @@ const EventLayout = ({ clName }) => {
         </button>
       </section>
 
-      {events.map((item, index) => (
-        <React.Fragment key={index}>
-          {item?.date < new Date() ? (
-            <section className="absolute -top-12 lg:-top-8 left-0 right-0 flex items-center justify-center lg:justify-end">
-              <div className="text-2xl md:text-3xl font-bold text-gray-900 bg-white px-8 py-3 lg:mr-12  shadow-xl">
-                Upcoming Event
-              </div>
-            </section>
-          ) : (
-            <section className="absolute -top-12 lg:-top-8 left-0 right-0 flex items-center justify-center lg:justify-end">
-              <div className="text-2xl md:text-3xl font-bold text-gray-900 bg-white px-8 py-3 lg:mr-12  shadow-xl">
-                Recent Event
-              </div>
-            </section>
-          )}
-        </React.Fragment>
-      ))}
+      <section className="absolute -top-12 lg:-top-8 left-0 right-0 flex items-center justify-center lg:justify-end">
+        <div className="text-2xl md:text-3xl font-bold text-gray-900 bg-white px-8 py-3 lg:mr-12 shadow-xl">
+          {sectionLabel}
+        </div>
+      </section>
     </div>
   ) : null;
 };

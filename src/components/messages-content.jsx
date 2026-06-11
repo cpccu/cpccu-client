@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, } from '@/components/ui/dialog';
-import { demoContactMessages } from '@/lib/demo-data';
 import { showSuccessAlert, showConfirmAlert } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
@@ -19,7 +18,7 @@ const statusConfig = {
     archived: { label: 'Archived', variant: 'destructive', icon: <Archive className="size-3"/> },
 };
 export function MessagesContent() {
-    const { items: messages, setItems: setMessages, updateItem, deleteItem } = useAdminContent('messages', demoContactMessages);
+    const { items: messages, setItems: setMessages, updateItem, deleteItem } = useAdminContent('messages', []);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [replyDialogOpen, setReplyDialogOpen] = useState(false);

@@ -80,6 +80,13 @@ export const adminApi = baseApi.injectEndpoints({
         "AdminOverview",
       ],
     }),
+    uploadAdminImage: builder.mutation({
+      query: (body) => ({
+        url: "/admin/uploads/image",
+        method: "POST",
+        body,
+      }),
+    }),
     getAdminStatistics: builder.query({
       query: () => "/admin/statistics",
       providesTags: ["AdminStatistics"],
@@ -152,4 +159,5 @@ export const {
   useUpdateAdminStatisticsMutation,
   useGetAdminSystemSettingsQuery,
   useUpdateAdminSystemSettingsMutation,
+  useUploadAdminImageMutation,
 } = adminApi;
