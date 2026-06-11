@@ -10,6 +10,9 @@ import { FaAngleRight } from "react-icons/fa6";
 
 import { useFetchUsersQuery, useRemoveJobPipelineProfileMutation, useRequestJobPipelineProfileMutation, useUpdateUserMutation, useUserImageUploadMutation } from "@/features/users/userApi";
 import { setCredentials, clearCredentials } from "@/features/auth/authSlice";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
 import ImageUploadModal from "../PROFILE/ImageUploadModal";
@@ -22,7 +25,7 @@ export default function Profile({ user, isOwnProfile }) {
   const token = useSelector((state) => state.auth.token);
   const [updateUser, { isLoading: isUpdating, isSuccess: isUpdateSuccess, isError: isUpdateError, reset: resetUpdate }] = useUpdateUserMutation();
   const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageSuccess, isError: isImageError, error: uploadError, reset: resetImage }] = useUserImageUploadMutation();
-  const [requestJobPipelineProfile, { isLoading: isRequestingJobPipeline, isSuccess: isJobPipelineSuccess, isError: isJobPipelineError, reset: resetJobPipeline }] = useRequestJobPipelineProfileMutation();
+  const [requestJobPipelineProfile, { isLoading: isRequestingJobPipeline, isSuccess: isJobPipelineSuccess, isError: isJobPipelineError, error: jobPipelineError, reset: resetJobPipeline }] = useRequestJobPipelineProfileMutation();
   const [removeJobPipelineProfile, { isLoading: isRemovingJobPipeline }] = useRemoveJobPipelineProfileMutation();
   const { data: currentUserResponse } = useFetchUsersQuery(undefined, {
     skip: !isOwnProfile || !token,
@@ -33,6 +36,9 @@ export default function Profile({ user, isOwnProfile }) {
   const [editMode, setEditMode] = useState(false);
   const [newSkill, setNewSkill] = useState({ skillName: "", experience: "" });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isJobPipelineModalOpen, setIsJobPipelineModalOpen] = useState(false);
+  const [jobPipelineTitleInput, setJobPipelineTitleInput] = useState("");
+  const [jobPipelineTitleError, setJobPipelineTitleError] = useState("");
   
   const [profile, setProfile] = useState({
     avatar: user?.avatar || "",
@@ -43,6 +49,8 @@ export default function Profile({ user, isOwnProfile }) {
     linkedin: user?.linkedin || "",
     portfolio: user?.portfolio || "",
     jobPipelineStatus: user?.jobPipelineStatus || "hidden",
+    jobPipelineTitle: user?.jobPipelineTitle || user?.developerProfile?.title || "",
+    jobPipelineRejectionReason: user?.jobPipelineRejectionReason || user?.developerProfile?.rejectionReason || "",
     skills: user?.skills || [],
     uniID: user?.uniID || "", // Matches backend field
     batch: user?.batch || "",
@@ -77,6 +85,22 @@ export default function Profile({ user, isOwnProfile }) {
     }
   };
 
+  const validateJobPipelineTitle = (title) => {
+    const trimmedTitle = title.trim();
+
+    if (!trimmedTitle) return "Title is required";
+    if (trimmedTitle.length < 3) return "Professional title must be at least 3 characters";
+    if (trimmedTitle.length > 100) return "Professional title must be 100 characters or fewer";
+
+    return "";
+  };
+
+  const openJobPipelineModal = () => {
+    setJobPipelineTitleInput(profile.jobPipelineTitle || "");
+    setJobPipelineTitleError("");
+    setIsJobPipelineModalOpen(true);
+  };
+
   const handleImageUpload = async (file) => {
     const formData = new FormData();
     formData.append("image", file);
@@ -89,35 +113,60 @@ export default function Profile({ user, isOwnProfile }) {
     }
   };
 
-  const handleJobPipelineRequest = async () => {
+  const handleJobPipelineRequest = async (title) => {
     try {
-      const res = await requestJobPipelineProfile().unwrap();
-      if (res?.data?.user) {
+      const res = await requestJobPipelineProfile({ title }).unwrap();
+      const updatedUser = res?.data?.user || res?.data;
+
+      if (updatedUser) {
         dispatch(setCredentials({
-          user: res.data.user,
+          user: updatedUser,
           token,
         }));
         setProfile(prev => ({
           ...prev,
-          jobPipelineStatus: res.data.user.jobPipelineStatus || "pending",
+          jobPipelineStatus: updatedUser.jobPipelineStatus || updatedUser.developerProfile?.status || "pending",
+          jobPipelineTitle: updatedUser.jobPipelineTitle || updatedUser.developerProfile?.title || title,
+          jobPipelineRejectionReason: updatedUser.jobPipelineRejectionReason || updatedUser.developerProfile?.rejectionReason || "",
         }));
       }
+
+      setIsJobPipelineModalOpen(false);
     } catch (error) {
+      setJobPipelineTitleError(error?.data?.message || "Failed to submit job pipeline request.");
       console.error("Job pipeline request failed:", error);
     }
+  };
+
+  const handleJobPipelineSubmit = async (event) => {
+    event.preventDefault();
+
+    const trimmedTitle = jobPipelineTitleInput.trim();
+    const validationError = validateJobPipelineTitle(trimmedTitle);
+
+    if (validationError) {
+      setJobPipelineTitleError(validationError);
+      return;
+    }
+
+    await handleJobPipelineRequest(trimmedTitle);
   };
 
   const handleJobPipelineRemove = async () => {
     try {
       const res = await removeJobPipelineProfile().unwrap();
-      if (res?.data?.user) {
+      const updatedUser = res?.data?.user || res?.data;
+
+      if (updatedUser) {
         dispatch(setCredentials({
-          user: res.data.user,
+          user: updatedUser,
           token,
         }));
         setProfile(prev => ({
           ...prev,
-          jobPipelineStatus: res.data.user.jobPipelineStatus || "hidden",
+          jobPipelineStatus: updatedUser.jobPipelineStatus || updatedUser.developerProfile?.status || "hidden",
+          jobPipelineTitle: updatedUser.jobPipelineTitle || updatedUser.developerProfile?.title || "",
+          jobPipelineRejectionReason: updatedUser.jobPipelineRejectionReason || updatedUser.developerProfile?.rejectionReason || "",
         }));
       }
     } catch (error) {
@@ -169,6 +218,8 @@ export default function Profile({ user, isOwnProfile }) {
         linkedin: freshUser.linkedin || "",
         portfolio: freshUser.portfolio || "",
         jobPipelineStatus: freshUser.jobPipelineStatus || "hidden",
+        jobPipelineTitle: freshUser.jobPipelineTitle || freshUser.developerProfile?.title || "",
+        jobPipelineRejectionReason: freshUser.jobPipelineRejectionReason || freshUser.developerProfile?.rejectionReason || "",
         skills: freshUser.skills || [],
         uniID: freshUser.uniID || "",
         batch: freshUser.batch || "",
@@ -219,6 +270,13 @@ export default function Profile({ user, isOwnProfile }) {
                     Shown in Job Pipeline
                   </span>
                   <button
+                    onClick={openJobPipelineModal}
+                    disabled={isRequestingJobPipeline}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Edit Job Pipeline Title
+                  </button>
+                  <button
                     onClick={handleJobPipelineRemove}
                     disabled={isRemovingJobPipeline}
                     className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition-all disabled:cursor-not-allowed disabled:opacity-60"
@@ -226,17 +284,26 @@ export default function Profile({ user, isOwnProfile }) {
                     {isRemovingJobPipeline ? "Removing..." : "Remove"}
                   </button>
                 </div>
+              ) : profile.jobPipelineStatus === "pending" ? (
+                <div className="flex flex-1 flex-col gap-2 md:flex-none md:flex-row">
+                  <span className="flex items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 font-bold text-amber-700">
+                    Request Pending Review
+                  </span>
+                  <button
+                    onClick={openJobPipelineModal}
+                    disabled={isRequestingJobPipeline}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Update Title
+                  </button>
+                </div>
               ) : (
                 <button
-                  onClick={handleJobPipelineRequest}
-                  disabled={isRequestingJobPipeline || profile.jobPipelineStatus === "pending"}
+                  onClick={openJobPipelineModal}
+                  disabled={isRequestingJobPipeline}
                   className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition-all disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {profile.jobPipelineStatus === "pending"
-                    ? "Job Pipeline Pending"
-                    : isRequestingJobPipeline
-                      ? "Requesting..."
-                      : "Show in Job Pipeline"}
+                  {isRequestingJobPipeline ? "Requesting..." : "Show in Job Pipeline"}
                 </button>
               )}
             </>
@@ -287,6 +354,9 @@ export default function Profile({ user, isOwnProfile }) {
             </div>
             
             <h2 className="text-2xl font-bold text-gray-800 mt-6">{profile.fullName || "Member Name"}</h2>
+            {profile.jobPipelineTitle && (
+              <p className="text-blue-600 font-semibold uppercase text-sm tracking-widest mt-2">{profile.jobPipelineTitle}</p>
+            )}
             <p className="text-blue-600 font-semibold uppercase text-sm tracking-widest mt-1">CPCCU Member</p>
           </div>
 
@@ -404,11 +474,64 @@ export default function Profile({ user, isOwnProfile }) {
         isUploading={isImageUploading}
       />
 
+      <Dialog open={isJobPipelineModalOpen} onOpenChange={(open) => {
+        setIsJobPipelineModalOpen(open);
+        if (!open) setJobPipelineTitleError("");
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handleJobPipelineSubmit}>
+            <DialogHeader>
+              <DialogTitle>Show in Job Pipeline</DialogTitle>
+              <DialogDescription>
+                Enter the professional title you want shown after admin approval.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="job-pipeline-title">Professional Title</Label>
+                <Input
+                  id="job-pipeline-title"
+                  value={jobPipelineTitleInput}
+                  onChange={(event) => {
+                    setJobPipelineTitleInput(event.target.value);
+                    setJobPipelineTitleError("");
+                  }}
+                  placeholder="e.g. Frontend Developer"
+                  maxLength={100}
+                  aria-invalid={Boolean(jobPipelineTitleError)}
+                  className="h-11"
+                />
+                {jobPipelineTitleError && (
+                  <p className="text-sm text-destructive">{jobPipelineTitleError}</p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <button
+                type="button"
+                onClick={() => setIsJobPipelineModalOpen(false)}
+                className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isRequestingJobPipeline}
+                className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+              >
+                {isRequestingJobPipeline ? "Submitting..." : "Submit Request"}
+              </button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Alerts */}
       {isUpdateSuccess && <SuccessAlert title="Success!" text="Your profile has been updated." />}
       {isUpdateError && <ErrorAlert title="Error" text="Failed to save profile changes." />}
       {isImageSuccess && <SuccessAlert title="Success!" text="Profile picture updated." />}
       {isImageError && <ErrorAlert title="Upload Failed" text={uploadError?.data?.message || "Failed to upload image."} />}
+      {isJobPipelineError && <ErrorAlert title="Job Pipeline Request Failed" text={jobPipelineError?.data?.message || "Failed to submit job pipeline request."} />}
     </div>
   );
 }
