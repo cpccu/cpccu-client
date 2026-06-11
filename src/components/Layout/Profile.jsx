@@ -62,6 +62,7 @@ export default function Profile({ user, isOwnProfile }) {
   const completion = Math.round(
     (fields.filter(f => profile[f] && (Array.isArray(profile[f]) ? profile[f].length > 0 : true)).length / fields.length) * 100
   );
+  const isJobPipelineRejected = profile.jobPipelineStatus === "rejected";
 
   const handleLogout = () => {
     dispatch(clearCredentials());
@@ -93,6 +94,12 @@ export default function Profile({ user, isOwnProfile }) {
     if (trimmedTitle.length > 100) return "Professional title must be 100 characters or fewer";
 
     return "";
+  };
+
+  const getJobPipelineModalTitle = () => {
+    if (profile.jobPipelineStatus === "approved") return "Edit Job Pipeline Title";
+    if (profile.jobPipelineStatus === "pending") return "Update Job Pipeline Request";
+    return "Show in Job Pipeline";
   };
 
   const openJobPipelineModal = () => {
@@ -264,6 +271,16 @@ export default function Profile({ user, isOwnProfile }) {
                 <FontAwesomeIcon icon={editMode ? faSave : faUserEdit} />
                 {editMode ? (isUpdating ? "Saving..." : "Save Changes") : "Edit Profile"}
               </button>
+              {isJobPipelineRejected && (
+                <div className="w-full rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
+                  <h3 className="font-bold text-red-700">Job Pipeline Request Rejected</h3>
+                  {profile.jobPipelineRejectionReason && (
+                    <p className="mt-2 text-sm text-red-600">
+                      Reason: {profile.jobPipelineRejectionReason}
+                    </p>
+                  )}
+                </div>
+              )}
               {profile.jobPipelineStatus === "approved" ? (
                 <div className="flex flex-1 flex-col gap-2 md:flex-none md:flex-row">
                   <span className="flex items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 font-bold text-emerald-700">
@@ -481,7 +498,7 @@ export default function Profile({ user, isOwnProfile }) {
         <DialogContent className="sm:max-w-md">
           <form onSubmit={handleJobPipelineSubmit}>
             <DialogHeader>
-              <DialogTitle>Show in Job Pipeline</DialogTitle>
+              <DialogTitle>{getJobPipelineModalTitle()}</DialogTitle>
               <DialogDescription>
                 Enter the professional title you want shown after admin approval.
               </DialogDescription>
@@ -501,6 +518,9 @@ export default function Profile({ user, isOwnProfile }) {
                   aria-invalid={Boolean(jobPipelineTitleError)}
                   className="h-11"
                 />
+                <div className="text-right text-xs text-muted-foreground">
+                  {jobPipelineTitleInput.length}/100
+                </div>
                 {jobPipelineTitleError && (
                   <p className="text-sm text-destructive">{jobPipelineTitleError}</p>
                 )}
