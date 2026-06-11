@@ -13,5 +13,7 @@ export const store = configureStore({
     certificate: certificateSlice,
   },
   middleware: (getDefault) =>
-    getDefault().concat(baseApi.middleware, publicApi.middleware),
+    getDefault({
+      serializableCheck: false,
+    }).concat(baseApi.middleware, publicApi.middleware),
 });

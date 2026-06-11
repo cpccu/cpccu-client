@@ -5,6 +5,7 @@ import { format } from "date-fns";
 
 export default function JobPipelineCard({ data }) {
   const { name, img, tag, phone, email, socials, skills, createdAt } = data;
+  const safeSocials = socials || {};
   const date = new Date(createdAt);
   const formatted = format(date, " dd MMMM, yyyy");
 
@@ -14,7 +15,7 @@ export default function JobPipelineCard({ data }) {
       <div className="flex flex-col flex-1 py-6 px-4 md:px-8 border-b md:border-b-0 md:border-r border-[#3b61c957] group-hover:border-[#3b60c9] duration-[250ms]">
         <figure className="rounded-full overflow-hidden self-center mb-4 border-4 border-white shadow-md w-32 h-32 md:w-40 md:h-40 lg:w-36 lg:h-36 xl:w-44 xl:h-44 shrink-0">
           <img
-            src={img}
+            src={img || "/assets/avatar/default-avatar.png"}
             loading="lazy"
             alt={`${name}'s profile`}
             className="w-full h-full object-cover hover:scale-110 duration-300 transition-transform"
@@ -45,17 +46,17 @@ export default function JobPipelineCard({ data }) {
         <div className="mt-6 flex flex-col items-center justify-between gap-4 border-t border-[#3b61c930] pt-4">
           <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 w-full">
             <div className="flex gap-4">
-              <a href={socials.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile">
+              {safeSocials.github && (<a href={safeSocials.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile">
                 <FaGithub className="text-2xl md:text-3xl hover:text-[#3b60c9] hover:scale-110 transition-all text-black" />
-              </a>
-              <a href={socials.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn Profile">
+              </a>)}
+              {safeSocials.linkedin && (<a href={safeSocials.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn Profile">
                 <ImLinkedin className="text-2xl md:text-3xl hover:text-[#3b60c9] hover:scale-110 transition-all text-black" />
-              </a>
+              </a>)}
             </div>
             
-            {socials.portfolio && (
+            {safeSocials.portfolio && (
               <a 
-                href={socials.portfolio} 
+                href={safeSocials.portfolio} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-[#18181f] text-white px-4 py-1.5 rounded-full text-xs md:text-sm font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-md"
@@ -81,7 +82,7 @@ export default function JobPipelineCard({ data }) {
         </h2>
 
         <ul className="flex flex-col gap-3 overflow-y-auto max-h-[15rem] md:max-h-none pr-2 custom-scrollbar">
-          {skills.map((skill, index) => (
+          {(skills || []).map((skill, index) => (
             <JobPipelineCardSkill key={`${skill.skillName}-${index}`} skill={skill} />
           ))}
         </ul>

@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSignOutAlt, faUserEdit, faSave, faTimes, faCloudUploadAlt } from "@fortawesome/free-solid-svg-icons";
 import { FaAngleRight } from "react-icons/fa6";
 
-import { useUpdateUserMutation, useUserImageUploadMutation } from "@/features/users/userApi";
+import { useFetchUsersQuery, useRemoveJobPipelineProfileMutation, useRequestJobPipelineProfileMutation, useUpdateUserMutation, useUserImageUploadMutation } from "@/features/users/userApi";
 import { setCredentials, clearCredentials } from "@/features/auth/authSlice";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
@@ -22,6 +22,13 @@ export default function Profile({ user, isOwnProfile }) {
   const token = useSelector((state) => state.auth.token);
   const [updateUser, { isLoading: isUpdating, isSuccess: isUpdateSuccess, isError: isUpdateError, reset: resetUpdate }] = useUpdateUserMutation();
   const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageSuccess, isError: isImageError, error: uploadError, reset: resetImage }] = useUserImageUploadMutation();
+  const [requestJobPipelineProfile, { isLoading: isRequestingJobPipeline, isSuccess: isJobPipelineSuccess, isError: isJobPipelineError, reset: resetJobPipeline }] = useRequestJobPipelineProfileMutation();
+  const [removeJobPipelineProfile, { isLoading: isRemovingJobPipeline }] = useRemoveJobPipelineProfileMutation();
+  const { data: currentUserResponse } = useFetchUsersQuery(undefined, {
+    skip: !isOwnProfile || !token,
+    pollingInterval: 5000,
+    refetchOnMountOrArgChange: true,
+  });
 
   const [editMode, setEditMode] = useState(false);
   const [newSkill, setNewSkill] = useState({ skillName: "", experience: "" });
@@ -34,6 +41,8 @@ export default function Profile({ user, isOwnProfile }) {
     phone: user?.phone || "",
     github: user?.github || "",
     linkedin: user?.linkedin || "",
+    portfolio: user?.portfolio || "",
+    jobPipelineStatus: user?.jobPipelineStatus || "hidden",
     skills: user?.skills || [],
     uniID: user?.uniID || "", // Matches backend field
     batch: user?.batch || "",
@@ -41,7 +50,7 @@ export default function Profile({ user, isOwnProfile }) {
   });
 
   // Calculate profile completion %
-  const fields = ["fullName", "email", "phone", "github", "linkedin", "skills", "uniID", "batch", "section"];
+  const fields = ["fullName", "email", "phone", "github", "linkedin", "portfolio", "skills", "uniID", "batch", "section"];
   const completion = Math.round(
     (fields.filter(f => profile[f] && (Array.isArray(profile[f]) ? profile[f].length > 0 : true)).length / fields.length) * 100
   );
@@ -80,6 +89,42 @@ export default function Profile({ user, isOwnProfile }) {
     }
   };
 
+  const handleJobPipelineRequest = async () => {
+    try {
+      const res = await requestJobPipelineProfile().unwrap();
+      if (res?.data?.user) {
+        dispatch(setCredentials({
+          user: res.data.user,
+          token,
+        }));
+        setProfile(prev => ({
+          ...prev,
+          jobPipelineStatus: res.data.user.jobPipelineStatus || "pending",
+        }));
+      }
+    } catch (error) {
+      console.error("Job pipeline request failed:", error);
+    }
+  };
+
+  const handleJobPipelineRemove = async () => {
+    try {
+      const res = await removeJobPipelineProfile().unwrap();
+      if (res?.data?.user) {
+        dispatch(setCredentials({
+          user: res.data.user,
+          token,
+        }));
+        setProfile(prev => ({
+          ...prev,
+          jobPipelineStatus: res.data.user.jobPipelineStatus || "hidden",
+        }));
+      }
+    } catch (error) {
+      console.error("Job pipeline remove failed:", error);
+    }
+  };
+
   const handleAddSkill = () => {
     const trimmedSkillName = newSkill.skillName.trim();
     const trimmedExperience = newSkill.experience.trim();
@@ -108,14 +153,40 @@ export default function Profile({ user, isOwnProfile }) {
   };
 
   useEffect(() => {
-    if (isUpdateSuccess || isUpdateError || isImageSuccess || isImageError) {
+    const freshUser = currentUserResponse?.data;
+
+    if (freshUser && isOwnProfile) {
+      dispatch(setCredentials({
+        user: freshUser,
+        token,
+      }));
+      setProfile({
+        avatar: freshUser.avatar || "",
+        fullName: freshUser.fullName || "",
+        email: freshUser.email || "",
+        phone: freshUser.phone || "",
+        github: freshUser.github || "",
+        linkedin: freshUser.linkedin || "",
+        portfolio: freshUser.portfolio || "",
+        jobPipelineStatus: freshUser.jobPipelineStatus || "hidden",
+        skills: freshUser.skills || [],
+        uniID: freshUser.uniID || "",
+        batch: freshUser.batch || "",
+        section: freshUser.section || "",
+      });
+    }
+  }, [currentUserResponse, dispatch, isOwnProfile, token]);
+
+  useEffect(() => {
+    if (isUpdateSuccess || isUpdateError || isImageSuccess || isImageError || isJobPipelineSuccess || isJobPipelineError) {
       const timer = setTimeout(() => {
         resetUpdate();
         resetImage();
+        resetJobPipeline();
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [isUpdateSuccess, isUpdateError, isImageSuccess, isImageError, resetUpdate, resetImage]);
+  }, [isUpdateSuccess, isUpdateError, isImageSuccess, isImageError, isJobPipelineSuccess, isJobPipelineError, resetUpdate, resetImage, resetJobPipeline]);
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-10 bg-gray-50 min-h-screen">
@@ -142,6 +213,32 @@ export default function Profile({ user, isOwnProfile }) {
                 <FontAwesomeIcon icon={editMode ? faSave : faUserEdit} />
                 {editMode ? (isUpdating ? "Saving..." : "Save Changes") : "Edit Profile"}
               </button>
+              {profile.jobPipelineStatus === "approved" ? (
+                <div className="flex flex-1 flex-col gap-2 md:flex-none md:flex-row">
+                  <span className="flex items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 font-bold text-emerald-700">
+                    Shown in Job Pipeline
+                  </span>
+                  <button
+                    onClick={handleJobPipelineRemove}
+                    disabled={isRemovingJobPipeline}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isRemovingJobPipeline ? "Removing..." : "Remove"}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleJobPipelineRequest}
+                  disabled={isRequestingJobPipeline || profile.jobPipelineStatus === "pending"}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {profile.jobPipelineStatus === "pending"
+                    ? "Job Pipeline Pending"
+                    : isRequestingJobPipeline
+                      ? "Requesting..."
+                      : "Show in Job Pipeline"}
+                </button>
+              )}
             </>
           )}
         </div>
@@ -174,6 +271,8 @@ export default function Profile({ user, isOwnProfile }) {
                   alt="Avatar" 
                   width={176} 
                   height={176} 
+                  priority
+                  loading="eager"
                   className="object-cover w-full h-full"
                 />
               </div>
@@ -267,6 +366,7 @@ export default function Profile({ user, isOwnProfile }) {
                 { label: "Section", field: "section", placeholder: "e.g., A" },
                 { label: "GitHub Profile", field: "github", placeholder: "https://github.com/..." },
                 { label: "LinkedIn Profile", field: "linkedin", placeholder: "https://linkedin.com/in/..." },
+                { label: "Portfolio", field: "portfolio", placeholder: "https://your-portfolio.com" },
               ].map(({ label, field, placeholder } ) => (
                 <div key={field} className="flex flex-col gap-2">
                   <label className="text-xs font-black uppercase text-gray-400 tracking-widest">{label}</label>
@@ -280,7 +380,7 @@ export default function Profile({ user, isOwnProfile }) {
                     />
                   ) : (
                     <div className="text-gray-800 font-bold text-lg truncate">
-                      {field === "github" || field === "linkedin" ? (
+                      {field === "github" || field === "linkedin" || field === "portfolio" ? (
                         profile[field] ? (
                           <a href={profile[field]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{profile[field].replace(/^https?:\/\/(www\.)?/, '')}</a>
                         ) : "Not linked"

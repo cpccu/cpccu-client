@@ -13,9 +13,9 @@ const UpComingEventCard = ({ data, clName }) => {
       )}
     >
       {/* Picture Section */}
-      <section className="md:col-span-3 lg:col-span-4 xl:col-span-3 mxl:col-span-3 mmmxl:col-span-3 md:h-[20rem] lg:h-[28rem]  mxl:h-auto mmmxl:h-[26rem] xl:h-auto overflow-hidden">
+      <section className="md:col-span-3 lg:col-span-4 xl:col-span-3 mxl:col-span-3 mmmxl:col-span-3 overflow-hidden">
         <img
-          className="h-full w-full object-cover"
+          className="h-auto max-h-[28rem] min-h-[14rem] w-full object-cover"
           src={data?.img}
           alt={data?.alt}
         />
@@ -48,19 +48,19 @@ const UpComingEventCard = ({ data, clName }) => {
           {data?.eventHeadLine3}
         </h1>
         <p className="font-[450] hidden lg:hidden mmmxl:hidden  lg:line-clamp-3">
-          {" -> "}
+          {" 🔶 "}
           {data?.rules1}
         </p>
         <p className="font-[450] hidden lg:hidden mmmxl:hidden  lg:line-clamp-3">
-          {" -> "}
+          {" 🔶 "}
           {data?.rules2}
         </p>
         <p className="font-[450] hidden lg:hidden mmmxl:hidden  lg:line-clamp-3">
-          {" -> "}
+          {" 🔶 "}
           {data?.rules3}
         </p>
         <p className="font-[450] hidden lg:hidden mmmxl:hidden  lg:line-clamp-3">
-          {" -> "}
+          {" 🔶 "}
           {data?.rules4}
         </p>
 
@@ -93,19 +93,19 @@ const UpComingEventCard = ({ data, clName }) => {
           {data?.eventHeadLine3}
         </h1>
         <p className="font-[450] text-xl hidden lg:hidden  mmmxl:block py-3lg:line-clamp-3">
-          {" ⛔ "}
+          {" 🔶 "}
           {data?.rules1}
         </p>
         <p className="font-[450] text-xl hidden lg:hidden  mmmxl:block py-3 lg:line-clamp-3">
-          {" ❌ "}
+          {" 🔶 "}
           {data?.rules2}
         </p>
         <p className="font-[450] text-xl hidden lg:hidden mmmxl:block py-3 lg:line-clamp-3">
-          {" 🚫 "}
+          {" 🔶 "}
           {data?.rules3}
         </p>
         <p className="font-[450] text-xl hidden lg:hidden mmmxl:block py-3 lg:line-clamp-3">
-          {" ✅ "}
+          {" 🔶 "}
           {data?.rules4}
         </p>
       </section>

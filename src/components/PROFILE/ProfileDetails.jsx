@@ -5,6 +5,7 @@ export default function ProfileDetails({ user }) {
     { title: "University ID", value: user?.uniID },
     { title: "Batch", value: user?.batch },
     { title: "Section", value: user?.section },
+    { title: "Portfolio", value: user?.portfolio, link: true },
   ];
 
   return (
@@ -12,18 +13,26 @@ export default function ProfileDetails({ user }) {
       <h2 className="text-2xl font-black text-gray-900 mb-6 border-b border-gray-50 pb-4">Details</h2>
       <section className="flex flex-col gap-6">
         {details.map((item, index) => (
-          <DetailItem key={index} title={item.title} value={item.value} />
+          <DetailItem key={index} title={item.title} value={item.value} link={item.link} />
         ))}
       </section>
     </main>
   );
 }
 
-function DetailItem({ title, value }) {
+function DetailItem({ title, value, link }) {
   return (
     <main className="flex flex-col gap-1">
       <div className="text-xs font-black uppercase text-gray-400 tracking-widest">{title}</div>
-      <div className="font-bold text-gray-800 text-lg truncate">{value || "Not provided"}</div>
+      <div className="font-bold text-gray-800 text-lg truncate">
+        {link && value ? (
+          <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            {value.replace(/^https?:\/\/(www\.)?/, "")}
+          </a>
+        ) : (
+          value || "Not provided"
+        )}
+      </div>
     </main>
   );
 }

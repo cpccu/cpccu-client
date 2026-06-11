@@ -11,13 +11,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { faSignInAlt } from "@fortawesome/free-solid-svg-icons";
 import Data from "@/data/global/navBar.json";
-import { useFetchUsersQuery } from "@/features/users/userApi";
+import { useSelector } from "react-redux";
 
-const adminPanelRoles = ["admin", "moderator", "mentor"];
+const adminPanelRoles = ["admin"];
 
 export default function NavBar() {
-  const { data: user, isLoading, isError } = useFetchUsersQuery();
-  const canOpenAdminPanel = adminPanelRoles.includes(user?.data?.roles?.role);
+  const currentUser = useSelector((state) => state.auth.user);
+  const canOpenAdminPanel = adminPanelRoles.includes(currentUser?.roles?.role);
   const router = useRouter();
   const [fixed, setFixed] = useState(false);
   const [open, setOpen] = useState(false);
@@ -160,7 +160,14 @@ export default function NavBar() {
                 </button>
               </Link>
             )}
-            {!user?.data && (
+            {currentUser && (
+              <Link href={`/profile/${currentUser._id}`} onClick={() => setOpen(false)}>
+                <button className="mb-3 w-full bg-blue-600 text-white flex items-center justify-center gap-2 py-4 rounded-xl font-bold shadow-lg active:scale-95 transition-all">
+                  Profile
+                </button>
+              </Link>
+            )}
+            {!currentUser && (
               <Link href="/login" onClick={() => setOpen(false)}>
                 <button className="w-full bg-header text-white flex items-center justify-center gap-2 py-4 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all">
                   <FontAwesomeIcon icon={faSignInAlt} />
