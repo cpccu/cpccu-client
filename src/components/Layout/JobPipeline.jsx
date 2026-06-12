@@ -11,7 +11,7 @@ export default function JobPipeline() {
   const databaseProfiles = Array.isArray(profilesResponse?.data)
     ? profilesResponse.data.map(toPublicDeveloperProfile)
     : [];
-  const profiles = isError ? Info : databaseProfiles;
+  const profiles = databaseProfiles.length > 0 ? databaseProfiles : Info;
 
   return (
     <div className="flex grow min-h-[50svh] flex-col pt-8 pb-12">
