@@ -17,7 +17,7 @@ export default function GalleryMain() {
   const gallerySections = liveGalleryItems.length
     ? [{
         header: "CPCCU Gallery",
-        conText: "Photos managed from the CPCCU admin panel.",
+        conText: "Photos of Our Different Events.",
         element: liveGalleryItems,
       }]
     : Data;
