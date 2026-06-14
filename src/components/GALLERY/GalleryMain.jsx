@@ -6,25 +6,41 @@ import GalleryScroll from "@/Context/GalleryScroll/GalleryScroll";
 import Data from "@/data/GalleryBodyCard.json";
 import Pagination from "@/components/Global/Pagination";
 import { useGetPublicContentQuery } from "@/features/content/contentApi";
-import { chooseLiveItems, toPublicGalleryItem } from "@/lib/public-content";
+import { chooseLiveItems, toPublicGalleryItem, groupGalleryItemsByEvent } from "@/lib/public-content";
 
 export default function GalleryMain() {
   const { setScrollTarget } = useContext(GalleryScroll);
 
   const [currentPage, setCurrentPage] = useState(0);
   const { data: galleryResponse } = useGetPublicContentQuery("gallery");
+  const { data: eventsResponse } = useGetPublicContentQuery("gallery-events");
+  
   const liveGalleryItems = chooseLiveItems(galleryResponse, [], toPublicGalleryItem);
-  const gallerySections = liveGalleryItems.length
-    ? [{
-        header: "CPCCU Gallery",
-        conText: "Photos managed from the CPCCU admin panel.",
-        element: liveGalleryItems,
-      }]
-    : Data;
+  const liveEvents = chooseLiveItems(eventsResponse, [], (event) => ({
+    id: event._id || event.id,
+    title: event.title,
+    description: event.description,
+    eventDate: event.eventDate,
+  }));
+  
+  const eventMap = useMemo(() => {
+    const map = {};
+    liveEvents.forEach(event => {
+      map[event.id] = event;
+    });
+    return map;
+  }, [liveEvents]);
+
+  const gallerySections = useMemo(() => {
+    if (liveGalleryItems.length > 0) {
+      return groupGalleryItemsByEvent(liveGalleryItems, eventMap);
+    }
+    return Data;
+  }, [liveGalleryItems, eventMap]);
 
   useEffect(() => {
     setScrollTarget("gallery");
-  });
+  }, []);
 
   const pageItem = 4;
 
@@ -35,24 +51,20 @@ export default function GalleryMain() {
   }, [currentPage, gallerySections]);
 
   return (
-    <>
-      <main
-        id="gallery"
-        className="flex flex-col gap-14 md:gap-20 lg:gap-32 pt-10 md:pt-20 lg:pt-32 padding"
-      >
-        {rows.map((item, index) => (
-          <GalleryBodyCard key={index} data={item} />
-        ))}
-      </main>
+    <main
+      id="gallery"
+      className="flex flex-col gap-14 md:gap-20 lg:gap-32 padding py-16 md:py-24 lg:py-32 bg-responsibility"
+    >
+      {rows.map((item, index) => (
+        <GalleryBodyCard key={index} data={item} />
+      ))}
 
-      {/* start pagination  */}
       <Pagination
         currentPage={currentPage}
         pageCount={Math.ceil(gallerySections.length / pageItem)}
         onPageChange={setCurrentPage}
       />
-      {/* end pagination */}
-    </>
+    </main>
   );
 }
 
@@ -61,11 +73,11 @@ export function GalleryBodyCard({ data }) {
     <section className="flex flex-col gap-12">
       <div className="flex flex-col gap-7 md:gap-10">
         <div>
-          <span className="text-2xl md:text-4xl lg:text-5xl font-thin text-gray-600 border-b-2 pb-2 border-gray-700">
+          <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-header border-b-2 pb-2 inline-block">
             {data?.header}
-          </span>
+          </h2>
         </div>
-        <p className="text-gray-700 lg:text-lg">{data?.conText}</p>
+        <p className="text-p-text lg:text-lg conText">{data?.conText}</p>
       </div>
       <GalleryCard Data={data?.element} />
     </section>

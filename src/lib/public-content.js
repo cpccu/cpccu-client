@@ -63,7 +63,34 @@ export const toPublicGalleryItem = (item) => ({
   tag: `all ${item.category || "event"}`,
   header: item.title,
   date: new Date(item.uploadedAt || item.createdAt || Date.now()).toLocaleDateString(),
+  eventId: item.eventId?._id || item.eventId || null,
+  eventTitle: item.eventTitle || (item.eventId && typeof item.eventId === 'object' ? item.eventId.title : null),
+  eventDescription: item.eventDescription || (item.eventId && typeof item.eventId === 'object' ? item.eventId.description : null),
 });
+
+export const groupGalleryItemsByEvent = (items, eventMap = {}) => {
+  const groups = {};
+  items.forEach(item => {
+    const eventId = item.eventId || 'ungrouped';
+    const event = eventMap[eventId];
+    if (!groups[eventId]) {
+      groups[eventId] = {
+        header: event?.title || item.eventTitle || 'Ungrouped Photos',
+        conText: event?.description || item.eventDescription || 'Photos from various events.',
+        eventDate: event?.eventDate || item.eventDate,
+        eventId: eventId === 'ungrouped' ? null : eventId,
+        element: [],
+      };
+    }
+    groups[eventId].element.push({
+      id: item.id,
+      img: item.img,
+      header: item.header,
+      date: item.date,
+    });
+  });
+  return Object.values(groups);
+};
 
 export const toPublicDeveloperProfile = (profile) => ({
   id: profile._id || profile.id,
