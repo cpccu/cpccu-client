@@ -47,9 +47,10 @@ export function GalleryContent() {
       (item.title || '').toLowerCase().includes(search.toLowerCase()) ||
       (item.description || '').toLowerCase().includes(search.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+    const itemEventId = typeof item.eventId === 'object' ? item.eventId._id || item.eventId.id : item.eventId;
     const matchesEvent = eventFilter === 'all' || 
-      (eventFilter === 'none' && !item.eventId) ||
-      item.eventId === eventFilter;
+      (eventFilter === 'none' && !itemEventId) ||
+      itemEventId === eventFilter;
     return matchesSearch && matchesCategory && matchesEvent;
   });
 
@@ -219,20 +220,20 @@ export function GalleryContent() {
                         {item.description && (
                           <p className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">{item.description}</p>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">{item.category || 'events'}</Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {item.eventId ? (
-                          <span className="text-sm">{eventName || 'Event'}</span>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">Ungrouped</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell text-muted-foreground">
-                        {item.eventDate || new Date(item.uploadedAt || item.createdAt).toLocaleDateString()}
-                      </TableCell>
+</TableCell>
+                       <TableCell>
+                         <Badge variant="outline" className="capitalize">{item.category || 'events'}</Badge>
+                       </TableCell>
+                       <TableCell className="hidden md:table-cell">
+                         {item.eventId ? (
+                           <span className="text-sm">{eventName || 'Event'}</span>
+                         ) : (
+                           <span className="text-sm text-muted-foreground">Ungrouped</span>
+                         )}
+                       </TableCell>
+                       <TableCell className="hidden lg:table-cell text-muted-foreground">
+                         {item.eventDate || new Date(item.uploadedAt || item.createdAt || Date.now()).toLocaleDateString()}
+                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
