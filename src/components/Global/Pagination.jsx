@@ -9,7 +9,6 @@ export default function Pagination({ currentPage, pageCount, onPageChange }) {
     }
   };
 
-  // Calculate page numbers for pagination
   let pageIndex = [];
   if (pageCount <= 4) {
     pageIndex = Array.from({ length: pageCount }, (_, idx) => idx + 1);
@@ -22,15 +21,14 @@ export default function Pagination({ currentPage, pageCount, onPageChange }) {
   }
 
   return (
-    <section className="flex items-center justify-center gap-5 py-8 md:py-10">
+    <section className="flex items-center justify-center gap-3 md:gap-5 py-8 md:py-12">
       <button
         onClick={() => handlePaginationClick(currentPage - 1)}
         disabled={currentPage === 0}
+        className="p-2 text-header hover:text-header-hover disabled:text-gray-400 transition-colors"
+        aria-label="Previous page"
       >
-        <FontAwesomeIcon
-          className={`${currentPage < 1 && "text-gray-400"}`}
-          icon={faChevronLeft}
-        />
+        <FontAwesomeIcon icon={faChevronLeft} />
       </button>
       {pageIndex.map((pageNumber, index) => (
         <button
@@ -38,9 +36,9 @@ export default function Pagination({ currentPage, pageCount, onPageChange }) {
           onClick={() => handlePaginationClick(pageNumber - 1)}
           className={`${
             pageNumber - 1 === currentPage
-              ? "bg-header text-white"
-              : "bg-header/20 font-semibold"
-          } px-5 py-2 border `}
+              ? "bg-header text-white shadow-md"
+              : "bg-header/10 text-header font-semibold hover:bg-header/20"
+          } px-4 md:px-5 py-2 rounded-md transition-all`}
         >
           {pageNumber}
         </button>
@@ -48,13 +46,10 @@ export default function Pagination({ currentPage, pageCount, onPageChange }) {
       <button
         onClick={() => handlePaginationClick(currentPage + 1)}
         disabled={currentPage === pageCount - 1}
+        className="p-2 text-header hover:text-header-hover disabled:text-gray-400 transition-colors"
+        aria-label="Next page"
       >
-        <FontAwesomeIcon
-          className={`${
-            currentPage > pageCount - 2 && "text-gray-400"
-          } transform rotate-180`}
-          icon={faChevronLeft}
-        />
+        <FontAwesomeIcon className="transform rotate-180" icon={faChevronLeft} />
       </button>
     </section>
   );
