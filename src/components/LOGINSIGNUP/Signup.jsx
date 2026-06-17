@@ -129,6 +129,7 @@ export default function Signup() {
                 title={"Email"}
                 id={"userEmail"}
                 clName={"col-span-6"}
+                placeholder={"dipty123@mail.com"}
                 data={email}
                 setData={setEmail}
                 autoComplete="email"
@@ -137,6 +138,7 @@ export default function Signup() {
                 type={"text"}
                 title={"Full name"}
                 id={"userName"}
+                placeholder={"Dipty Sorkar"}
                 clName={"col-span-6"}
                 data={fullName}
                 setData={setFullName}
@@ -147,6 +149,7 @@ export default function Signup() {
                 type={"number"}
                 title={"CITY UNIVERSITY ID"}
                 id={"userUniID"}
+                placeholder={"027250******"}
                 clName={"md:col-span-9"}
                 data={uniID}
                 setData={setUniID}
@@ -155,6 +158,7 @@ export default function Signup() {
                 type={"number"}
                 title={"BATCH NO."}
                 id={"userBatch"}
+                placeholder={"60"}
                 clName={"md:col-span-3"}
                 data={batch}
                 setData={setBatch}
