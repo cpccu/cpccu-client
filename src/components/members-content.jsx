@@ -43,7 +43,7 @@ export function MembersContent() {
         email: '',
         role: 'member',
         status: 'active',
-        department: '',
+        Section: '',
         phone: '',
         skills: '',
         batch: '',
@@ -59,7 +59,7 @@ export function MembersContent() {
                 avatar: member.avatar || '',
                 role: member.roles?.role || 'member',
                 status: member.isValid ? 'active' : 'pending',
-                department: member.section || '',
+                Section: member.section || '',
                 joinedAt: member.createdAt || new Date().toISOString(),
                 phone: member.phone || '',
                 skills: member.skills || [],
@@ -72,7 +72,7 @@ export function MembersContent() {
         return members.filter((m) => {
             const matchesSearch = (m.name || '').toLowerCase().includes(search.toLowerCase()) ||
                 (m.email || '').toLowerCase().includes(search.toLowerCase()) ||
-                (m.department || '').toLowerCase().includes(search.toLowerCase());
+                (m.Section || '').toLowerCase().includes(search.toLowerCase());
             const matchesRole = roleFilter === 'all' || m.role === roleFilter;
             const matchesStatus = statusFilter === 'all' || m.status === statusFilter;
             return matchesSearch && matchesRole && matchesStatus;
@@ -80,7 +80,7 @@ export function MembersContent() {
     }, [members, search, roleFilter, statusFilter]);
     const openCreate = () => {
         setEditingMember(null);
-        setFormData({ name: '', email: '', role: 'member', status: 'active', department: '', phone: '', skills: '', batch: '', uniID: '', password: '' });
+        setFormData({ name: '', email: '', role: 'member', status: 'active', Section: '', phone: '', skills: '', batch: '', uniID: '', password: '' });
         setDialogOpen(true);
     };
     const openEdit = (member) => {
@@ -90,7 +90,7 @@ export function MembersContent() {
             email: member.email,
             role: member.role,
             status: member.status,
-            department: member.department,
+            Section: member.Section,
             phone: member.phone,
             skills: (member.skills || []).join(', '),
             batch: member.batch || '',
@@ -111,7 +111,7 @@ export function MembersContent() {
                 fullName: formData.name,
                 email: formData.email,
                 phone: formData.phone,
-                section: formData.department,
+                section: formData.Section,
                 skills: updatedMember.skills,
                 role: formData.role,
                 isValid: formData.status === 'active',
@@ -123,7 +123,7 @@ export function MembersContent() {
                 fullName: formData.name,
                 email: formData.email,
                 phone: formData.phone,
-                section: formData.department,
+                section: formData.Section,
                 skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
                 batch: formData.batch,
                 uniID: formData.uniID,
@@ -191,9 +191,9 @@ export function MembersContent() {
             </div>),
         },
         {
-            key: 'department',
-            header: 'Department',
-            accessor: 'department',
+            key: 'Section',
+            header: 'Section',
+            accessor: 'Section',
             cellClassName: 'hidden md:table-cell text-muted-foreground',
             className: 'hidden md:table-cell',
         },
@@ -373,8 +373,8 @@ export function MembersContent() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="department">Department</Label>
-                <Input id="department" value={formData.department} onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))} placeholder="Computer Science"/>
+                <Label htmlFor="Section">Section</Label>
+                <Input id="Section" value={formData.Section} onChange={(e) => setFormData(prev => ({ ...prev, Section: e.target.value }))} placeholder="Computer Science"/>
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="phone">Phone</Label>
