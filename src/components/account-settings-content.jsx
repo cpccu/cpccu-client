@@ -24,9 +24,9 @@ export function AccountSettingsContent() {
     const [deleteOwnAccount] = useDeleteOwnAccountMutation();
     const [userImageUpload] = useUserImageUploadMutation();
     const [profile, setProfile] = useState({
-        name: 'Ananya Sharma',
-        email: 'ananya@cpccu.club',
-        phone: '+91 98765 43210',
+        name: 'Test',
+        email: 'test@cpccu.club',
+        phone: '+8801702020202',
         bio: 'Administrator of the CPCCU Programming Club. Passionate about Machine Learning and Web Development.',
         department: 'Computer Science',
         avatar: '',
