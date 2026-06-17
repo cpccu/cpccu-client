@@ -72,7 +72,7 @@ export default function Profile({ user, isOwnProfile }) {
   const handleUpdate = async () => {
     if (editMode) {
       try {
-        const res = await updateUser(profile).unwrap();
+        const res = await updateUser({ userData: profile }).unwrap();
         dispatch(setCredentials({ 
           user: res.data, 
           token

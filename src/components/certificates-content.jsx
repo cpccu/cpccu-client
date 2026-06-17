@@ -67,16 +67,32 @@ export function CertificatesContent() {
             cert.eventName.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesPlacement = placementFilter === 'all' || cert.placement === placementFilter;
         return matchesSearch && matchesPlacement;
-    });
+    }).sort((a, b) => a.certificateId.localeCompare(b.certificateId));
     const stats = {
         total: certificates.length,
         firstPlace: certificates.filter((c) => c.placement === '1st').length,
         secondPlace: certificates.filter((c) => c.placement === '2nd').length,
         thirdPlace: certificates.filter((c) => c.placement === '3rd').length,
     };
+    const getNextCertificateNumber = () => {
+        const currentYear = new Date().getFullYear();
+        const yearCerts = certificates.filter((cert) => {
+            const match = cert.certificateId.match(/^CPCCU-(\d{4})-(\d+)$/);
+            return match && match[1] === String(currentYear);
+        });
+        let maxNum = 0;
+        yearCerts.forEach((cert) => {
+            const match = cert.certificateId.match(/^CPCCU-\d{4}-(\d+)$/);
+            if (match) {
+                const num = parseInt(match[1], 10);
+                if (num > maxNum) maxNum = num;
+            }
+        });
+        return maxNum + 1;
+    };
     const generateCertificateId = () => {
         const year = new Date().getFullYear();
-        const num = String(certificates.length + 1).padStart(3, '0');
+        const num = String(getNextCertificateNumber()).padStart(5, '0');
         return `CPCCU-${year}-${num}`;
     };
     const handleOpenDialog = (cert) => {
@@ -163,7 +179,7 @@ export function CertificatesContent() {
                         ? 'winner'
                         : 'participation';
             return createCertificate({
-                certificateId: `CPCCU-${new Date().getFullYear()}-${String(certificates.length + index + 1).padStart(3, '0')}`,
+                certificateId: `CPCCU-${new Date().getFullYear()}-${String(getNextCertificateNumber() + index).padStart(5, '0')}`,
                 recipientName,
                 recipientId,
                 contestName,
