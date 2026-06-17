@@ -1,19 +1,51 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { FaUsers } from 'react-icons/fa';
+import React, { useState, useEffect } from "react";
+import { FaUsers } from "react-icons/fa";
 import CountUp from "react-countup";
+
+const VISITOR_KEY = "cpccu_last_visit";
+const ONE_HOUR = 60 * 60 * 1000;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+
+const getStoredVisitTimestamp = () => {
+  try {
+    return localStorage.getItem(VISITOR_KEY);
+  } catch (error) {
+    return null;
+  }
+};
+
+const setStoredVisitTimestamp = (timestamp) => {
+  try {
+    localStorage.setItem(VISITOR_KEY, timestamp.toString());
+  } catch (error) {
+    console.error("Visitor timestamp save error:", error);
+  }
+};
+
+const shouldIncrementVisitor = () => {
+  const lastVisit = getStoredVisitTimestamp();
+
+  if (!lastVisit) {
+    return true;
+  }
+
+  const lastVisitTime = Number(lastVisit);
+
+  return Number.isNaN(lastVisitTime) || Date.now() - lastVisitTime > ONE_HOUR;
+};
 
 const VisitorCounter = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchTotalCount = async () => {
       try {
-        const url = "https://cpccu-server.onrender.com/api/visitor";
-
-        const response = await fetch(url);
+        const response = await fetch(`${API_URL}/api/visitor`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch");
@@ -21,33 +53,73 @@ const VisitorCounter = () => {
 
         const data = await response.json();
 
-        setTotalCount(data?.count || 1250);
-
+        if (isMounted) {
+          setTotalCount(data?.count ?? 1250);
+        }
       } catch (error) {
         console.error("Visitor fetch error:", error);
-        setTotalCount(1250);
+        if (isMounted) {
+          setTotalCount(1250);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchTotalCount();
+    const incrementVisitor = async () => {
+      if (!shouldIncrementVisitor()) {
+        return false;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/api/visitor/increment`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to increment");
+        }
+
+        setStoredVisitTimestamp(Date.now());
+        return true;
+      } catch (error) {
+        console.error("Visitor increment error:", error);
+        return false;
+      }
+    };
+
+    const initializeVisitorCounter = async () => {
+      await fetchTotalCount();
+      const incremented = await incrementVisitor();
+
+      if (incremented) {
+        await fetchTotalCount();
+      }
+    };
+
+    initializeVisitorCounter();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
     <section className="bg-count text-white py-12 md:py-16 lg:py-14 padding border-t border-white/10">
       <div className="max-w-7xl mx-auto flex flex-col items-center justify-center">
-        
         <div className="flex items-center justify-center gap-x-8 md:gap-10">
-          
           {/* ICON */}
           <div className="bg-white/10 p-4 rounded-full backdrop-blur-sm">
             <FaUsers className="text-4xl md:text-5xl text-blue-400" />
           </div>
-          
+
           {/* TEXT SECTION */}
           <div className="flex flex-col items-start justify-center">
-            
             {/* COUNT */}
             <h3 className="text-4xl md:text-5xl font-custom font-thin text-white/90">
               {!loading ? (
@@ -77,7 +149,6 @@ const VisitorCounter = () => {
             <p className="text-sm md:text-base text-white/50 font-light mt-1 italic">
               Counting since April 2026
             </p>
-
           </div>
         </div>
 
@@ -91,7 +162,6 @@ const VisitorCounter = () => {
             Live Community Engagement
           </p>
         </div>
-
       </div>
     </section>
   );
