@@ -32,6 +32,10 @@ export const authApi = baseApi.injectEndpoints({
                 body: { email, otp },
             }),
         }),
+        getCurrentUser: builder.query({
+            query: () => '/users/user',
+            providesTags: ['Auth'],
+        }),
         logout: builder.mutation({
             query: () => ({
                 url: '/auth/logout',
@@ -60,6 +64,7 @@ export const {
     useRegisterMutation,
     useSendOtpMutation,
     useOtpVerifyMutation,
+    useGetCurrentUserQuery,
     useLogoutMutation,
     useSendPasswordResetLinkMutation,
     useResetPasswordMutation,
