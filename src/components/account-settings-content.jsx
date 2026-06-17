@@ -80,7 +80,10 @@ export function AccountSettingsContent() {
         imageData.append('image', image);
         const response = await userImageUpload({ key: 'avatar', imageData }).unwrap();
         dispatch(setCredentials({ user: response.data, token }));
-        setProfile((current) => ({ ...current, avatar: response.data.avatar || current.avatar }));
+        setProfile((current) => ({
+          ...current,
+          avatar: response.data.avatar || current.avatar,
+        }));
         event.target.value = '';
         showSuccessAlert('Photo Updated', 'Your profile photo has been uploaded.');
     };
