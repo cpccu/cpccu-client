@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { IoMailOpenOutline } from "react-icons/io5";
 import InstitudeInfo from "@/data/global/institude.json";
 
-const adminPanelRoles = ["admin"];
+const adminPanelRoles = ["admin", "moderator", "mentor"];
 
 export default function Header() {
   // 1. Get the logged-in user from Redux

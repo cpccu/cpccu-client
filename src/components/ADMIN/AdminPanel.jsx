@@ -51,6 +51,9 @@ export default function AdminPanel() {
   const router = useRouter();
   const { hydrated, user } = useSelector((state) => state.auth);
   const isAdmin = user?.roles?.role === "admin";
+  const isModerator = user?.roles?.role === "moderator";
+  const isMentor = user?.roles?.role === "mentor";
+  const canAccessAdmin = isAdmin || isModerator || isMentor;
   const [search, setSearch] = useState("");
   const {
     data: overviewResponse,
