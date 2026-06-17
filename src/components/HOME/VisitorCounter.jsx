@@ -6,7 +6,10 @@ import CountUp from "react-countup";
 
 const VISITOR_KEY = "cpccu_last_visit";
 const ONE_HOUR = 60 * 60 * 1000;
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const VISITOR_API_URL = API_BASE_URL
+  ? `${API_BASE_URL.replace(/\/+$/, "")}/visitor`
+  : "/api/visitor";
 
 const getStoredVisitTimestamp = () => {
   try {
@@ -45,7 +48,7 @@ const VisitorCounter = () => {
 
     const fetchTotalCount = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/visitor`);
+        const response = await fetch(VISITOR_API_URL);
 
         if (!response.ok) {
           throw new Error("Failed to fetch");
@@ -74,7 +77,7 @@ const VisitorCounter = () => {
       }
 
       try {
-        const response = await fetch(`${API_URL}/api/visitor/increment`, {
+        const response = await fetch(`${VISITOR_API_URL}/increment`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -85,7 +88,6 @@ const VisitorCounter = () => {
           throw new Error("Failed to increment");
         }
 
-        setStoredVisitTimestamp(Date.now());
         return true;
       } catch (error) {
         console.error("Visitor increment error:", error);
@@ -94,12 +96,15 @@ const VisitorCounter = () => {
     };
 
     const initializeVisitorCounter = async () => {
-      await fetchTotalCount();
-      const incremented = await incrementVisitor();
+      if (shouldIncrementVisitor()) {
+        const incremented = await incrementVisitor();
 
-      if (incremented) {
-        await fetchTotalCount();
+        if (incremented) {
+          setStoredVisitTimestamp(Date.now());
+        }
       }
+
+      await fetchTotalCount();
     };
 
     initializeVisitorCounter();
