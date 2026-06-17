@@ -3,86 +3,98 @@ import { baseApi } from "@/services/baseApi";
 export const userApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     fetchUsers: builder.query({
-        query: () => '/users/user',
-        providesTags: ['Users'],
+      query: () => "/users/user",
+      providesTags: ["Users"],
     }),
     fetchUserById: builder.query({
-        query: (id) => `/users/user/${id}`,
-        providesTags: (result, error, id) => [{ type: 'Users', id }],
+      query: (id) => `/users/user/${id}`,
+      providesTags: (result, error, id) => [{ type: "Users", id }],
     }),
     createUser: builder.mutation({
-        query: (userData) => ({
-            url: '/users/user',
-            method: 'POST',
-            body: userData,
-        }),
-        invalidatesTags: ['Users'],
+      query: (userData) => ({
+        url: "/users/user",
+        method: "POST",
+        body: userData,
+      }),
+      invalidatesTags: ["Users"],
     }),
     updateUser: builder.mutation({
-        query: (userData) => ({
-            url: `users/userInfo-update`,
-            method: 'PATCH',
-            body: userData,
-        }),
-        invalidatesTags: (result, error, { id }) => [{ type: 'Users', id }],
+      query: ({ userData }) => ({
+        url: "users/userInfo-update",
+        method: "PATCH",
+        body: userData,
+      }),
+      invalidatesTags: (result, error, arg) => [
+        "Auth",
+        { type: "Users", id: result?._id },
+        { type: "Users", id: arg?.id },
+      ],
     }),
     userImageUpload: builder.mutation({
-        query: ({ key, imageData }) => ({
-            url: `users/user/upload-image/${key}`,
-            method: 'PATCH',
-            body: imageData,
-        }),
-        invalidatesTags: ['Users'],
+      query: ({ key, imageData }) => ({
+        url: `users/user/upload-image/${key}`,
+        method: "PATCH",
+        body: imageData,
+      }),
+      invalidatesTags: ["Auth", "Users"],
     }),
     requestJobPipelineProfile: builder.mutation({
-        query: (body = {}) => ({
-            url: 'users/job-pipeline-request',
-            method: 'POST',
-            body,
-        }),
-        invalidatesTags: ['Users', { type: 'PublicContent', id: 'profiles' }],
+      query: (body = {}) => ({
+        url: "users/job-pipeline-request",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [
+        "Auth",
+        "Users",
+        { type: "PublicContent", id: "profiles" },
+      ],
     }),
     removeJobPipelineProfile: builder.mutation({
-        query: () => ({
-            url: 'users/job-pipeline-request',
-            method: 'DELETE',
-        }),
-        invalidatesTags: ['Users', { type: 'PublicContent', id: 'profiles' }],
+      query: () => ({
+        url: "users/job-pipeline-request",
+        method: "DELETE",
+      }),
+      invalidatesTags: [
+        "Auth",
+        "Users",
+        { type: "PublicContent", id: "profiles" },
+      ],
     }),
     deleteUser: builder.mutation({
-        query: (id) => ({
-            url: `/users/${id}`,
-            method: 'DELETE',
-        }),
-        invalidatesTags: (result, error, id) => [{ type: 'Users', id }],
+      query: (id) => ({
+        url: `/users/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, id) => [{ type: "Users", id }],
     }),
     changePassword: builder.mutation({
-        query: (body) => ({
-            url: '/users/password',
-            method: 'PATCH',
-            body,
-        }),
+      query: (body) => ({
+        url: "/users/password",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Auth"],
     }),
     deleteOwnAccount: builder.mutation({
-        query: () => ({
-            url: '/users/user',
-            method: 'DELETE',
-        }),
-        invalidatesTags: ['Users', 'Auth'],
+      query: () => ({
+        url: "/users/user",
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Auth", "Users"],
     }),
   }),
 });
 
-
 export const {
   useFetchUsersQuery,
   useFetchUserByIdQuery,
-    useCreateUserMutation,
-    useUpdateUserMutation,
-    useUserImageUploadMutation,
-    useRequestJobPipelineProfileMutation,
-    useRemoveJobPipelineProfileMutation,
-    useDeleteUserMutation,
-    useChangePasswordMutation,
-    useDeleteOwnAccountMutation,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useUserImageUploadMutation,
+  useRequestJobPipelineProfileMutation,
+  useRemoveJobPipelineProfileMutation,
+  useDeleteUserMutation,
+  useChangePasswordMutation,
+  useDeleteOwnAccountMutation,
 } = userApi;
