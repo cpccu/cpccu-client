@@ -39,6 +39,8 @@ export function GalleryContent() {
     eventDate: '',
     featured: false,
   });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState(null);
 
   const allCategories = ['all', 'events', 'recent', 'old', 'picnic', 'workshop', 'other'];
 
@@ -119,12 +121,18 @@ export function GalleryContent() {
     setEventDialogOpen(false);
   };
 
-  const handleDeleteEventItem = async (event) => {
-    const result = await showDeleteConfirm(event.title || 'Event');
-    if (result.isConfirmed) {
-      await deleteEvent(event.id);
+  const handleDeleteEventItem = (event) => {
+    setEventToDelete(event);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (eventToDelete) {
+      await deleteEvent(eventToDelete.id);
       showSuccessAlert('Deleted', `Event has been deleted.`);
+      setEventToDelete(null);
     }
+    setDeleteConfirmOpen(false);
   };
 
   if (isLoading) {
@@ -220,20 +228,20 @@ export function GalleryContent() {
                         {item.description && (
                           <p className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">{item.description}</p>
                         )}
-</TableCell>
-                       <TableCell>
-                         <Badge variant="outline" className="capitalize">{item.category || 'events'}</Badge>
-                       </TableCell>
-                       <TableCell className="hidden md:table-cell">
-                         {item.eventId ? (
-                           <span className="text-sm">{eventName || 'Event'}</span>
-                         ) : (
-                           <span className="text-sm text-muted-foreground">Ungrouped</span>
-                         )}
-                       </TableCell>
-                       <TableCell className="hidden lg:table-cell text-muted-foreground">
-                         {item.eventDate || new Date(item.uploadedAt || item.createdAt || Date.now()).toLocaleDateString()}
-                       </TableCell>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">{item.category || 'events'}</Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {item.eventId ? (
+                          <span className="text-sm">{eventName || 'Event'}</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Ungrouped</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">
+                        {item.eventDate || new Date(item.uploadedAt || item.createdAt || Date.now()).toLocaleDateString()}
+                      </TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -371,6 +379,21 @@ export function GalleryContent() {
             <Button onClick={handleSaveEvent} disabled={!eventFormData.title.trim()}>
               {editingEventItem ? 'Update Event' : 'Create Event'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="z-[60]">
+          <DialogHeader>
+            <DialogTitle>Delete Event</DialogTitle>
+            <DialogDescription>
+              Remove "{eventToDelete?.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDeleteEvent}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

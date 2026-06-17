@@ -28,6 +28,10 @@ export const showDeleteConfirm = (itemName) => {
         cancelButtonColor: 'oklch(0.50 0.02 250)',
         confirmButtonText: 'Yes, delete it!',
         cancelButtonText: 'Cancel',
+        allowOutsideClick: false,
+        customClass: {
+            container: 'z-[9999]',
+        },
     });
 };
 export const showInfoAlert = (title, text) => {
