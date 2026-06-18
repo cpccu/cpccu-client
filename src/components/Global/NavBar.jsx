@@ -161,7 +161,7 @@ export default function NavBar() {
               </Link>
             )}
             {currentUser && (
-              <Link href={`/profile/${currentUser._id}`} onClick={() => setOpen(false)}>
+              <Link href={`/profile/${currentUser?.uniID || currentUser?._id}`} onClick={() => setOpen(false)}>
                 <button className="mb-3 w-full bg-blue-600 text-white flex items-center justify-center gap-2 py-4 rounded-xl font-bold shadow-lg active:scale-95 transition-all">
                   Profile
                 </button>

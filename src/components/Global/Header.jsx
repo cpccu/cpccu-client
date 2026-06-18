@@ -37,7 +37,7 @@ export default function Header() {
                 </button>
               </LinkNext>
             )}
-            <LinkNext href={`/profile/${user._id}`}>
+            <LinkNext href={`/profile/${user?.uniID || user?._id}`}>
               <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition-all">
                 Profile
               </button>
