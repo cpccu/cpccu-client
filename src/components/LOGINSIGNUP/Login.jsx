@@ -43,7 +43,7 @@ export default function Login() {
   // Redirect if already logged in
   useEffect(() => {
     if (authUser?._id) {
-      router.push(`/profile/${authUser._id}`);
+      router.push(`/profile/${authUser?.uniID || authUser._id}`);
     }
   }, [authUser, router]);
 
@@ -60,7 +60,7 @@ export default function Login() {
         }),
       );
 
-      router.push(`/profile/${response.data.user._id}`);
+      router.push(`/profile/${response.data.user?.uniID || response.data.user._id}`);
     } catch (err) {
       console.error("Login failed:", err);
     }

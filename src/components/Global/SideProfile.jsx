@@ -13,7 +13,7 @@ export default function SideProfile() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const path = `/profile/${Data?.username}`;
+  const path = `/profile/${Data?.uniID || Data?.username || Data?._id}`;
 
   const goProfile = useCallback(() => {
     router.push(path);
