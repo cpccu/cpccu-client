@@ -34,7 +34,7 @@ export default function AboutCard({ Data }) {
 
       <section>
         <Link
-          href={`/users/profile/${Data?._id}`}
+          href={`/profile/${Data?.uniID || Data?._id}`}
           className="mt-5 px-5 py-3 font-semibold border rounded-full bg-header hover:bg-gray-900 trans text-white"
         >
           View Profile
