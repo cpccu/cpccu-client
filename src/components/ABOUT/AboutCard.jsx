@@ -19,9 +19,12 @@ export default function AboutCard({ Data }) {
 	        <h1 className="text-2xl font-semibold capitalize text-p-text">
 	          {Data?.fullName || Data?.name}
         </h1>
-        <p className={`italic capitalize text-xl ${Data?.type && "font-bold"}`}>
+        <p className="italic capitalize text-xl text-muted-foreground">
           {Data?.displayPosition || Data?.roles?.role || Data?.position}
         </p>
+        {Data?.batch && (
+          <p className="text-sm font-medium text-primary">Batch {Data.batch}</p>
+        )}
 
         <Link
           href={`mailto:${Data?.email}`}
