@@ -16,6 +16,53 @@ export default function GalleryMain() {
   const { data: galleryResponse, isLoading: galleryLoading, isError: galleryError } = useGetPublicContentQuery("gallery");
   const { data: eventsResponse, isLoading: eventsLoading, isError: eventsError } = useGetPublicContentQuery("gallery-events");
 
+  // All hooks must be called before any conditional return
+  const liveGalleryItems = useMemo(() => {
+    if (galleryLoading || !galleryResponse?.data) return [];
+    const items = galleryResponse.data;
+    return Array.isArray(items) && items.length ? items.map(toPublicGalleryItem) : [];
+  }, [galleryResponse, galleryLoading]);
+
+  const liveEvents = useMemo(() => {
+    if (eventsLoading || !eventsResponse?.data) return [];
+    const items = eventsResponse.data;
+    return Array.isArray(items) && items.length
+      ? items.map((event) => ({
+          id: event._id || event.id,
+          title: event.title,
+          description: event.description,
+          eventDate: event.eventDate,
+        }))
+      : [];
+  }, [eventsResponse, eventsLoading]);
+
+  const eventMap = useMemo(() => {
+    const map = {};
+    liveEvents.forEach((event) => {
+      map[event.id] = event;
+    });
+    return map;
+  }, [liveEvents]);
+
+  const gallerySections = useMemo(() => {
+    if (!galleryError && liveGalleryItems.length > 0) {
+      return groupGalleryItemsByEvent(liveGalleryItems, eventMap);
+    }
+    return Data;
+  }, [liveGalleryItems, eventMap, galleryError]);
+
+  useEffect(() => {
+    setScrollTarget("gallery");
+  }, [setScrollTarget]);
+
+  const pageItem = 4;
+
+  const rows = useMemo(() => {
+    const startIdx = currentPage * pageItem;
+    const endIdx = startIdx + pageItem;
+    return gallerySections.slice(startIdx, endIdx);
+  }, [currentPage, gallerySections]);
+
   if (galleryLoading || eventsLoading) {
     return (
       <main
@@ -43,41 +90,6 @@ export default function GalleryMain() {
       </main>
     );
   }
-
-  const liveGalleryItems = chooseLiveItems(galleryResponse, [], toPublicGalleryItem);
-  const liveEvents = chooseLiveItems(eventsResponse, [], (event) => ({
-    id: event._id || event.id,
-    title: event.title,
-    description: event.description,
-    eventDate: event.eventDate,
-  }));
-
-  const eventMap = useMemo(() => {
-    const map = {};
-    liveEvents.forEach(event => {
-      map[event.id] = event;
-    });
-    return map;
-  }, [liveEvents]);
-
-  const gallerySections = useMemo(() => {
-    if (!galleryError && liveGalleryItems.length > 0) {
-      return groupGalleryItemsByEvent(liveGalleryItems, eventMap);
-    }
-    return Data;
-  }, [liveGalleryItems, eventMap, galleryError]);
-
-  useEffect(() => {
-    setScrollTarget("gallery");
-  }, []);
-
-  const pageItem = 4;
-
-  const rows = useMemo(() => {
-    const startIdx = currentPage * pageItem;
-    const endIdx = startIdx + pageItem;
-    return gallerySections.slice(startIdx, endIdx);
-  }, [currentPage, gallerySections]);
 
   return (
     <main

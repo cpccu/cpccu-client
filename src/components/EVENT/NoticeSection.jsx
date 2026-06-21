@@ -11,23 +11,14 @@ import { chooseLiveItems, toPublicEvent } from "@/lib/public-content";
 
 export default function NoticeSection() {
   const { setScrollTarget } = useContext(EventScroll);
-  const [currentPage, setCurrentPage] = useState(0);
-  const { data: eventsResponse, isLoading, isError } = useGetPublicContentQuery("events");
-  const events = chooseLiveItems(eventsResponse, Data, toPublicEvent, isLoading, isError);
 
   useEffect(() => {
     setScrollTarget("eventMain");
   }, []);
 
-  const pageItem = 4;
+  const { data: eventsResponse, isLoading, isError } = useGetPublicContentQuery("events");
 
-  const rows = useMemo(() => {
-    const startIdx = currentPage * pageItem;
-    const endIdx = startIdx + pageItem;
-    return events.slice(startIdx, endIdx);
-  }, [events, currentPage, pageItem]);
-
-  if (events === null) {
+  if (isLoading || isError || !eventsResponse) {
     return (
       <section className="bg-responsibility">
         <main
@@ -67,6 +58,20 @@ export default function NoticeSection() {
       </section>
     );
   }
+
+  return <NoticeSectionContent eventsResponse={eventsResponse} />;
+}
+
+function NoticeSectionContent({ eventsResponse }) {
+  const [currentPage, setCurrentPage] = useState(0);
+  const events = chooseLiveItems(eventsResponse, Data, toPublicEvent, false, false);
+  const pageItem = 4;
+
+  const rows = useMemo(() => {
+    const startIdx = currentPage * pageItem;
+    const endIdx = startIdx + pageItem;
+    return events.slice(startIdx, endIdx);
+  }, [events, currentPage, pageItem]);
 
   return (
     <section className="bg-responsibility">

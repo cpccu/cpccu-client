@@ -12,12 +12,9 @@ import { useGetPublicContentQuery } from "@/features/content/contentApi";
 import { chooseLiveItems, toPublicEvent } from "@/lib/public-content";
 
 const EventLayout = ({ clName }) => {
-  const slider = useRef(null);
-  const [slidePx, setSlidePx] = useState(0);
   const { data: eventsResponse, isLoading, isError } = useGetPublicContentQuery("events");
-  const events = chooseLiveItems(eventsResponse, fallbackData, toPublicEvent, isLoading, isError);
 
-  if (events === null) {
+  if (isLoading || isError || !eventsResponse) {
     return (
       <div className={cn("text-white bg-header relative z-30 p-5 md:p-10 lg:p-12", clName)}>
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
@@ -53,6 +50,14 @@ const EventLayout = ({ clName }) => {
       </div>
     );
   }
+
+  return <EventLayoutContent eventsResponse={eventsResponse} clName={clName} />;
+};
+
+function EventLayoutContent({ eventsResponse, clName }) {
+  const slider = useRef(null);
+  const [slidePx, setSlidePx] = useState(0);
+  const events = chooseLiveItems(eventsResponse, fallbackData, toPublicEvent, false, false);
 
   const firstEventStart = events[0]?.date ? new Date(events[0].date).getTime() : 0;
   const sectionLabel = firstEventStart && firstEventStart > Date.now() ? "Upcoming Event" : "Recent Event";
@@ -129,6 +134,6 @@ const EventLayout = ({ clName }) => {
       </section>
     </div>
   ) : null;
-};
+}
 
 export default EventLayout;

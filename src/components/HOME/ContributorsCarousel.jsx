@@ -1,23 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { FaGithub, FaLinkedin, FaArrowRight } from "react-icons/fa";
 import contributorsData from "@/data/contributors.json";
 import { useGetPublicContentQuery } from "@/features/content/contentApi";
 import { chooseLiveItems, toPublicContributor } from "@/lib/public-content";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function ContributorsCarousel() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
-  const trackRef = useRef(null);
-  const autoplayRef = useRef(null);
-  const rafRef = useRef(null);
-  const isHoveringRef = useRef(false);
-  const touchStartX = useRef(0);
-  const touchStartScroll = useRef(0);
   const { data: contributorsResponse, isLoading, isError } = useGetPublicContentQuery("contributors");
   const contributors = chooseLiveItems(
     contributorsResponse,
@@ -28,63 +19,81 @@ export default function ContributorsCarousel() {
   );
 
   if (contributors === null) {
-    return (
-      <section className="py-16 md:py-20 bg-gradient-to-b from-white to-blue-50/40 overflow-hidden">
-        <div className="padding mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <p className="text-header font-mono text-sm font-semibold mb-2 tracking-wide uppercase">
-              // the team
-            </p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              Meet Our Contributors
-            </h2>
-            <p className="text-gray-500 mt-2 max-w-md">
-              The passionate developers who built this platform from the ground up.
-            </p>
-          </div>
-          <Link
-            href="/contributors"
-            className="flex items-center gap-2 text-header font-semibold hover:gap-3 transition-all duration-300 group shrink-0"
-          >
-            <span>View All Contributors</span>
-            <FaArrowRight
-              size={14}
-              className="group-hover:translate-x-1 transition-transform duration-300"
-            />
-          </Link>
-        </div>
-        <div className="relative">
-          <div className="absolute left-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-l from-blue-50/40 to-transparent z-10 pointer-events-none" />
-          <div className="relative cursor-grab select-none flex gap-5 overflow-x-auto hide-scrollbar scroll-smooth snap-x snap-mandatory touch-pan-x pb-6 px-4 md:px-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="shrink-0 w-[calc(33.333%-14px)] min-w-[260px] bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col items-center gap-3 text-center"
-              >
-                <div className="h-1 w-full bg-gradient-to-r from-header to-blue-400" />
-                <Skeleton className="w-40 h-40 rounded-full mt-1" />
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-3 w-full mt-2" />
-                <div className="flex gap-2">
-                  <Skeleton className="w-8 h-8 rounded-full" />
-                  <Skeleton className="w-8 h-8 rounded-full" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="flex justify-center gap-2 mt-8">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="w-2.5 h-2.5 rounded-full" />
-          ))}
-        </div>
-      </section>
-    );
+    return <ContributorsCarouselSkeleton />;
   }
 
-  const scrollToIndex = (index) => {
+  return <ContributorsCarouselContent contributors={contributors} />;
+}
+
+function ContributorsCarouselSkeleton() {
+  return (
+    <section className="py-16 md:py-20 bg-gradient-to-b from-white to-blue-50/40 overflow-hidden">
+      <div className="padding mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <p className="text-header font-mono text-sm font-semibold mb-2 tracking-wide uppercase">
+            // the team
+          </p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
+            Meet Our Contributors
+          </h2>
+          <p className="text-gray-500 mt-2 max-w-md">
+            The passionate developers who built this platform from the ground up.
+          </p>
+        </div>
+        <Link
+          href="/contributors"
+          className="flex items-center gap-2 text-header font-semibold hover:gap-3 transition-all duration-300 group shrink-0"
+        >
+          <span>View All Contributors</span>
+          <FaArrowRight
+            size={14}
+            className="group-hover:translate-x-1 transition-transform duration-300"
+          />
+        </Link>
+      </div>
+      <div className="relative">
+        <div className="absolute left-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-l from-blue-50/40 to-transparent z-10 pointer-events-none" />
+        <div className="relative cursor-grab select-none flex gap-5 overflow-x-auto hide-scrollbar scroll-smooth snap-x snap-mandatory touch-pan-x pb-6 px-4 md:px-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="shrink-0 w-[calc(33.333%-14px)] min-w-[260px] bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col items-center gap-3 text-center"
+            >
+              <div className="h-1 w-full bg-gradient-to-r from-header to-blue-400" />
+              <Skeleton className="w-40 h-40 rounded-full mt-1" />
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-3 w-full mt-2" />
+              <div className="flex gap-2">
+                <Skeleton className="w-8 h-8 rounded-full" />
+                <Skeleton className="w-8 h-8 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex justify-center gap-2 mt-8">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="w-2.5 h-2.5 rounded-full" />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ContributorsCarouselContent({ contributors }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const trackRef = useRef(null);
+  const autoplayRef = useRef(null);
+  const rafRef = useRef(null);
+  const isHoveringRef = useRef(false);
+  const touchStartX = useRef(0);
+  const touchStartScroll = useRef(0);
+
+  const scrollToIndex = useCallback((index) => {
     const track = trackRef.current;
     if (!track) return;
 
@@ -93,15 +102,15 @@ export default function ContributorsCarousel() {
       const offset = card.offsetLeft - (track.clientWidth - card.clientWidth) / 2;
       track.scrollTo({ left: Math.max(0, offset), behavior: "smooth" });
     }
-  };
+  }, []);
 
-  const goTo = (index) => {
+  const goTo = useCallback((index) => {
     const normalized = index % contributors.length;
     setCurrentIndex(normalized);
     scrollToIndex(normalized);
-  };
+  }, [contributors.length, scrollToIndex]);
 
-  const updateCurrentIndex = () => {
+  const updateCurrentIndex = useCallback(() => {
     const track = trackRef.current;
     if (!track) return;
 
@@ -117,30 +126,30 @@ export default function ContributorsCarousel() {
     );
 
     setCurrentIndex(nearest.index % contributors.length);
-  };
+  }, [contributors.length]);
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (rafRef.current) return;
     rafRef.current = requestAnimationFrame(() => {
       updateCurrentIndex();
       rafRef.current = null;
     });
-  };
+  }, [updateCurrentIndex]);
 
-  const handleTouchStart = (event) => {
+  const handleTouchStart = useCallback((event) => {
     const track = trackRef.current;
     if (!track) return;
     touchStartX.current = event.touches[0].pageX;
     touchStartScroll.current = track.scrollLeft;
-  };
+  }, []);
 
-  const handleTouchMove = (event) => {
+  const handleTouchMove = useCallback((event) => {
     const track = trackRef.current;
     if (!track) return;
     const x = event.touches[0].pageX;
     const walk = x - touchStartX.current;
     track.scrollLeft = touchStartScroll.current - walk;
-  };
+  }, []);
 
   useEffect(() => {
     updateCurrentIndex();
@@ -149,7 +158,7 @@ export default function ContributorsCarousel() {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, []);
+  }, [updateCurrentIndex]);
 
   useEffect(() => {
     const track = trackRef.current;
@@ -193,7 +202,7 @@ export default function ContributorsCarousel() {
         clearInterval(autoplayRef.current);
       }
     };
-  }, [contributors.length, isPaused]);
+  }, [contributors.length, isPaused, scrollToIndex]);
 
   return (
     <section className="py-16 md:py-20 bg-gradient-to-b from-white to-blue-50/40 overflow-hidden">
@@ -295,7 +304,7 @@ function CarouselCard({ contributor }) {
             onError={(e) => {
               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 contributor?.name
-               )}&background=3b60c9&color=fff&size=128`;
+              )}&background=3b60c9&color=fff&size=128`;
             }}
           />
         </div>

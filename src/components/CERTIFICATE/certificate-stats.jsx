@@ -1,15 +1,35 @@
 "use client";
 
-import { Award, Trophy, Users, Layers, Loader2 } from "lucide-react";
+import { Award, Trophy, Users, Layers, Loader2, AlertTriangle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useGetCertificateStatsQuery } from "@/features/certificate/certificateApi";
 
 export function CertificateStats() {
-  const { data, isLoading } = useGetCertificateStatsQuery();
+  const { data, isLoading, isError } = useGetCertificateStatsQuery();
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-10 col-span-2">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <div className="grid grid-cols-2 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-gradient-to-br from-card to-card/60 px-4 py-6"
+          >
+            <Skeleton className="w-12 h-12 rounded-xl" />
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center space-y-3">
+        <AlertTriangle className="w-8 h-8 text-destructive mx-auto" />
+        <p className="text-sm font-medium text-destructive">Unable to load statistics</p>
+        <p className="text-xs text-muted-foreground">Please try again later.</p>
       </div>
     );
   }
