@@ -74,6 +74,22 @@ Supported generic resources include:
 - `posts`
 - `profiles`
 
+Specialized admin endpoints (not generic content):
+- `GET /api/v1/admin/overview` — dashboard data
+- `GET /api/v1/admin/members` — member list
+- `POST /api/v1/admin/members` — create member
+- `PATCH /api/v1/admin/members/:id` — update member
+- `DELETE /api/v1/admin/members/:id` — delete member
+- `GET /api/v1/admin/certificates` — certificate list
+- `POST /api/v1/admin/certificates` — create certificate
+- `PATCH /api/v1/admin/certificates/:id` — update certificate
+- `DELETE /api/v1/admin/certificates/:id` — delete certificate
+- `GET /api/v1/admin/statistics` — editable statistics
+- `PATCH /api/v1/admin/statistics` — update statistics
+- `GET /api/v1/admin/system-settings` — system settings
+- `PATCH /api/v1/admin/system-settings` — update system settings
+- `POST /api/v1/admin/uploads/image` — Cloudinary image upload
+
 ### Public Content API
 Public content is exposed through `/api/v1/content/:resource`.
 
@@ -86,6 +102,11 @@ Public resources include:
 - `events`
 - `gallery`
 - `profiles`
+
+### Frontend Hooks
+- `useAdminContent(resource, fallback)` — manages CRUD state for generic admin content tables with local state and fallback JSON data.
+- `useIsMobile()` — mobile breakpoint detection (768px) for responsive admin layouts.
+- `useToast()` / `toast()` — global toast notifications for admin actions.
 
 ## Committee Management
 
@@ -143,6 +164,54 @@ The public card still computes the three phases from `date` and `endDate`:
 - `running`
 - `ended`
 
+## Gallery Management
+
+Gallery is managed at `/admin/gallery` via the generic content API (`resource: gallery`).
+
+Gallery items support:
+- Image upload via Cloudinary (`admin-image-upload-field`)
+- Title and description
+- Sort order
+- Featured/public visibility flags
+
+## Posts Management
+
+Posts are managed at `/admin/posts` via the generic content API (`resource: posts`).
+
+Posts support:
+- Title, content, and excerpt
+- Cover image upload
+- Author attribution
+- Published/draft status
+- Publication date
+- Sort order
+
+## Contributors & Donators Management
+
+Contributors (`/admin/contributors`) and Donators (`/admin/donators`) are managed via the generic content API.
+
+Contributor fields:
+- Name
+- GitHub username
+- Avatar (uploaded or URL)
+- Contribution type
+- Sort order
+
+Donator fields:
+- Name
+- Amount or recognition tier
+- Avatar (uploaded or URL)
+- Message or note
+- Sort order
+
+## Messages Management
+
+Contact messages are managed at `/admin/messages` via the generic content API (`resource: messages`).
+
+Admins can:
+- View submitted contact messages
+- Mark messages as read/unread
+- Delete old messages
 
 ## Cloudinary Uploads
 
@@ -161,6 +230,8 @@ It is used by:
 - Committee member photos
 - Contributor avatars
 - Donator avatars
+- Alumni photos
+- Post cover images
 
 Admins can still paste an existing image URL if needed.
 
@@ -227,6 +298,31 @@ Request flow:
 7. Rejected or pending profiles stay hidden from `/job-pipeline`.
 8. If admin rejects the request, the user sees the request button again and can submit a new request.
 
+## Statistics Management
+
+Public statistics are managed at `/admin/statistics`.
+
+Statistics fields are editable and drive the public site display. Common statistic fields include:
+- Total members
+- Total alumni
+- Total events held
+- Total certificates issued
+- Certificate verifications
+- Failed certificate verifications
+
+Changes are immediately reflected on the public site via the `/api/v1/content/statistics` endpoint.
+
+## System Settings
+
+System settings are managed at `/admin/settings/system`.
+
+Settings include:
+- Site metadata (title, description, keywords)
+- Maintenance mode toggle
+- Public appearance settings
+- Contact information
+- Social media links
+
 ## Audit Logs
 
 Admin create/update/delete actions for generic content and certificates write to `AdminAuditLog`.
@@ -260,10 +356,10 @@ Name and student ID searches can return multiple certificates.
 ## Dashboard
 
 The dashboard no longer uses demo chart data. It maps `overviewResponse` from `/api/v1/admin/overview` into:
-- Member status chart
-- Content overview chart
-- Live operational cards
-- Recent signals
+- Member status chart (Recharts pie/bar chart)
+- Content overview chart (Recharts bar chart)
+- Live operational cards (total members, pending approvals, total events, etc.)
+- Recent signals (recent member registrations, certificate issues, content updates)
 
 ## Mobile Auth Button Fix
 
