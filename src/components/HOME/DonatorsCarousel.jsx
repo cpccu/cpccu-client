@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { FaGlobe, FaLinkedin, FaArrowRight } from "react-icons/fa";
 import donatorsData from "@/data/donators.json";
@@ -17,6 +18,72 @@ export default function DonatorsCarousel() {
   const isHoveringRef = useRef(false);
   const touchStartX = useRef(0);
   const touchStartScroll = useRef(0);
+
+  const { data: donatorsResponse, isLoading, isError } = useGetPublicContentQuery("donators");
+  const donators = chooseLiveItems(
+    donatorsResponse,
+    donatorsData,
+    toPublicDonator,
+    isLoading,
+    isError,
+  );
+
+  if (donators === null) {
+    return (
+      <section className="py-16 md:py-20 bg-gradient-to-b from-blue-50/40 to-white overflow-hidden">
+        <div className="padding mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <p className="text-header font-mono text-sm font-semibold mb-2 tracking-wide uppercase">
+              // our supporters
+            </p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
+              Meet Our Generous Donators
+            </h2>
+            <p className="text-gray-500 mt-2 max-w-md">
+              Organizations and individuals who support our mission and vision.
+            </p>
+          </div>
+          <Link
+            href="/donators"
+            className="flex items-center gap-2 text-header font-semibold hover:gap-3 transition-all duration-300 group shrink-0"
+          >
+            <span>View All Donators</span>
+            <FaArrowRight
+              size={14}
+              className="group-hover:translate-x-1 transition-transform duration-300"
+            />
+          </Link>
+        </div>
+        <div className="relative">
+          <div className="absolute left-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-r from-blue-50/40 to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+          <div className="relative cursor-grab select-none flex gap-5 overflow-x-auto hide-scrollbar scroll-smooth snap-x snap-mandatory touch-pan-x pb-6 px-4 md:px-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="shrink-0 w-[calc(33.333%-14px)] min-w-[260px] bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col items-center gap-3 text-center"
+              >
+                <div className="h-1 w-full bg-gradient-to-r from-header to-blue-400" />
+                <Skeleton className="w-40 h-40 rounded-full mt-1" />
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-3 w-full mt-2" />
+                <div className="flex gap-2">
+                  <Skeleton className="w-8 h-8 rounded-full" />
+                  <Skeleton className="w-8 h-8 rounded-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex justify-center gap-2 mt-8">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="w-2.5 h-2.5 rounded-full" />
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   const scrollToIndex = (index) => {
     const track = trackRef.current;
@@ -44,7 +111,7 @@ export default function DonatorsCarousel() {
       { index: 0, distance: Infinity }
     );
 
-    setCurrentIndex(nearest.index % donatorsData.length);
+    setCurrentIndex(nearest.index % donators.length);
   };
 
   const handleScroll = () => {
@@ -56,7 +123,7 @@ export default function DonatorsCarousel() {
   };
 
   const goTo = (index) => {
-    const normalized = index % donatorsData.length;
+    const normalized = index % donators.length;
     setCurrentIndex(normalized);
     scrollToIndex(normalized);
   };
@@ -115,7 +182,7 @@ export default function DonatorsCarousel() {
     if (!isPaused) {
       autoplayRef.current = setInterval(() => {
         setCurrentIndex((prev) => {
-          const next = (prev + 1) % donatorsData.length;
+          const next = (prev + 1) % donators.length;
           scrollToIndex(next);
           return next;
         });
@@ -127,7 +194,7 @@ export default function DonatorsCarousel() {
         clearInterval(autoplayRef.current);
       }
     };
-  }, [isPaused]);
+  }, [donators.length, isPaused]);
 
   return (
     <section className="py-16 md:py-20 bg-gradient-to-b from-blue-50/40 to-white overflow-hidden">
@@ -187,7 +254,7 @@ export default function DonatorsCarousel() {
           className="relative cursor-grab select-none flex gap-5 overflow-x-auto hide-scrollbar scroll-smooth snap-x snap-mandatory touch-pan-x pb-6 px-4 md:px-6"
           style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
         >
-          {donatorsData.map((donator) => (
+          {donators.map((donator) => (
             <CarouselCard key={donator.id} donator={donator} />
           ))}
         </div>
@@ -195,7 +262,7 @@ export default function DonatorsCarousel() {
 
       {/* Dot Indicators */}
       <div className="flex justify-center gap-2 mt-8">
-        {donatorsData.map((_, index) => (
+        {donators.map((_, index) => (
           <button
             key={index}
             onClick={() => goTo(index)}

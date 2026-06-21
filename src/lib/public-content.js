@@ -1,4 +1,6 @@
-export const chooseLiveItems = (response, fallback, mapItem) => {
+export const chooseLiveItems = (response, fallback, mapItem, isLoading = false, isError = false) => {
+  if (isLoading) return null;
+  if (isError) return fallback;
   const items = response?.data;
   return Array.isArray(items) && items.length ? items.map(mapItem) : fallback;
 };
