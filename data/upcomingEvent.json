@@ -1,29 +1,5 @@
 [
   {
-  "img": "https://i.ibb.co.com/S776RY8f/Bootcamp.png",
-  "alt": "CPCCU Season 2 Contest",
-  "eventHeadLine1": "CPCCU Season 2 Contest",
-  "textContext": "The wait is over! CPCCU proudly presents the Season 2 Contest of our Competitive Programming Bootcamp. Test your problem-solving skills, compete with fellow participants, improve your rating, and climb the leaderboard. This is your opportunity to showcase your logical thinking and coding abilities in a real contest environment.",
-  
-  "eventHeadLine2": "Highlights",
-  "reward": "Top performers will earn leaderboard recognition, rating improvements, special rewards, and the chance to secure a place among the best contestants of Season 2.",
-
-  "eventHeadLine3": "Contest Information",
-  "rules1": "Contest starts on 7 June 2026 at 8:30 PM (BST).",
-  "rules2": "Platform: Codeforces.",
-  "rules3": "Participants must solve problems individually. Any form of plagiarism or code sharing will result in disqualification.",
-  "rules4": "The contest rating and leaderboard will be updated after the contest ends.",
-
-  "btnText": "JOIN CONTEST",
-  "btnLink": "YOUR_CODEFORCES_CONTEST_LINK",
-
-  "btnText1": "REGISTER NOW",
-  "btnLink1": "YOUR_REGISTRATION_FORM_LINK",
-
-  "date": "2026-06-07T20:30:00+06:00",
-  "endDate": "2026-06-07T23:30:00+06:00"
-},
-  {
     "img": "https://i.ibb.co.com/S776RY8f/Bootcamp.png",
     "alt": "Competitive Programming Bootcamp-Season 2",
     "eventHeadLine1": "Competitive Programming Bootcamp-Season 2",
