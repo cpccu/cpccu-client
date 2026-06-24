@@ -13,6 +13,9 @@ export default function InputBox({
   clName,
   autoComplete,
   invalid = false,
+  inputMode,
+  onBlur,
+  className: extraClassName,
 }) {
   const labelCSS = `uppercase font-semibold text-sm text-gray-800 font-custom`;
   const inputCSS = `outline-none border-b py-2 focus:border-black bg-gray-100 px-2 ${
@@ -29,12 +32,14 @@ export default function InputBox({
       <div className="relative">
         <input
           onChange={(e) => setData(e.target.value)}
-          className={`${inputCSS} w-full ${isPassword ? "pr-16" : ""}`}
+          onBlur={onBlur}
+          className={`${inputCSS} w-full ${isPassword ? "pr-16" : ""} ${extraClassName || ''}`}
           type={isPassword && showPassword ? "text" : type}
           id={id}
           placeholder={placeholder}
           value={data}
           autoComplete={autoComplete}
+          inputMode={inputMode}
           aria-invalid={invalid}
           required
         />
