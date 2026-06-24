@@ -21,6 +21,12 @@ const placementConfig = {
     participant: { label: 'Participant', variant: 'outline' },
     completion: { label: 'Completion', variant: 'outline' },
 };
+const CONTEST_TYPE_LABELS = {
+    'programming-contest': 'Programming Contest',
+    hackathon: 'Hackathon',
+    workshop: 'Workshop',
+    'article-writing': 'Article Writing Contest',
+};
 export function CertificatesContent() {
     const [certificates, setCertificates] = useState([]);
     const { data: certificatesResponse } = useGetAdminCertificatesQuery();
@@ -39,6 +45,8 @@ export function CertificatesContent() {
         recipientStudentId: '',
         eventName: '',
         placement: '1st',
+        contestType: 'programming-contest',
+        batch: '',
     });
     useEffect(() => {
         if (certificatesResponse?.data) {
@@ -48,6 +56,8 @@ export function CertificatesContent() {
                 recipientName: certificate.recipientName,
                 recipientStudentId: certificate.recipientId,
                 eventName: certificate.contestName,
+                contestType: certificate.contestType,
+                batch: certificate.batch || '',
                 placement: certificate.certificateType === 'runner-up'
                     ? '2nd'
                     : certificate.certificateType === '2nd-runner-up'
@@ -103,6 +113,8 @@ export function CertificatesContent() {
                 recipientStudentId: cert.recipientStudentId,
                 eventName: cert.eventName,
                 placement: cert.placement,
+                contestType: cert.contestType || 'programming-contest',
+                batch: cert.batch || '',
             });
         }
         else {
@@ -112,6 +124,8 @@ export function CertificatesContent() {
                 recipientStudentId: '',
                 eventName: '',
                 placement: '1st',
+                contestType: 'programming-contest',
+                batch: '',
             });
         }
         setDialogOpen(true);
@@ -128,10 +142,11 @@ export function CertificatesContent() {
             recipientName: formData.recipientName,
             recipientId: formData.recipientStudentId,
             contestName: formData.eventName,
-            contestType: 'programming-contest',
+            contestType: formData.contestType,
             certificateType,
             issueDate: new Date().toISOString(),
             description: `${formData.recipientName} received a CPCCU certificate for ${formData.eventName}.`,
+            batch: formData.batch,
         };
         if (editingCert) {
             await updateCertificate({ id: editingCert.id, body: payload });
@@ -169,7 +184,7 @@ export function CertificatesContent() {
             .filter(Boolean)
             .map((row) => row.split(',').map((cell) => cell.trim()));
         const dataRows = rows[0]?.[0]?.toLowerCase().includes('name') ? rows.slice(1) : rows;
-        await Promise.all(dataRows.map(([recipientName, recipientId, contestName, placement = 'participant'], index) => {
+        await Promise.all(dataRows.map(([recipientName, recipientId, contestName, placement = 'participant', contestType = 'programming-contest', batch = ''], index) => {
             const normalizedPlacement = placement.toLowerCase();
             const certificateType = normalizedPlacement.includes('2')
                 ? 'runner-up'
@@ -183,10 +198,11 @@ export function CertificatesContent() {
                 recipientName,
                 recipientId,
                 contestName,
-                contestType: 'programming-contest',
+                contestType,
                 certificateType,
                 issueDate: new Date().toISOString(),
                 description: `${recipientName} received a CPCCU certificate for ${contestName}.`,
+                batch,
             });
         }));
         setBulkDialogOpen(false);
@@ -210,6 +226,13 @@ export function CertificatesContent() {
         { key: 'recipientName', header: 'Recipient', accessor: 'recipientName', cellClassName: 'font-medium' },
         { key: 'recipientStudentId', header: 'Student ID', accessor: 'recipientStudentId', cellClassName: 'text-muted-foreground' },
         { key: 'eventName', header: 'Event', accessor: 'eventName' },
+        {
+            key: 'contestType',
+            header: 'Type',
+            accessor: 'contestType',
+            cell: (cert) => <span className="text-xs font-semibold px-2 py-1 bg-primary/10 rounded-md">{CONTEST_TYPE_LABELS[cert.contestType] || cert.contestType}</span>,
+        },
+        { key: 'batch', header: 'Batch', accessor: 'batch', cellClassName: 'text-muted-foreground' },
         {
             key: 'placement',
             header: 'Placement',
@@ -365,6 +388,22 @@ export function CertificatesContent() {
               <Input value={formData.eventName} onChange={(e) => setFormData((prev) => ({ ...prev, eventName: e.target.value }))} placeholder="e.g. CPCCU Contest 3"/>
             </div>
             <div className="flex flex-col gap-2">
+              <Label>Contest Type</Label>
+              <Select value={formData.contestType} onValueChange={(v) => setFormData((prev) => ({ ...prev, contestType: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="programming-contest">Programming Contest</SelectItem>
+                  <SelectItem value="hackathon">Hackathon</SelectItem>
+                  <SelectItem value="workshop">Workshop</SelectItem>
+                  <SelectItem value="article-writing">Article Writing Contest</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Batch</Label>
+              <Input value={formData.batch} onChange={(e) => setFormData((prev) => ({ ...prev, batch: e.target.value }))} placeholder="e.g. 2022, 2023"/>
+            </div>
+            <div className="flex flex-col gap-2">
               <Label>Placement</Label>
               <Select value={formData.placement} onValueChange={(v) => setFormData((prev) => ({ ...prev, placement: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -390,7 +429,7 @@ export function CertificatesContent() {
           <DialogHeader>
             <DialogTitle>Bulk Issue Certificates</DialogTitle>
             <DialogDescription>
-              Paste CSV rows as name, student ID, event name, placement.
+              Paste CSV rows as name, student ID, event name, placement, contest type, batch.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2 py-4">
@@ -400,7 +439,7 @@ export function CertificatesContent() {
               value={bulkCsv}
               onChange={(event) => setBulkCsv(event.target.value)}
               rows={8}
-              placeholder={'recipientName,recipientId,contestName,placement\nRahul Roy Nipon,2022-1-60-001,CPCCU Contest 3,1st'}
+              placeholder={'recipientName,recipientId,contestName,placement,contestType,batch\nRahul Roy Nipon,2022-1-60-001,CPCCU Contest 3,1st,programming-contest,2022'}
             />
           </div>
           <DialogFooter>
