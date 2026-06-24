@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AdminDataTable } from '@/components/admin-data-table';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
+import { isValidStudentId, detectScientificNotation, normalizeStudentId } from '@/lib/id-validation';
 import { useCreateAdminMemberMutation, useDeleteAdminMemberMutation, useGetAdminMembersQuery, useUpdateAdminMemberMutation } from '@/features/admin/adminApi';
 const statusStyles = {
     active: 'bg-success/15 text-success border-success/30',
@@ -50,6 +51,7 @@ export function MembersContent() {
         uniID: '',
         password: '',
     });
+    const [memberValidationError, setMemberValidationError] = useState('');
     useEffect(() => {
         if (membersResponse?.data) {
             setMembers(membersResponse.data.map((member) => ({
@@ -100,11 +102,26 @@ export function MembersContent() {
         setDialogOpen(true);
     };
     const handleSave = async () => {
+        setMemberValidationError('');
+        const trimmedUni = normalizeStudentId(formData.uniID);
+        if (!editingMember && !trimmedUni) {
+            setMemberValidationError('University ID is required for new members.');
+            return;
+        }
+        if (trimmedUni && detectScientificNotation(trimmedUni)) {
+            setMemberValidationError('University ID cannot be in scientific notation. Please re-enter the full ID.');
+            return;
+        }
+        if (trimmedUni && !isValidStudentId(trimmedUni)) {
+            setMemberValidationError('University ID must be digits only (6–20 characters, no symbols or spaces).');
+            return;
+        }
         if (editingMember) {
             const updatedMember = {
                 ...editingMember,
                 ...formData,
                 skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
+                uniID: trimmedUni,
             };
             await updateAdminMember({
                 id: editingMember.id,
@@ -115,6 +132,7 @@ export function MembersContent() {
                 skills: updatedMember.skills,
                 role: formData.role,
                 isValid: formData.status === 'active',
+                uniID: trimmedUni,
             });
             showSuccessAlert('Member Updated', `${formData.name}'s profile has been updated.`);
         }
@@ -125,8 +143,8 @@ export function MembersContent() {
                 phone: formData.phone,
                 section: formData.Section,
                 skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
-                batch: formData.batch,
-                uniID: formData.uniID,
+                batch: String(formData.batch).trim(),
+                uniID: trimmedUni,
                 password: formData.password,
                 role: formData.role,
                 isValid: formData.status === 'active',
@@ -386,6 +404,9 @@ export function MembersContent() {
               <Input id="skills" value={formData.skills} onChange={(e) => setFormData(prev => ({ ...prev, skills: e.target.value }))} placeholder="Python, React, Machine Learning"/>
             </div>
           </div>
+          {memberValidationError && (
+            <p className="text-sm font-semibold text-red-600 px-1">{memberValidationError}</p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={!formData.name.trim() || !formData.email.trim() || (!editingMember && (!formData.batch.trim() || !formData.uniID.trim() || formData.password.length < 6))}>
