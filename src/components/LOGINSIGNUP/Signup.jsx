@@ -13,6 +13,7 @@ import ErrorAlert from "../ALERT/ErrorAlert";
 import OtpVerifyPopup from "../ALERT/OtpVerifyPopup";
 import PasswordStrength from "@/components/LOGINSIGNUP/PasswordStrength";
 import { validatePassword } from "@/lib/password-validation";
+import { isValidStudentId, detectScientificNotation, normalizeStudentId } from "@/lib/id-validation";
 
 export default function Signup() {
   const router = useRouter();
@@ -31,13 +32,31 @@ export default function Signup() {
   const [showOtpPopup, setShowOtpPopup] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [registeredUserId, setRegisteredUserId] = useState("");
+  const [emailFieldError, setEmailFieldError] = useState("");
+  const [uniIDFieldError, setUniIDFieldError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setValidationError("");
+    setEmailFieldError("");
+    setUniIDFieldError("");
 
     if (password !== confirmPass) {
       setValidationError("Passwords do not match!");
+      return;
+    }
+
+    const normalizedUni = normalizeStudentId(uniID);
+    if (!normalizedUni) {
+      setValidationError("University ID is required.");
+      return;
+    }
+    if (detectScientificNotation(uniID)) {
+      setValidationError("University ID cannot be in scientific notation. Please re-enter the full ID.");
+      return;
+    }
+    if (!isValidStudentId(uniID)) {
+      setValidationError("University ID must be digits only (6–20 characters, no symbols or spaces).");
       return;
     }
 
@@ -55,8 +74,8 @@ export default function Signup() {
         password,
         confirm_password: confirmPass,
         fullName,
-        uniID,
-        batch,
+        uniID: normalizedUni,
+        batch: String(batch).trim(),
       };
       const response = await register(userData).unwrap();
       const userId =
@@ -70,18 +89,56 @@ export default function Signup() {
       setShowOtpPopup(true);
     } catch (err) {
       console.error("Registration failed:", err);
+      const data = err?.data || err?.originalError || {};
+      const fieldErrors = data.errors || {};
+      const emailMsg =
+        fieldErrors.email ||
+        (typeof data.message === "string" && data.message.toLowerCase().includes("email")
+          ? data.message
+          : "");
+      const uniMsg =
+        fieldErrors.uniID ||
+        (typeof data.message === "string" && data.message.toLowerCase().includes("uni")
+          ? data.message
+          : "");
+      if (emailMsg) setEmailFieldError(emailMsg);
+      if (uniMsg) setUniIDFieldError(uniMsg);
     }
   };
 
+  const handleEmailBlur = () => {
+    if (!email.trim()) {
+      setEmailFieldError("Email address is required.");
+      return;
+    }
+    setEmailFieldError("");
+  };
+
+  const handleUniIDBlur = () => {
+    if (!uniID.trim()) {
+      setUniIDFieldError("Student ID is required.");
+      return;
+    }
+    if (detectScientificNotation(uniID)) {
+      setUniIDFieldError("Student ID is in scientific notation. Please enter the full number.");
+      return;
+    }
+    if (!isValidStudentId(uniID)) {
+      setUniIDFieldError("Student ID must be digits only (6–20 characters, no symbols or spaces).");
+      return;
+    }
+    setUniIDFieldError("");
+  };
+
   useEffect(() => {
-    if ((isSuccess || isError || validationError) && !showOtpPopup) {
+    if ((isSuccess || validationError) && !showOtpPopup) {
       const timer = setTimeout(() => {
         reset();
         setValidationError("");
       }, 4000);
       return () => clearTimeout(timer);
     }
-  }, [isSuccess, isError, validationError, showOtpPopup, reset]);
+  }, [isSuccess, validationError, showOtpPopup, reset]);
 
   return (
     <>
@@ -133,7 +190,13 @@ export default function Signup() {
                 data={email}
                 setData={setEmail}
                 autoComplete="email"
+                onBlur={handleEmailBlur}
               />
+              {emailFieldError && (
+                <p className="text-xs font-semibold text-red-600 mt-1 col-span-6">
+                  {emailFieldError}
+                </p>
+              )}
               <InputBox
                 type={"text"}
                 title={"Full name"}
@@ -146,16 +209,24 @@ export default function Signup() {
             </section>
             <section className=" grid md:grid-cols-12 gap-5">
               <InputBox
-                type={"number"}
+                type={"text"}
+                inputMode={"numeric"}
                 title={"CITY UNIVERSITY ID"}
                 id={"userUniID"}
                 placeholder={"027250******"}
                 clName={"md:col-span-9"}
                 data={uniID}
                 setData={setUniID}
+                onBlur={handleUniIDBlur}
               />
+              {uniIDFieldError && (
+                <p className="text-xs font-semibold text-red-600 mt-1 md:col-span-9">
+                  {uniIDFieldError}
+                </p>
+              )}
               <InputBox
-                type={"number"}
+                type={"text"}
+                inputMode={"numeric"}
                 title={"BATCH NO."}
                 id={"userBatch"}
                 placeholder={"60"}
