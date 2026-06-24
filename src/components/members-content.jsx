@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AdminDataTable } from '@/components/admin-data-table';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
+import { isValidStudentId, detectScientificNotation, normalizeStudentId } from '@/lib/id-validation';
 import { useCreateAdminMemberMutation, useDeleteAdminMemberMutation, useGetAdminMembersQuery, useUpdateAdminMemberMutation } from '@/features/admin/adminApi';
 const statusStyles = {
     active: 'bg-success/15 text-success border-success/30',
@@ -50,6 +51,9 @@ export function MembersContent() {
         uniID: '',
         password: '',
     });
+    const [memberValidationError, setMemberValidationError] = useState('');
+    const [emailFieldError, setEmailFieldError] = useState('');
+    const [uniIDFieldError, setUniIDFieldError] = useState('');
     useEffect(() => {
         if (membersResponse?.data) {
             setMembers(membersResponse.data.map((member) => ({
@@ -81,6 +85,8 @@ export function MembersContent() {
     const openCreate = () => {
         setEditingMember(null);
         setFormData({ name: '', email: '', role: 'member', status: 'active', Section: '', phone: '', skills: '', batch: '', uniID: '', password: '' });
+        setEmailFieldError('');
+        setUniIDFieldError('');
         setDialogOpen(true);
     };
     const openEdit = (member) => {
@@ -97,43 +103,77 @@ export function MembersContent() {
             uniID: member.uniID || '',
             password: '',
         });
+        setEmailFieldError('');
+        setUniIDFieldError('');
         setDialogOpen(true);
     };
     const handleSave = async () => {
-        if (editingMember) {
-            const updatedMember = {
-                ...editingMember,
-                ...formData,
-                skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
-            };
-            await updateAdminMember({
-                id: editingMember.id,
-                fullName: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                section: formData.Section,
-                skills: updatedMember.skills,
-                role: formData.role,
-                isValid: formData.status === 'active',
-            });
-            showSuccessAlert('Member Updated', `${formData.name}'s profile has been updated.`);
+        setMemberValidationError('');
+        setEmailFieldError('');
+        setUniIDFieldError('');
+        const trimmedUni = normalizeStudentId(formData.uniID);
+        if (!editingMember && !trimmedUni) {
+            setMemberValidationError('University ID is required for new members.');
+            return;
         }
-        else {
-            await createAdminMember({
-                fullName: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                section: formData.Section,
-                skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
-                batch: formData.batch,
-                uniID: formData.uniID,
-                password: formData.password,
-                role: formData.role,
-                isValid: formData.status === 'active',
-            });
-            showSuccessAlert('Member Added', `${formData.name} has been added to the club.`);
+        if (trimmedUni && detectScientificNotation(trimmedUni)) {
+            setMemberValidationError('University ID cannot be in scientific notation. Please re-enter the full ID.');
+            return;
         }
-        setDialogOpen(false);
+        if (trimmedUni && !isValidStudentId(trimmedUni)) {
+            setMemberValidationError('University ID must be digits only (6–20 characters, no symbols or spaces).');
+            return;
+        }
+        try {
+            if (editingMember) {
+                await updateAdminMember({
+                    id: editingMember.id,
+                    fullName: formData.name,
+                    email: formData.email,
+                    phone: formData.phone,
+                    section: formData.Section,
+                    skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
+                    role: formData.role,
+                    isValid: formData.status === 'active',
+                    uniID: trimmedUni,
+                }).unwrap();
+                showSuccessAlert('Member Updated', `${formData.name}'s profile has been updated.`);
+            }
+            else {
+                await createAdminMember({
+                    fullName: formData.name,
+                    email: formData.email,
+                    phone: formData.phone,
+                    section: formData.Section,
+                    skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
+                    batch: String(formData.batch).trim(),
+                    uniID: trimmedUni,
+                    password: formData.password,
+                    role: formData.role,
+                    isValid: formData.status === 'active',
+                }).unwrap();
+                showSuccessAlert('Member Added', `${formData.name} has been added to the club.`);
+            }
+            setDialogOpen(false);
+        } catch (error) {
+            console.error('Save failed:', error);
+            const fieldErrors = error?.data?.errors || [];
+            if (Array.isArray(fieldErrors) && fieldErrors.length > 0) {
+                const emailMsg = fieldErrors.find(e => e.field === 'email');
+                const uniMsg = fieldErrors.find(e => e.field === 'uniID');
+                if (emailMsg) setEmailFieldError(emailMsg.message);
+                if (uniMsg) setUniIDFieldError(uniMsg.message);
+                const otherErrors = fieldErrors.filter(e => e.field !== 'email' && e.field !== 'uniID');
+                if (otherErrors.length > 0) {
+                    setMemberValidationError(otherErrors.map(e => e.message).join(' '));
+                }
+                if (!emailMsg && !uniMsg && otherErrors.length === 0) {
+                    setMemberValidationError(error?.data?.message || 'Failed to save member changes.');
+                }
+            } else {
+                setMemberValidationError(error?.data?.message || 'Failed to save member changes.');
+            }
+        }
     };
     const handleDelete = async (member) => {
         const result = await showDeleteConfirm(member.name);
@@ -329,21 +369,55 @@ export function MembersContent() {
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="email@cpccu.club"/>
+                <Input id="email" type="email" value={formData.email} onChange={(e) => { setFormData(prev => ({ ...prev, email: e.target.value })); setEmailFieldError(''); }} placeholder="email@cpccu.club" onBlur={() => {
+                  const val = (formData.email || '').trim();
+                  if (val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+                    setEmailFieldError('Please enter a valid email address.');
+                  }
+                }}/>
+                {emailFieldError && <p className="text-xs font-semibold text-red-600">{emailFieldError}</p>}
               </div>
             </div>
             {!editingMember && (<div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="batch">Batch</Label>
-                <Input id="batch" value={formData.batch} onChange={(e) => setFormData(prev => ({ ...prev, batch: e.target.value }))} placeholder="67"/>
+                <Input id="batch" type="text" value={formData.batch} onChange={(e) => setFormData(prev => ({ ...prev, batch: e.target.value }))} placeholder="67"/>
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="uniID">University ID</Label>
-                <Input id="uniID" value={formData.uniID} onChange={(e) => setFormData(prev => ({ ...prev, uniID: e.target.value }))} placeholder="Student ID"/>
+                <Input id="uniID" type="text" inputMode="numeric" value={formData.uniID} onChange={(e) => { setFormData(prev => ({ ...prev, uniID: e.target.value })); setUniIDFieldError(''); }} placeholder="Student ID" onBlur={() => {
+                  const val = normalizeStudentId(formData.uniID);
+                  if (detectScientificNotation(formData.uniID)) {
+                    setUniIDFieldError('University ID cannot be in scientific notation. Please enter the full number.');
+                  }
+                  else if (val && !isValidStudentId(val)) {
+                    setUniIDFieldError('University ID must be digits only (6–20 characters, no symbols or spaces).');
+                  }
+                }}/>
+                {uniIDFieldError && <p className="text-xs font-semibold text-red-600">{uniIDFieldError}</p>}
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="password">Temporary Password</Label>
                 <Input id="password" type="password" value={formData.password} onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))} placeholder="At least 6 chars"/>
+              </div>
+            </div>)}
+            {editingMember && (<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="batch">Batch</Label>
+                <Input id="batch" type="text" value={formData.batch} onChange={(e) => setFormData(prev => ({ ...prev, batch: e.target.value }))} placeholder="67"/>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="uniID">University ID</Label>
+                <Input id="uniID" type="text" inputMode="numeric" value={formData.uniID} onChange={(e) => { setFormData(prev => ({ ...prev, uniID: e.target.value })); setUniIDFieldError(''); }} placeholder="Student ID" onBlur={() => {
+                  const val = normalizeStudentId(formData.uniID);
+                  if (detectScientificNotation(formData.uniID)) {
+                    setUniIDFieldError('University ID cannot be in scientific notation. Please enter the full number.');
+                  }
+                  else if (val && !isValidStudentId(val)) {
+                    setUniIDFieldError('University ID must be digits only (6–20 characters, no symbols or spaces).');
+                  }
+                }}/>
+                {uniIDFieldError && <p className="text-xs font-semibold text-red-600">{uniIDFieldError}</p>}
               </div>
             </div>)}
             <div className="grid grid-cols-2 gap-4">
@@ -386,6 +460,9 @@ export function MembersContent() {
               <Input id="skills" value={formData.skills} onChange={(e) => setFormData(prev => ({ ...prev, skills: e.target.value }))} placeholder="Python, React, Machine Learning"/>
             </div>
           </div>
+          {memberValidationError && (
+            <p className="text-sm font-semibold text-red-600 px-1">{memberValidationError}</p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={!formData.name.trim() || !formData.email.trim() || (!editingMember && (!formData.batch.trim() || !formData.uniID.trim() || formData.password.length < 6))}>

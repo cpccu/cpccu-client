@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Plus, MoreHorizontal, Award, Edit2, Trash2, Eye, Download, Copy, Check, Upload } from 'lucide-react';
+import { Plus, MoreHorizontal, Award, Edit2, Trash2, Eye, Download, Copy, Check, Upload, FileSpreadsheet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
+import { isValidStudentId, detectScientificNotation, normalizeStudentId } from '@/lib/id-validation';
+import * as XLSX from 'xlsx';
 import { useCreateAdminCertificateMutation, useDeleteAdminCertificateMutation, useGetAdminCertificatesQuery, useUpdateAdminCertificateMutation } from '@/features/admin/adminApi';
 import { AdminDataTable } from '@/components/admin-data-table';
 const placementConfig = {
@@ -39,7 +41,12 @@ export function CertificatesContent() {
     const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
     const [editingCert, setEditingCert] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
-    const [bulkCsv, setBulkCsv] = useState('');
+    const [bulkFile, setBulkFile] = useState(null);
+    const [bulkFileRows, setBulkFileRows] = useState([]);
+    const [bulkFileMeta, setBulkFileMeta] = useState(null);
+    const [bulkValidationErrors, setBulkValidationErrors] = useState([]);
+    const [bulkSuccessSummary, setBulkSuccessSummary] = useState(null);
+    const [idValidationError, setIdValidationError] = useState('');
     const [formData, setFormData] = useState({
         recipientName: '',
         recipientStudentId: '',
@@ -105,12 +112,110 @@ export function CertificatesContent() {
         const num = String(getNextCertificateNumber()).padStart(5, '0');
         return `CPCCU-${year}-${num}`;
     };
+    const downloadBulkTemplate = () => {
+        const headers = ['recipientName', 'recipientId', 'contestName', 'placement', 'contestType', 'batch'];
+        const exampleRow = ['Rahul Roy Nipon', '02725205101015', 'CPCCU Contest 3', '1st', 'programming-contest', '2022'];
+        const ws = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
+        const numericColIndex = headers.indexOf('recipientId');
+        if (numericColIndex >= 0) {
+            const colLetter = XLSX.utils.encode_col(numericColIndex);
+            ws['!cols'] = ws['!cols'] || [];
+            ws['!cols'][numericColIndex] = ws['!cols'][numericColIndex] || {};
+            ws['!cols'][numericColIndex].t = 's';
+            ws['!cols'][numericColIndex].z = '@';
+        }
+        ws['!cols'] = ws['!cols'] || [];
+        headers.forEach((_, i) => {
+            if (!ws['!cols'][i]) ws['!cols'][i] = {};
+            ws['!cols'][i].wch = 28;
+        });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Bulk Issue');
+        const xlsxFile = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([xlsxFile], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'cpccu-bulk-issue-template.xlsx';
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+    const parseXlsxFile = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                    resolve(json);
+                } catch (err) {
+                    reject(new Error('Failed to parse XLSX file. Please ensure it is a valid Excel file.'));
+                }
+            };
+            reader.onerror = () => reject(new Error('Failed to read XLSX file.'));
+            reader.readAsArrayBuffer(file);
+        });
+    };
+    const handleXlsxUpload = async (file) => {
+        if (!file) return;
+        if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+            setBulkValidationErrors([{ type: 'file', message: 'Only .xlsx files are supported.' }]);
+            setBulkFile(null);
+            setBulkFileRows([]);
+            setBulkFileMeta(null);
+            return;
+        }
+        try {
+            const rows = await parseXlsxFile(file);
+            const trimmed = rows.map((r) => r.map((c) => String(c).trim())).filter((r) => r.some((c) => c));
+            if (trimmed.length === 0) {
+                setBulkValidationErrors([{ type: 'file', message: 'The uploaded file contains no data rows.' }]);
+                setBulkFile(null);
+                setBulkFileRows([]);
+                setBulkFileMeta(null);
+                return;
+            }
+            const headerRow = trimmed[0].map((c) => c.toLowerCase());
+            const hasHeader = headerRow.some((h) => ['recipientid', 'recipientname', 'recipient_id', 'recipient_name'].includes(h));
+            const dataRows = hasHeader ? trimmed.slice(1) : trimmed;
+            setBulkFile(file);
+            setBulkFileMeta({ name: file.name, size: file.size, rowCount: dataRows.length });
+            setBulkFileRows(dataRows);
+            setBulkValidationErrors([]);
+            setBulkSuccessSummary(null);
+        } catch (err) {
+            setBulkValidationErrors([{ type: 'file', message: 'Unable to read the XLSX file. Please download a fresh template and try again.' }]);
+            setBulkFile(null);
+            setBulkFileRows([]);
+            setBulkFileMeta(null);
+        }
+    };
+
+    const handleXlsxInputChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (file) await handleXlsxUpload(file);
+        e.target.value = '';
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const file = e.dataTransfer.files?.[0];
+        if (file) await handleXlsxUpload(file);
+    };
     const handleOpenDialog = (cert) => {
         if (cert) {
             setEditingCert(cert);
             setFormData({
                 recipientName: cert.recipientName,
-                recipientStudentId: cert.recipientStudentId,
+                recipientStudentId: normalizeStudentId(cert.recipientStudentId),
                 eventName: cert.eventName,
                 placement: cert.placement,
                 contestType: cert.contestType || 'programming-contest',
@@ -131,6 +236,19 @@ export function CertificatesContent() {
         setDialogOpen(true);
     };
     const handleSave = async () => {
+        const trimmedId = normalizeStudentId(formData.recipientStudentId);
+        if (detectScientificNotation(trimmedId)) {
+            showSuccessAlert('Invalid Student ID', 'Student ID cannot be in scientific notation. Please re-enter the full ID.');
+            return;
+        }
+        if (!isValidStudentId(trimmedId)) {
+            showSuccessAlert('Invalid Student ID', 'Student ID must be digits only (6–20 characters, no symbols or spaces).');
+            return;
+        }
+        if (!formData.eventName.trim()) {
+            showSuccessAlert('Missing Event', 'Please enter the event name.');
+            return;
+        }
         const certificateType = formData.placement === '2nd'
             ? 'runner-up'
             : formData.placement === '3rd'
@@ -140,7 +258,7 @@ export function CertificatesContent() {
                     : 'winner';
         const payload = {
             recipientName: formData.recipientName,
-            recipientId: formData.recipientStudentId,
+            recipientId: trimmedId,
             contestName: formData.eventName,
             contestType: formData.contestType,
             certificateType,
@@ -178,14 +296,45 @@ export function CertificatesContent() {
         }
     };
     const handleBulkIssue = async () => {
-        const rows = bulkCsv
-            .split('\n')
-            .map((row) => row.trim())
-            .filter(Boolean)
-            .map((row) => row.split(',').map((cell) => cell.trim()));
-        const dataRows = rows[0]?.[0]?.toLowerCase().includes('name') ? rows.slice(1) : rows;
-        await Promise.all(dataRows.map(([recipientName, recipientId, contestName, placement = 'participant', contestType = 'programming-contest', batch = ''], index) => {
-            const normalizedPlacement = placement.toLowerCase();
+        const rows = bulkFileRows;
+        const validRows = [];
+        const errors = [];
+        rows.forEach((row, idx) => {
+            const rowNumber = idx + 2;
+            const [recipientName, recipientIdRaw, contestName, placement = 'participant', contestType = 'programming-contest', batch = ''] = row;
+            if (!recipientName || !recipientName.trim()) {
+                errors.push({ row: rowNumber, field: 'name', message: 'Recipient name is required.' });
+                return;
+            }
+            const trimmedId = normalizeStudentId(recipientIdRaw);
+            if (!trimmedId) {
+                errors.push({ row: rowNumber, field: 'id', message: `Student ID is required for "${recipientName.trim()}".` });
+                return;
+            }
+            if (detectScientificNotation(trimmedId)) {
+                errors.push({ row: rowNumber, field: 'id', message: `Student ID "${trimmedId}" for "${recipientName.trim()}" is in scientific notation. Re-enter the full ID.` });
+                return;
+            }
+            if (!isValidStudentId(trimmedId)) {
+                errors.push({ row: rowNumber, field: 'id', message: `Student ID "${trimmedId}" for "${recipientName.trim()}" must be digits only (6–20 characters, no symbols or spaces).` });
+                return;
+            }
+            if (!contestName || !contestName.trim()) {
+                errors.push({ row: rowNumber, field: 'event', message: `Event name is required for "${recipientName.trim()}".` });
+                return;
+            }
+            validRows.push({ recipientId: trimmedId, recipientName: recipientName.trim(), contestName: contestName.trim(), placement, contestType, batch: String(batch).trim() });
+        });
+        setBulkValidationErrors(errors);
+        if (errors.length > 0) {
+            return;
+        }
+        if (validRows.length === 0) {
+            setBulkValidationErrors([{ row: null, field: 'file', message: 'No valid data rows found to process.' }]);
+            return;
+        }
+        await Promise.all(validRows.map((row, index) => {
+            const normalizedPlacement = row.placement.toLowerCase();
             const certificateType = normalizedPlacement.includes('2')
                 ? 'runner-up'
                 : normalizedPlacement.includes('3')
@@ -195,19 +344,17 @@ export function CertificatesContent() {
                         : 'participation';
             return createCertificate({
                 certificateId: `CPCCU-${new Date().getFullYear()}-${String(getNextCertificateNumber() + index).padStart(5, '0')}`,
-                recipientName,
-                recipientId,
-                contestName,
-                contestType,
+                recipientName: row.recipientName,
+                recipientId: row.recipientId,
+                contestName: row.contestName,
+                contestType: row.contestType,
                 certificateType,
                 issueDate: new Date().toISOString(),
-                description: `${recipientName} received a CPCCU certificate for ${contestName}.`,
-                batch,
+                description: `${row.recipientName} received a CPCCU certificate for ${row.contestName}.`,
+                batch: row.batch,
             });
         }));
-        setBulkDialogOpen(false);
-        setBulkCsv('');
-        showSuccessAlert('Bulk Issued', `${dataRows.length} certificates have been queued.`);
+        setBulkSuccessSummary({ total: validRows.length, issued: validRows.length, skipped: 0 });
     };
     const columns = [
         {
@@ -381,7 +528,25 @@ export function CertificatesContent() {
             </div>
             <div className="flex flex-col gap-2">
               <Label>Student ID</Label>
-              <Input value={formData.recipientStudentId} onChange={(e) => setFormData((prev) => ({ ...prev, recipientStudentId: e.target.value }))} placeholder="e.g. 2022-1-60-001"/>
+              <Input
+                value={formData.recipientStudentId}
+                onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData((prev) => ({ ...prev, recipientStudentId: val }));
+                    if (!val) { setIdValidationError(''); return; }
+                    if (detectScientificNotation(val)) {
+                        setIdValidationError('ID contains scientific notation – please enter the full number.');
+                    }
+                    else if (val.trim() && !isValidStudentId(val)) {
+                        setIdValidationError('Student ID must be digits only (6–20 characters, no spaces or symbols).');
+                    }
+                    else {
+                        setIdValidationError('');
+                    }
+                }}
+                placeholder="e.g. 02725205101015"
+              />
+              {idValidationError && <p className="text-xs font-semibold text-red-600">{idValidationError}</p>}
             </div>
             <div className="flex flex-col gap-2">
               <Label>Event Name</Label>
@@ -424,29 +589,124 @@ export function CertificatesContent() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
-        <DialogContent>
+      <Dialog open={bulkDialogOpen} onOpenChange={(open) => {
+          setBulkDialogOpen(open);
+          if (!open) {
+              setBulkFile(null);
+              setBulkFileRows([]);
+              setBulkFileMeta(null);
+              setBulkValidationErrors([]);
+              setBulkSuccessSummary(null);
+          }
+      }}>
+        <DialogContent className="sm:max-w-[640px]">
           <DialogHeader>
             <DialogTitle>Bulk Issue Certificates</DialogTitle>
             <DialogDescription>
-              Paste CSV rows as name, student ID, event name, placement, contest type, batch.
+              Issue multiple certificates by uploading a completed XLSX file.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-2 py-4">
-            <Label htmlFor="bulk-csv">Certificate CSV</Label>
-            <Textarea
-              id="bulk-csv"
-              value={bulkCsv}
-              onChange={(event) => setBulkCsv(event.target.value)}
-              rows={8}
-              placeholder={'recipientName,recipientId,contestName,placement,contestType,batch\nRahul Roy Nipon,2022-1-60-001,CPCCU Contest 3,1st,programming-contest,2022'}
-            />
+          <div className="flex flex-col gap-5 py-4">
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Step 1</p>
+              <Button variant="outline" onClick={downloadBulkTemplate} className="gap-2 w-fit">
+                <FileSpreadsheet className="size-4" />
+                Download XLSX Template
+              </Button>
+            </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Step 2</p>
+              <p className="text-sm text-muted-foreground">Fill the template with student data, save, then upload below.</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Step 3</p>
+              <div
+                className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/40 bg-muted/20 px-6 py-10 text-center cursor-pointer transition-colors hover:border-primary/50 hover:bg-muted/40"
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById('bulk-xlsx-input')?.click()}
+              >
+                <FileSpreadsheet className="size-10 text-muted-foreground" />
+                <p className="text-sm font-semibold text-gray-700">Drag & drop your XLSX file here</p>
+                <p className="text-xs text-muted-foreground">or</p>
+                <Button variant="secondary" size="sm" type="button" onClick={(e) => e.stopPropagation()}>
+                  Browse Files
+                </Button>
+                <input
+                  id="bulk-xlsx-input"
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleXlsxInputChange}
+                />
+              </div>
+            </div>
+            {bulkFileMeta && (
+              <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                    <FileSpreadsheet className="size-4 text-primary" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-gray-800">{bulkFileMeta.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {(bulkFileMeta.size / 1024).toFixed(1)} KB • {bulkFileMeta.rowCount} rows detected
+                    </span>
+                  </div>
+                </div>
+                {!bulkSuccessSummary && (
+                  <span className="text-xs font-semibold text-green-600">Ready to issue</span>
+                )}
+              </div>
+            )}
+            {bulkValidationErrors.length > 0 && !bulkSuccessSummary && (
+              <div className="flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                <p className="text-sm font-semibold text-red-700">
+                  {bulkValidationErrors.length} row(s) contain invalid data:
+                </p>
+                <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
+                  {bulkValidationErrors.slice(0, 20).map((err, i) => (
+                    <span key={i} className="text-xs text-red-600">
+                      Row {err.row ?? '?'}: {err.message}
+                    </span>
+                  ))}
+                  {bulkValidationErrors.length > 20 && (
+                    <span className="text-xs text-red-500">...and {bulkValidationErrors.length - 20} more.</span>
+                  )}
+                </div>
+              </div>
+            )}
+            {bulkSuccessSummary && (
+              <div className="flex flex-col gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+                <p className="text-sm font-bold text-green-800">Certificates Issued Successfully</p>
+                <p className="text-xs text-green-700">
+                  Total Rows: {bulkSuccessSummary.total} • Issued: {bulkSuccessSummary.issued} • Skipped: {bulkSuccessSummary.skipped}
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleBulkIssue} disabled={!bulkCsv.trim()}>Issue Batch</Button>
+            <Button variant="outline" onClick={() => {
+                setBulkDialogOpen(false);
+                setBulkFile(null);
+                setBulkFileRows([]);
+                setBulkFileMeta(null);
+                setBulkValidationErrors([]);
+                setBulkSuccessSummary(null);
+            }}>Cancel</Button>
+            <Button
+              onClick={() => {
+                  if (bulkValidationErrors.length === 0 && bulkFileRows.length > 0) {
+                      handleBulkIssue();
+                  }
+              }}
+              disabled={!bulkFile || bulkFileRows.length === 0 || bulkValidationErrors.length > 0 || !!bulkSuccessSummary}
+              className="gap-2"
+            >
+              {bulkSuccessSummary ? 'Issued' : 'Issue Certificates'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>);
-}
+  }

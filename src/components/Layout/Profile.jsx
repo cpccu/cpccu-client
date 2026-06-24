@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
 import ImageUploadModal from "../PROFILE/ImageUploadModal";
+import { isValidStudentId, detectScientificNotation, normalizeStudentId } from "@/lib/id-validation";
 
 const defaultAvatar = "/assets/avatar/default-avatar.png";
 
@@ -39,6 +40,8 @@ export default function Profile({ user, isOwnProfile }) {
   const [isJobPipelineModalOpen, setIsJobPipelineModalOpen] = useState(false);
   const [jobPipelineTitleInput, setJobPipelineTitleInput] = useState("");
   const [jobPipelineTitleError, setJobPipelineTitleError] = useState("");
+  const [emailFieldError, setEmailFieldError] = useState('');
+  const [uniIDFieldError, setUniIDFieldError] = useState('');
   
   const [profile, setProfile] = useState({
     avatar: user?.avatar || "",
@@ -71,18 +74,60 @@ export default function Profile({ user, isOwnProfile }) {
 
   const handleUpdate = async () => {
     if (editMode) {
+      const trimmedEmail = (profile.email || '').trim().toLowerCase();
+      const trimmedUniID = normalizeStudentId(profile.uniID);
+
+      if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+        setEmailFieldError('Please enter a valid email address.');
+        return;
+      }
+      if (detectScientificNotation(profile.uniID)) {
+        setUniIDFieldError('University ID cannot be in scientific notation. Please enter the full number.');
+        return;
+      }
+      if (trimmedUniID && !isValidStudentId(trimmedUniID)) {
+        setUniIDFieldError('University ID must be digits only (6–20 characters, no symbols or spaces).');
+        return;
+      }
+
       try {
-        const res = await updateUser({ userData: profile }).unwrap();
-        dispatch(setCredentials({ 
-          user: res.data, 
-          token
-        }));
+        const updatePayload = {
+          ...profile,
+          email: trimmedEmail,
+          uniID: trimmedUniID,
+          studentId: trimmedUniID,
+        };
+        const res = await updateUser({ userData: updatePayload }).unwrap();
+        const updatedUser = res?.data?.user || res?.data;
+        if (updatedUser) {
+          dispatch(setCredentials({
+            user: updatedUser,
+            token,
+          }));
+        }
         setEditMode(false);
+        setEmailFieldError('');
+        setUniIDFieldError('');
+
+        const newUniID = trimmedUniID || user?.uniID || '';
+        const oldUniID = user?.uniID || '';
+        if (newUniID && newUniID !== oldUniID) {
+          router.replace(`/profile/${newUniID}`);
+        }
       } catch (error) {
         console.error("Update failed:", error);
+        const fieldErrors = error?.data?.errors || [];
+        if (Array.isArray(fieldErrors) && fieldErrors.length > 0) {
+          const emailMsg = fieldErrors.find(e => e.field === 'email');
+          const uniMsg = fieldErrors.find(e => e.field === 'uniID');
+          if (emailMsg) setEmailFieldError(emailMsg.message);
+          if (uniMsg) setUniIDFieldError(uniMsg.message);
+        }
       }
     } else {
       setEditMode(true);
+      setEmailFieldError('');
+      setUniIDFieldError('');
     }
   };
 
@@ -446,25 +491,59 @@ export default function Profile({ user, isOwnProfile }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-10">
               {[
                 { label: "Full Name", field: "fullName", placeholder: "Enter full name" },
-                { label: "Email Address", field: "email", placeholder: "email@example.com" },
+                { label: "Email Address", field: "email", placeholder: "email@example.com", isIdentifier: false },
                 { label: "Phone Number", field: "phone", placeholder: "+880 1xxx-xxxxxx" },
-                { label: "University ID", field: "uniID", placeholder: "ID Number" },
+                { label: "University ID", field: "uniID", placeholder: "ID Number", isIdentifier: true },
                 { label: "Batch Number", field: "batch", placeholder: "e.g., 60th" },
                 { label: "Section", field: "section", placeholder: "e.g., A" },
                 { label: "GitHub Profile", field: "github", placeholder: "https://github.com/..." },
                 { label: "LinkedIn Profile", field: "linkedin", placeholder: "https://linkedin.com/in/..." },
                 { label: "Portfolio", field: "portfolio", placeholder: "https://your-portfolio.com" },
-              ].map(({ label, field, placeholder } ) => (
+              ].map(({ label, field, placeholder, isIdentifier }) => (
                 <div key={field} className="flex flex-col gap-2">
                   <label className="text-xs font-black uppercase text-gray-400 tracking-widest">{label}</label>
                   {editMode ? (
-                    <input 
-                      type="text" 
-                      value={profile[field]} 
-                      onChange={(e) => setProfile({...profile, [field]: e.target.value})}
-                      placeholder={placeholder}
-                      className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 ring-blue-100 focus:border-blue-400 transition-all"
-                    />
+                    <>
+                      <input
+                        type={field === "email" ? "email" : "text"}
+                        inputMode={isIdentifier ? "numeric" : undefined}
+                        value={profile[field]}
+                        onChange={(e) => {
+                          setProfile({...profile, [field]: e.target.value});
+                          if (field === 'email') {
+                            setEmailFieldError('');
+                          }
+                          if (field === 'uniID') {
+                            setUniIDFieldError('');
+                          }
+                        }}
+                        onBlur={() => {
+                          if (field === 'email') {
+                            const val = (profile.email || '').trim();
+                            if (val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+                              setEmailFieldError('Please enter a valid email address.');
+                            }
+                          }
+                          if (field === 'uniID') {
+                            const val = normalizeStudentId(profile.uniID);
+                            if (detectScientificNotation(profile.uniID)) {
+                              setUniIDFieldError('University ID cannot be in scientific notation. Please enter the full number.');
+                            }
+                            else if (val && !isValidStudentId(val)) {
+                              setUniIDFieldError('University ID must be digits only (6–20 characters, no symbols or spaces).');
+                            }
+                          }
+                        }}
+                        placeholder={placeholder}
+                        className={`px-4 py-3 bg-gray-50 border rounded-2xl outline-none focus:ring-2 ring-blue-100 focus:border-blue-400 transition-all ${field === 'email' && emailFieldError ? 'border-red-400' : field === 'uniID' && uniIDFieldError ? 'border-red-400' : 'border-gray-200'}`}
+                      />
+                      {(field === 'email' && emailFieldError) && (
+                        <p className="text-xs font-semibold text-red-600">{emailFieldError}</p>
+                      )}
+                      {(field === 'uniID' && uniIDFieldError) && (
+                        <p className="text-xs font-semibold text-red-600">{uniIDFieldError}</p>
+                      )}
+                    </>
                   ) : (
                     <div className="text-gray-800 font-bold text-lg truncate">
                       {field === "github" || field === "linkedin" || field === "portfolio" ? (
@@ -548,7 +627,6 @@ export default function Profile({ user, isOwnProfile }) {
 
       {/* Alerts */}
       {isUpdateSuccess && <SuccessAlert title="Success!" text="Your profile has been updated." />}
-      {isUpdateError && <ErrorAlert title="Error" text="Failed to save profile changes." />}
       {isImageSuccess && <SuccessAlert title="Success!" text="Profile picture updated." />}
       {isImageError && <ErrorAlert title="Upload Failed" text={uploadError?.data?.message || "Failed to upload image."} />}
       {isJobPipelineError && <ErrorAlert title="Job Pipeline Request Failed" text={jobPipelineError?.data?.message || "Failed to submit job pipeline request."} />}
