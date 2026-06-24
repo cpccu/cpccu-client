@@ -77,6 +77,11 @@ export function CertificateCard({ certificate }) {
           <h2 className="text-2xl md:text-3xl font-extrabold text-foreground text-balance">
             {certificate.recipientName}
           </h2>
+          {certificate.batch && (
+            <span className="text-xs text-primary font-semibold mt-1 inline-block px-2 py-1 bg-primary/10 rounded-md">
+              Batch {certificate.batch}
+            </span>
+          )}
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             {certificate.description}
           </p>
