@@ -295,6 +295,18 @@ export function CertificatesContent() {
             certificateWindow.addEventListener('load', () => certificateWindow.print());
         }
     };
+    const CONTEST_TYPE_MAP = {
+        'programming contest': 'programming-contest',
+        'programming-contest': 'programming-contest',
+        'article writing': 'article-writing',
+        'article-writing': 'article-writing',
+        'hackathon': 'hackathon',
+        'workshop': 'workshop',
+    };
+    const normalizeContestType = (raw) => {
+        const key = String(raw || '').trim().toLowerCase();
+        return CONTEST_TYPE_MAP[key] || 'programming-contest';
+    };
     const handleBulkIssue = async () => {
         const rows = bulkFileRows;
         const validRows = [];
@@ -323,7 +335,7 @@ export function CertificatesContent() {
                 errors.push({ row: rowNumber, field: 'event', message: `Event name is required for "${recipientName.trim()}".` });
                 return;
             }
-            validRows.push({ recipientId: trimmedId, recipientName: recipientName.trim(), contestName: contestName.trim(), placement, contestType, batch: String(batch).trim() });
+            validRows.push({ recipientId: trimmedId, recipientName: recipientName.trim(), contestName: contestName.trim(), placement, contestType: normalizeContestType(contestType), batch: String(batch).trim() });
         });
         setBulkValidationErrors(errors);
         if (errors.length > 0) {
@@ -333,7 +345,17 @@ export function CertificatesContent() {
             setBulkValidationErrors([{ row: null, field: 'file', message: 'No valid data rows found to process.' }]);
             return;
         }
-        await Promise.all(validRows.map((row, index) => {
+
+        const currentYear = new Date().getFullYear();
+        const baseNum = getNextCertificateNumber();
+        const rowsWithIds = validRows.map((row, index) => ({
+            ...row,
+            certificateId: `CPCCU-${currentYear}-${String(baseNum + index).padStart(5, '0')}`,
+        }));
+
+        const issued = [];
+        const skipped = [];
+        for (const row of rowsWithIds) {
             const normalizedPlacement = row.placement.toLowerCase();
             const certificateType = normalizedPlacement.includes('2')
                 ? 'runner-up'
@@ -342,19 +364,25 @@ export function CertificatesContent() {
                     : normalizedPlacement.includes('winner') || normalizedPlacement.includes('1')
                         ? 'winner'
                         : 'participation';
-            return createCertificate({
-                certificateId: `CPCCU-${new Date().getFullYear()}-${String(getNextCertificateNumber() + index).padStart(5, '0')}`,
-                recipientName: row.recipientName,
-                recipientId: row.recipientId,
-                contestName: row.contestName,
-                contestType: row.contestType,
-                certificateType,
-                issueDate: new Date().toISOString(),
-                description: `${row.recipientName} received a CPCCU certificate for ${row.contestName}.`,
-                batch: row.batch,
-            });
-        }));
-        setBulkSuccessSummary({ total: validRows.length, issued: validRows.length, skipped: 0 });
+            try {
+                await createCertificate({
+                    certificateId: row.certificateId,
+                    recipientName: row.recipientName,
+                    recipientId: row.recipientId,
+                    contestName: row.contestName,
+                    contestType: row.contestType,
+                    certificateType,
+                    issueDate: new Date().toISOString(),
+                    description: `${row.recipientName} received a CPCCU certificate for ${row.contestName}.`,
+                    batch: row.batch,
+                }).unwrap();
+                issued.push(row);
+            } catch (err) {
+                console.error(`Failed to issue ${row.certificateId}:`, err);
+                skipped.push({ ...row, reason: err?.data?.message || 'Server error' });
+            }
+        }
+        setBulkSuccessSummary({ total: validRows.length, issued: issued.length, skipped: skipped.length });
     };
     const columns = [
         {
