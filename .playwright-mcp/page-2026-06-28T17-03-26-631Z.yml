@@ -1,0 +1,1128 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "cpccu.club@gmail.com" [ref=e4] [cursor=pointer]:
+      - /url: mailto:cpccu.club@gmail.com
+      - img [ref=e5]
+      - generic [ref=e8]: cpccu.club@gmail.com
+    - generic [ref=e9]:
+      - link "Login" [ref=e10] [cursor=pointer]:
+        - /url: /login
+        - button "Login" [ref=e11]
+      - link "Signup" [ref=e12] [cursor=pointer]:
+        - /url: /signup
+        - button "Signup" [ref=e13]
+  - main [ref=e14]:
+    - link "Logo Competitive Programming Camp City University" [ref=e15] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e16]:
+        - img "Logo" [ref=e17]
+        - generic [ref=e18]:
+          - heading "Competitive Programming Camp" [level=1] [ref=e19]
+          - paragraph [ref=e20]: City University
+    - generic [ref=e21]:
+      - button "Toggle navigation" [ref=e22]:
+        - img "Open" [ref=e23]
+      - navigation [ref=e24]:
+        - generic [ref=e26]:
+          - img "Logo" [ref=e27]
+          - generic [ref=e28]:
+            - heading "CPCCU" [level=1] [ref=e29]
+            - paragraph [ref=e30]: City University
+        - list [ref=e31]:
+          - listitem [ref=e32]:
+            - button "About" [ref=e33] [cursor=pointer]:
+              - generic [ref=e34]: About
+              - img [ref=e35]
+          - listitem [ref=e37]:
+            - link "Event" [ref=e38] [cursor=pointer]:
+              - /url: /event
+          - listitem [ref=e39]:
+            - link "Bootcamp Leaderboard" [ref=e40] [cursor=pointer]:
+              - /url: /bootcamp-leaderboard
+          - listitem [ref=e41]:
+            - link "Gallery" [ref=e42] [cursor=pointer]:
+              - /url: /gallery
+          - listitem [ref=e43]:
+            - link "Certificate" [ref=e44] [cursor=pointer]:
+              - /url: /certificate
+          - listitem [ref=e45]:
+            - link "Job Pipeline" [ref=e46] [cursor=pointer]:
+              - /url: /job-pipeline
+        - link "Login to Portal" [ref=e48] [cursor=pointer]:
+          - /url: /login
+          - button "Login to Portal" [ref=e49]:
+            - img [ref=e50]
+            - generic [ref=e52]: Login to Portal
+  - main [ref=e53]:
+    - generic [ref=e54]:
+      - heading "Welcome to" [level=1] [ref=e55]
+      - heading "Competitive Programming Camp City University" [level=3] [ref=e56]
+    - generic [ref=e57]:
+      - paragraph [ref=e58]: We're excited to launch our new portal, a dedicated space for coding enthusiasts to connect, learn, and grow.
+      - paragraph [ref=e59]: It's your go-to place for coding, collaboration, and creativity. Join our community to tackle challenges, share knowledge, and celebrate coding.
+      - paragraph [ref=e60]: Let's code, conquer, and create together!
+      - paragraph [ref=e61]: — Our Competitive Programming Camp Team.
+    - generic [ref=e62]:
+      - button "Our mission" [ref=e64]
+      - button "Our story" [ref=e65]
+  - generic [ref=e67]:
+    - generic [ref=e68]:
+      - main [ref=e70]:
+        - img "CPCCU Season 2 Contest" [ref=e72]
+        - generic [ref=e74]:
+          - main [ref=e75]:
+            - generic [ref=e77]: Ended
+          - heading "\"CPCCU Season 2 Contest\"" [level=1] [ref=e78]
+          - paragraph [ref=e79]: The wait is over! CPCCU proudly presents the Season 2 Contest of our Competitive Programming Bootcamp. Test your problem-solving skills, compete with fellow participants, improve your rating, and climb the leaderboard. This is your opportunity to showcase your logical thinking and coding abilities in a real contest environment.
+          - link "JOIN CONTEST" [ref=e80] [cursor=pointer]:
+            - /url: YOUR_CODEFORCES_CONTEST_LINK
+            - button "JOIN CONTEST" [ref=e81]
+          - link "REGISTER NOW" [ref=e82] [cursor=pointer]:
+            - /url: YOUR_REGISTRATION_FORM_LINK
+            - button "REGISTER NOW" [ref=e83]
+      - main [ref=e85]:
+        - img "Competitive Programming Bootcamp-Season 2" [ref=e87]
+        - generic [ref=e89]:
+          - main [ref=e90]:
+            - generic [ref=e92]: Ended
+          - heading "\"Competitive Programming Bootcamp-Season 2\"" [level=1] [ref=e93]
+          - paragraph [ref=e94]: CPCCU invites you to build a strong foundation in competitive programming. Join our restructured program featuring 25-minute daily short classes split into 10-day seasons to maintain a smooth learning flow without academic hassle.
+          - link "REGISTER NOW" [ref=e95] [cursor=pointer]:
+            - /url: https://forms.gle/LEGktHVLoi4ASmNSA
+            - button "REGISTER NOW" [ref=e96]
+          - link "Details Here" [ref=e97] [cursor=pointer]:
+            - /url: https://www.facebook.com/cpccu2022/posts/pfbid02PfXUPgGt41TEKxWpAUC5FsiihGumxUhh4SworckzkQ9H7taehCfwqPhGRdEGkVbZl
+            - button "Details Here" [ref=e98]
+      - main [ref=e100]:
+        - img "Competitive Programming Bootcamp-Season 1" [ref=e102]
+        - generic [ref=e104]:
+          - main [ref=e105]:
+            - generic [ref=e107]: Ended
+          - heading "\"Competitive Programming Bootcamp-Season 1\"" [level=1] [ref=e108]
+          - paragraph [ref=e109]: CPCCU invites you to build a strong foundation in competitive programming. Join our restructured program featuring 25-minute daily short classes split into 10-day seasons to maintain a smooth learning flow without academic hassle.
+          - link "REGISTER NOW" [ref=e110] [cursor=pointer]:
+            - /url: https://forms.gle/LEGktHVLoi4ASmNSA
+            - button "REGISTER NOW" [ref=e111]
+          - link "Details Here" [ref=e112] [cursor=pointer]:
+            - /url: https://www.facebook.com/cpccu2022/posts/pfbid02PfXUPgGt41TEKxWpAUC5FsiihGumxUhh4SworckzkQ9H7taehCfwqPhGRdEGkVbZl
+            - button "Details Here" [ref=e113]
+      - main [ref=e115]:
+        - img "Introduction to GitHub Online Class" [ref=e117]
+        - generic [ref=e119]:
+          - main [ref=e120]:
+            - generic [ref=e122]: Ended
+          - heading "\"Introduction to GitHub Online Class\"" [level=1] [ref=e123]
+          - paragraph [ref=e124]: Join CPCCU for an introductory online class to learn the fundamentals of GitHub.
+          - link "Join Class" [ref=e125] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/cpccu/posts/1711648266871280
+            - button "Join Class" [ref=e126]
+          - link "Event Details" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/cpccu/posts/1711648266871280
+            - button "Event Details" [ref=e128]
+      - main [ref=e130]:
+        - img "CPCCU Bootcamp Contest-1" [ref=e132]
+        - generic [ref=e134]:
+          - main [ref=e135]:
+            - generic [ref=e137]: Ended
+          - heading "\"CPCCU Bootcamp Contest-1\"" [level=1] [ref=e138]
+          - paragraph [ref=e139]: CPCCU invites you to step away from the compiler and share your unique perspective.
+          - link "Sign Up For Coderoj" [ref=e140] [cursor=pointer]:
+            - /url: https://www.coderoj.com/
+            - button "Sign Up For Coderoj" [ref=e141]
+          - link "Contest Link" [ref=e142] [cursor=pointer]:
+            - /url: https://www.coderoj.com/c/jlu4Ug8
+            - button "Contest Link" [ref=e143]
+      - main [ref=e145]:
+        - img "Competitive Programming-এ হাতে খড়ি Bootcamp" [ref=e147]
+        - generic [ref=e149]:
+          - main [ref=e150]:
+            - generic [ref=e152]: Ended
+          - heading "\"Competitive Programming-এ হাতে খড়ি Bootcamp\"" [level=1] [ref=e153]
+          - paragraph [ref=e154]: CPCCU invites you to build a strong foundation in competitive programming. Join our intensive program to solve 200 problems over 30 days and step up your coding skills.
+          - link "REGISTER NOW" [ref=e155] [cursor=pointer]:
+            - /url: https://forms.gle/LEGktHVLoi4ASmNSA
+            - button "REGISTER NOW" [ref=e156]
+          - link "Details Here" [ref=e157] [cursor=pointer]:
+            - /url: https://www.facebook.com/cpccu2022/posts/pfbid02PfXUPgGt41TEKxWpAUC5FsiihGumxUhh4SworckzkQ9H7taehCfwqPhGRdEGkVbZl
+            - button "Details Here" [ref=e158]
+      - main [ref=e160]:
+        - img "EARN YOUR SALAMI Programming Contest (EID SPECIAL)" [ref=e162]
+        - generic [ref=e164]:
+          - main [ref=e165]:
+            - generic [ref=e167]: Ended
+          - heading "\"EARN YOUR SALAMI Programming Contest (EID SPECIAL)\"" [level=1] [ref=e168]
+          - paragraph [ref=e169]: CPCCU invites you to step away from the compiler and share your unique perspective.
+          - link "Join Vjudge Group" [ref=e170] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e171]
+          - link "Contest Link" [ref=e172] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/794777
+            - button "Contest Link" [ref=e173]
+      - main [ref=e175]:
+        - 'img "Beyond the Code: Article Writing Contest 2026" [ref=e177]'
+        - generic [ref=e179]:
+          - main [ref=e180]:
+            - generic [ref=e182]: Ended
+          - 'heading "\"Beyond the Code: Article Writing Contest 2026\"" [level=1] [ref=e183]'
+          - paragraph [ref=e184]: CPCCU invites you to step away from the compiler and share your unique perspective.
+          - link "Join Facebook Group" [ref=e185] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/cpccu
+            - button "Join Facebook Group" [ref=e186]
+          - link "Submit Article" [ref=e187] [cursor=pointer]:
+            - /url: https://forms.gle/LfcZmBFZHgEA69Ht7
+            - button "Submit Article" [ref=e188]
+      - main [ref=e190]:
+        - img "Code Breeze and Freeze - 3 - Programming Contest" [ref=e192]
+        - generic [ref=e194]:
+          - main [ref=e195]:
+            - generic [ref=e197]: Ended
+          - heading "\"Code Breeze and Freeze - 3 - Programming Contest\"" [level=1] [ref=e198]
+          - paragraph [ref=e199]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e200] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e201]
+          - link "Contest Link" [ref=e202] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/780016
+            - button "Contest Link" [ref=e203]
+      - main [ref=e205]:
+        - img "Code Breeze and Freeze - 2 - Programming Contest" [ref=e207]
+        - generic [ref=e209]:
+          - main [ref=e210]:
+            - generic [ref=e212]: Ended
+          - heading "\"Code Breeze and Freeze - 2 - Programming Contest\"" [level=1] [ref=e213]
+          - paragraph [ref=e214]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e215] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e216]
+          - link "Contest Link" [ref=e217] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/780015
+            - button "Contest Link" [ref=e218]
+      - main [ref=e220]:
+        - img "Code Breeze and Freeze - 1 - Programming Contest" [ref=e222]
+        - generic [ref=e224]:
+          - main [ref=e225]:
+            - generic [ref=e227]: Ended
+          - heading "\"Code Breeze and Freeze - 1 - Programming Contest\"" [level=1] [ref=e228]
+          - paragraph [ref=e229]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e230] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e231]
+          - link "Contest Link" [ref=e232] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/780014
+            - button "Contest Link" [ref=e233]
+      - main [ref=e235]:
+        - img "Beat the vibe Programming Contest" [ref=e237]
+        - generic [ref=e239]:
+          - main [ref=e240]:
+            - generic [ref=e242]: Ended
+          - heading "\"Beat the vibe Programming Contest\"" [level=1] [ref=e243]
+          - paragraph [ref=e244]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e245] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e246]
+          - link "Contest Link" [ref=e247] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/751121
+            - button "Contest Link" [ref=e248]
+      - main [ref=e250]:
+        - img "Ctrl+Alt+Defeat Programming Contest" [ref=e252]
+        - generic [ref=e254]:
+          - main [ref=e255]:
+            - generic [ref=e257]: Ended
+          - heading "\"Ctrl+Alt+Defeat Programming Contest\"" [level=1] [ref=e258]
+          - paragraph [ref=e259]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e260] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e261]
+          - link "Contest Link" [ref=e262] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/729029
+            - button "Contest Link" [ref=e263]
+      - main [ref=e265]:
+        - img "Write To Win Programming Contest" [ref=e267]
+        - generic [ref=e269]:
+          - main [ref=e270]:
+            - generic [ref=e272]: Ended
+          - heading "\"Write To Win Programming Contest\"" [level=1] [ref=e273]
+          - paragraph [ref=e274]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e275] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e276]
+          - link "Contest Link" [ref=e277] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/689158
+            - button "Contest Link" [ref=e278]
+      - main [ref=e280]:
+        - img "ICPC Regional Prep Contest - 2" [ref=e282]
+        - generic [ref=e284]:
+          - main [ref=e285]:
+            - generic [ref=e287]: Ended
+          - heading "\"ICPC Regional Prep Contest - 2\"" [level=1] [ref=e288]
+          - paragraph [ref=e289]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e290] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e291]
+          - link "Contest Link" [ref=e292] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/676653
+            - button "Contest Link" [ref=e293]
+      - main [ref=e295]:
+        - img "ICPC Regional Prep Contest - 2024" [ref=e297]
+        - generic [ref=e299]:
+          - main [ref=e300]:
+            - generic [ref=e302]: Ended
+          - heading "\"ICPC Regional Prep Contest - 2024\"" [level=1] [ref=e303]
+          - paragraph [ref=e304]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e305] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e306]
+          - link "Contest Link" [ref=e307] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/676429
+            - button "Contest Link" [ref=e308]
+      - main [ref=e310]:
+        - img "Khela Hobe Contest" [ref=e312]
+        - generic [ref=e314]:
+          - main [ref=e315]:
+            - generic [ref=e317]: Ended
+          - heading "\"Khela Hobe Contest\"" [level=1] [ref=e318]
+          - paragraph [ref=e319]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e320] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e321]
+          - link "Contest Link" [ref=e322] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/676246
+            - button "Contest Link" [ref=e323]
+      - main [ref=e325]:
+        - img "Flash Contest - 2024" [ref=e327]
+        - generic [ref=e329]:
+          - main [ref=e330]:
+            - generic [ref=e332]: Ended
+          - heading "\"Flash Contest - 2024\"" [level=1] [ref=e333]
+          - paragraph [ref=e334]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e335] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e336]
+          - link "Contest Link" [ref=e337] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/671644
+            - button "Contest Link" [ref=e338]
+      - main [ref=e340]:
+        - img "Code Clash - 2024" [ref=e342]
+        - generic [ref=e344]:
+          - main [ref=e345]:
+            - generic [ref=e347]: Ended
+          - heading "\"Code Clash - 2024\"" [level=1] [ref=e348]
+          - paragraph [ref=e349]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e350] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e351]
+          - link "Contest Link" [ref=e352] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/659189
+            - button "Contest Link" [ref=e353]
+      - main [ref=e355]:
+        - img "Gen-Z Programming Contest" [ref=e357]
+        - generic [ref=e359]:
+          - main [ref=e360]:
+            - generic [ref=e362]: Ended
+          - heading "\"Gen-Z Programming Contest\"" [level=1] [ref=e363]
+          - paragraph [ref=e364]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e365] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e366]
+          - link "Contest Link" [ref=e367] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/658071
+            - button "Contest Link" [ref=e368]
+      - main [ref=e370]:
+        - img "Re-stack cpccu" [ref=e372]
+        - generic [ref=e374]:
+          - main [ref=e375]:
+            - generic [ref=e377]: Ended
+          - heading "\"Re-stack cpccu\"" [level=1] [ref=e378]
+          - paragraph [ref=e379]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e380] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e381]
+          - link "Contest Link" [ref=e382] [cursor=pointer]:
+            - /url: https://vjudge.net/contest/655529
+            - button "Contest Link" [ref=e383]
+      - main [ref=e385]:
+        - img "Console Craze Hackathon" [ref=e387]
+        - generic [ref=e389]:
+          - main [ref=e390]:
+            - generic [ref=e392]: Ended
+          - heading "\"Console Craze Hackathon\"" [level=1] [ref=e393]
+          - paragraph [ref=e394]: "## Registration Deadline - 13th July, 2024 ## Hackathone Date - 15th July, 2024. A programming contest where participants compete to create the most creative and innovative console applications. The contest is open to all and offers a great opportunity to showcase your coding skills and creativity. Participants will have the freedom to explore the world of console programming and create their own unique and exciting games, utilities, and more. Whether you're a seasoned programmer or just starting out, this is a great opportunity to learn, grow, and showcase your talents."
+          - link "Register" [ref=e395] [cursor=pointer]:
+            - /url: https://forms.gle/92xAyYtmc7zz3ycL7
+            - button "Register" [ref=e396]
+          - link "Contest Link" [ref=e397] [cursor=pointer]:
+            - /url: https://forms.gle/92xAyYtmc7zz3ycL7
+            - button "Contest Link" [ref=e398]
+      - main [ref=e400]:
+        - img "Console App Workshop" [ref=e402]
+        - generic [ref=e404]:
+          - main [ref=e405]:
+            - generic [ref=e407]: Ended
+          - heading "\"Console App Workshop\"" [level=1] [ref=e408]
+          - paragraph [ref=e409]: A workshop for learning C/C++ programming. We will explore the basics of C/C++ and learn how to build console applications. Participants will learn about input/output, loops, conditional statements, functions, and more. This workshop will provide a solid foundation for those who are new to C++ and those who want to brush up on their C++ skills.
+          - link "Join Google Meet - 10pm, 9th July, 2024" [ref=e410] [cursor=pointer]:
+            - /url: https://meet.google.com/wkd-sbuq-hwj
+            - button "Join Google Meet - 10pm, 9th July, 2024" [ref=e411]
+          - link "Contest Link" [ref=e412] [cursor=pointer]:
+            - /url: https://meet.google.com/wkd-sbuq-hwj
+            - button "Contest Link" [ref=e413]
+      - main [ref=e415]:
+        - img "Retake Byte Battles CPCCU" [ref=e417]
+        - generic [ref=e419]:
+          - main [ref=e420]:
+            - generic [ref=e422]: Ended
+          - heading "\"Retake Byte Battles CPCCU\"" [level=1] [ref=e423]
+          - paragraph [ref=e424]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e425] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e426]
+          - link "Contest Link" [ref=e427] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Contest Link" [ref=e428]
+      - main [ref=e430]:
+        - img "Byte Battles CPCCU" [ref=e432]
+        - generic [ref=e434]:
+          - main [ref=e435]:
+            - generic [ref=e437]: Ended
+          - heading "\"Byte Battles CPCCU\"" [level=1] [ref=e438]
+          - paragraph [ref=e439]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e440] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e441]
+          - link "Contest Link" [ref=e442] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Contest Link" [ref=e443]
+      - main [ref=e445]:
+        - img "Debugging Derby CPCCU" [ref=e447]
+        - generic [ref=e449]:
+          - main [ref=e450]:
+            - generic [ref=e452]: Ended
+          - heading "\"Debugging Derby CPCCU\"" [level=1] [ref=e453]
+          - paragraph [ref=e454]: A programming contest where participants compete to solve challenging problems and showcase their coding skills.
+          - link "Join Vjudge Group" [ref=e455] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e456]
+          - link "Contest Link" [ref=e457] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Contest Link" [ref=e458]
+      - main [ref=e460]:
+        - img "Beat The Champ" [ref=e462]
+        - generic [ref=e464]:
+          - main [ref=e465]:
+            - generic [ref=e467]: Ended
+          - heading "\"Beat The Champ\"" [level=1] [ref=e468]
+          - paragraph [ref=e469]: A programming contest where participants compete to solve challenging problems and showcase their coding skills. The contest is open to all and offers a great opportunity to learn and grow in the field of programming.
+          - link "Join Vjudge Group" [ref=e470] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e471]
+          - link "Contest Link" [ref=e472] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Contest Link" [ref=e473]
+      - main [ref=e475]:
+        - img "Code Queens Challenge" [ref=e477]
+        - generic [ref=e479]:
+          - main [ref=e480]:
+            - generic [ref=e482]: Ended
+          - heading "\"Code Queens Challenge\"" [level=1] [ref=e483]
+          - paragraph [ref=e484]: Contest for our wonderful ladies in our CSE Dept.
+          - link "Join Vjudge Group" [ref=e485] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e486]
+          - link "Contest Link" [ref=e487] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Contest Link" [ref=e488]
+      - main [ref=e490]:
+        - 'img "Eid Code Fest CPCCU: 2024" [ref=e492]'
+        - generic [ref=e494]:
+          - main [ref=e495]:
+            - generic [ref=e497]: Ended
+          - 'heading "\"Eid Code Fest CPCCU: 2024\"" [level=1] [ref=e498]'
+          - paragraph [ref=e499]: Eid Ul Fitr' Coding Contest.
+          - link "Join Vjudge Group" [ref=e500] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e501]
+          - link "Contest Link" [ref=e502] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Contest Link" [ref=e503]
+      - main [ref=e505]:
+        - 'img "Ramadan Coding Quest: 2024" [ref=e507]'
+        - generic [ref=e509]:
+          - main [ref=e510]:
+            - generic [ref=e512]: Ended
+          - 'heading "\"Ramadan Coding Quest: 2024\"" [level=1] [ref=e513]'
+          - paragraph [ref=e514]: Ramadan programming contest of CPCCU club.
+          - link "Join Vjudge Group" [ref=e515] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e516]
+          - link "Contest Link" [ref=e517] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Contest Link" [ref=e518]
+      - main [ref=e520]:
+        - img "CPCCU Contest 3" [ref=e522]
+        - generic [ref=e524]:
+          - main [ref=e525]:
+            - generic [ref=e527]: Ended
+          - heading "\"CPCCU Contest 3\"" [level=1] [ref=e528]
+          - paragraph [ref=e529]: Third official programming contest of CPCCU club.
+          - link "Join Vjudge Group" [ref=e530] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e531]
+          - link "Contest Link" [ref=e532] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Contest Link" [ref=e533]
+      - main [ref=e535]:
+        - img "CPCCU Contest 2" [ref=e537]
+        - generic [ref=e539]:
+          - main [ref=e540]:
+            - generic [ref=e542]: Ended
+          - heading "\"CPCCU Contest 2\"" [level=1] [ref=e543]
+          - paragraph [ref=e544]: Second official programming contest of CPCCU club.
+          - link "Join Vjudge Group" [ref=e545] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e546]
+          - link "Contest Link" [ref=e547] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Contest Link" [ref=e548]
+      - main [ref=e550]:
+        - img "CPCCU Contest 1" [ref=e552]
+        - generic [ref=e554]:
+          - main [ref=e555]:
+            - generic [ref=e557]: Ended
+          - heading "\"CPCCU Contest 1\"" [level=1] [ref=e558]
+          - paragraph [ref=e559]: First official programming contest of CPCCU club.
+          - link "Join Vjudge Group" [ref=e560] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Join Vjudge Group" [ref=e561]
+          - link "Contest Link" [ref=e562] [cursor=pointer]:
+            - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+            - button "Contest Link" [ref=e563]
+    - generic [ref=e564]:
+      - button [ref=e565]:
+        - img [ref=e566]
+      - button [ref=e568]:
+        - img [ref=e569]
+    - generic [ref=e572]: Recent Event
+  - main [ref=e574]:
+    - heading "Our Misssion" [level=1] [ref=e575]
+    - img "our mission" [ref=e576]
+    - generic [ref=e577]:
+      - paragraph [ref=e578]: Establishing a support network for students is vital to creating a thriving educational environment. By offering programming instruction, seminars, and opportunities for open-source contributions, we enhance students' technical skills and knowledge. Encouraging active participation in communication and recommendations empowers students and fosters a collaborative learning community.
+      - paragraph [ref=e579]: Promoting critical thinking and creativity helps students innovate, while fostering cooperation prepares them for future challenges.
+    - button "Know more" [ref=e580]
+  - generic [ref=e581]:
+    - generic [ref=e582]:
+      - generic [ref=e583]:
+        - paragraph [ref=e584]: // the team
+        - heading "Meet Our Contributors" [level=2] [ref=e585]
+        - paragraph [ref=e586]: The passionate developers who built this platform from the ground up.
+      - link "View All Contributors" [ref=e587] [cursor=pointer]:
+        - /url: /contributors
+        - generic [ref=e588]: View All Contributors
+        - img [ref=e589]
+    - generic [ref=e592]:
+      - generic [ref=e595]:
+        - img "anisurrahmanfarazi17" [ref=e597]
+        - generic [ref=e598]:
+          - heading "anisurrahmanfarazi17" [level=3] [ref=e599]
+          - generic [ref=e600]: Contributor
+        - paragraph [ref=e601]: Contributed 218 commits to the project
+        - generic [ref=e602]:
+          - link [ref=e603] [cursor=pointer]:
+            - /url: https://github.com/anisurrahmanfarazi17
+            - img [ref=e604]
+          - link [ref=e606] [cursor=pointer]:
+            - /url: https://www.linkedin.com/in/anisurrahmanfarazi17/
+            - img [ref=e607]
+      - generic [ref=e611]:
+        - img "mdsiaofficial" [ref=e613]
+        - generic [ref=e614]:
+          - heading "mdsiaofficial" [level=3] [ref=e615]
+          - generic [ref=e616]: Contributor
+        - paragraph [ref=e617]: Contributed 190 commits to the project
+        - generic [ref=e618]:
+          - link [ref=e619] [cursor=pointer]:
+            - /url: https://github.com/mdsiaofficial
+            - img [ref=e620]
+          - link [ref=e622] [cursor=pointer]:
+            - /url: https://www.linkedin.com/in/mdsiaofficial/
+            - img [ref=e623]
+      - generic [ref=e627]:
+        - img "rahulroynipon" [ref=e629]
+        - generic [ref=e630]:
+          - heading "rahulroynipon" [level=3] [ref=e631]
+          - generic [ref=e632]: Contributor
+        - paragraph [ref=e633]: Contributed 95 commits to the project
+        - generic [ref=e634]:
+          - link [ref=e635] [cursor=pointer]:
+            - /url: https://github.com/rahulroynipon
+            - img [ref=e636]
+          - link [ref=e638] [cursor=pointer]:
+            - /url: https://www.linkedin.com/in/rahulroynipon/
+            - img [ref=e639]
+      - generic [ref=e643]:
+        - img "Abraralvi2002" [ref=e645]
+        - generic [ref=e646]:
+          - heading "Abraralvi2002" [level=3] [ref=e647]
+          - generic [ref=e648]: Contributor
+        - paragraph [ref=e649]: Contributed 15 commits to the project
+        - generic [ref=e650]:
+          - link [ref=e651] [cursor=pointer]:
+            - /url: https://github.com/Abraralvi2002
+            - img [ref=e652]
+          - link [ref=e654] [cursor=pointer]:
+            - /url: https://www.linkedin.com/in/md-abrar-siddiqui/
+            - img [ref=e655]
+      - generic [ref=e659]:
+        - img "Md-Masum-Hossain" [ref=e661]
+        - generic [ref=e662]:
+          - heading "Md-Masum-Hossain" [level=3] [ref=e663]
+          - generic [ref=e664]: Contributor
+        - paragraph [ref=e665]: Contributed 14 commits to the project
+        - generic [ref=e666]:
+          - link [ref=e667] [cursor=pointer]:
+            - /url: https://github.com/Md-Masum-Hossain
+            - img [ref=e668]
+          - link [ref=e670] [cursor=pointer]:
+            - /url: https://linkedin.com
+            - img [ref=e671]
+      - generic [ref=e675]:
+        - img "Anik-36" [ref=e677]
+        - generic [ref=e678]:
+          - heading "Anik-36" [level=3] [ref=e679]
+          - generic [ref=e680]: Contributor
+        - paragraph [ref=e681]: Contributed 12 commits to the project
+        - generic [ref=e682]:
+          - link [ref=e683] [cursor=pointer]:
+            - /url: https://github.com/Anik-36
+            - img [ref=e684]
+          - link [ref=e686] [cursor=pointer]:
+            - /url: https://www.linkedin.com/in/md-anisur-rahman-anik-933680249/
+            - img [ref=e687]
+      - generic [ref=e691]:
+        - img "sizan14789" [ref=e693]
+        - generic [ref=e694]:
+          - heading "sizan14789" [level=3] [ref=e695]
+          - generic [ref=e696]: Contributor
+        - paragraph [ref=e697]: Contributed 6 commits to the project
+        - link [ref=e699] [cursor=pointer]:
+          - /url: https://github.com/sizan14789
+          - img [ref=e700]
+      - generic [ref=e704]:
+        - img "Rifat-Shahariar" [ref=e706]
+        - generic [ref=e707]:
+          - heading "Rifat-Shahariar" [level=3] [ref=e708]
+          - generic [ref=e709]: Contributor
+        - paragraph [ref=e710]: Contributed 5 commits to the project
+        - generic [ref=e711]:
+          - link [ref=e712] [cursor=pointer]:
+            - /url: https://github.com/Rifat-Shahariar
+            - img [ref=e713]
+          - link [ref=e715] [cursor=pointer]:
+            - /url: https://linkedin.com
+            - img [ref=e716]
+      - generic [ref=e720]:
+        - img "FAsami" [ref=e722]
+        - generic [ref=e723]:
+          - heading "FAsami" [level=3] [ref=e724]
+          - generic [ref=e725]: Contributor
+        - paragraph [ref=e726]: Contributed 3 commits to the project
+        - generic [ref=e727]:
+          - link [ref=e728] [cursor=pointer]:
+            - /url: https://github.com/FAsami
+            - img [ref=e729]
+          - link [ref=e731] [cursor=pointer]:
+            - /url: https://www.linkedin.com/in/foysal-dev/
+            - img [ref=e732]
+      - generic [ref=e736]:
+        - img "MH-Alok" [ref=e738]
+        - generic [ref=e739]:
+          - heading "MH-Alok" [level=3] [ref=e740]
+          - generic [ref=e741]: Contributor
+        - paragraph [ref=e742]: Contributed 1 commits to the project
+        - link [ref=e744] [cursor=pointer]:
+          - /url: https://github.com/MH-Alok
+          - img [ref=e745]
+      - generic [ref=e749]:
+        - img "abu-taher-saikat" [ref=e751]
+        - generic [ref=e752]:
+          - heading "abu-taher-saikat" [level=3] [ref=e753]
+          - generic [ref=e754]: Contributor
+        - paragraph [ref=e755]: Contributed 1 commits to the project
+        - generic [ref=e756]:
+          - link [ref=e757] [cursor=pointer]:
+            - /url: https://github.com/abu-taher-saikat
+            - img [ref=e758]
+          - link [ref=e760] [cursor=pointer]:
+            - /url: https://www.linkedin.com/in/abu-taher-saikat-200101142/
+            - img [ref=e761]
+    - generic [ref=e763]:
+      - button "Go to contributor 1" [ref=e764]
+      - button "Go to contributor 2" [ref=e765]
+      - button "Go to contributor 3" [ref=e766]
+      - button "Go to contributor 4" [ref=e767]
+      - button "Go to contributor 5" [ref=e768]
+      - button "Go to contributor 6" [ref=e769]
+      - button "Go to contributor 7" [ref=e770]
+      - button "Go to contributor 8" [ref=e771]
+      - button "Go to contributor 9" [ref=e772]
+      - button "Go to contributor 10" [ref=e773]
+      - button "Go to contributor 11" [ref=e774]
+  - main [ref=e775]:
+    - heading "Our Responsibility" [level=1] [ref=e776]
+    - generic [ref=e777]:
+      - main [ref=e778]:
+        - img "01" [ref=e780]
+        - generic [ref=e781]:
+          - heading "Career Oportunities" [level=1] [ref=e782]
+          - paragraph [ref=e783]: A bundle of skills are needed to conquer the coding world. You can get a chance to earn those skills by joining our community and thus you are a step ahead of your enhanced career.
+      - main [ref=e784]:
+        - img "02" [ref=e786]
+        - generic [ref=e787]:
+          - heading "Help Current Students" [level=1] [ref=e788]
+          - paragraph [ref=e789]: Our camp provides cordial support to our current students in any kind of circumstances in order to make them knowledgeable. Helping each other is our main concern.
+      - main [ref=e790]:
+        - img "03" [ref=e792]
+        - generic [ref=e793]:
+          - heading "Help Our University" [level=1] [ref=e794]
+          - paragraph [ref=e795]: Our camp encourages students to excel in problem-solving contests at all levels, boosting our university's reputation. Their involvement builds skills and success, bringing prestige to our institution.
+      - main [ref=e796]:
+        - img "04" [ref=e798]
+        - generic [ref=e799]:
+          - heading "Build Our Community" [level=1] [ref=e800]
+          - paragraph [ref=e801]: Our camp has a great community with our respected alumni of our university. You can have their support by joining us and help us to build a vast and enriched community loaded with genius people.
+  - generic [ref=e802]:
+    - generic [ref=e803]:
+      - generic [ref=e804]:
+        - paragraph [ref=e805]: // our supporters
+        - heading "Meet Our Generous Donators" [level=2] [ref=e806]
+        - paragraph [ref=e807]: Organizations and individuals who support our mission and vision.
+      - link "View All Donators" [ref=e808] [cursor=pointer]:
+        - /url: /donators
+        - generic [ref=e809]: View All Donators
+        - img [ref=e810]
+    - generic [ref=e813]:
+      - generic [ref=e816]:
+        - img "Zubayer Bin Ayub" [ref=e818]
+        - generic [ref=e819]:
+          - heading "Zubayer Bin Ayub" [level=3] [ref=e820]
+          - generic [ref=e821]: CPCCU Supporter
+        - paragraph [ref=e823]: Website Renewal Fee Contribution
+      - generic [ref=e826]:
+        - img "Reduan Rafi" [ref=e828]
+        - generic [ref=e829]:
+          - heading "Reduan Rafi" [level=3] [ref=e830]
+          - generic [ref=e831]: CPCCU Supporter
+        - paragraph [ref=e833]: Website Renewal Fee Contribution
+      - generic [ref=e836]:
+        - img "Kazi Ashraf Hossain" [ref=e838]
+        - generic [ref=e839]:
+          - heading "Kazi Ashraf Hossain" [level=3] [ref=e840]
+          - generic [ref=e841]: CPCCU Supporter
+        - paragraph [ref=e843]: Website Renewal Fee Contribution
+      - generic [ref=e846]:
+        - img "Md Omar Faruq" [ref=e848]
+        - generic [ref=e849]:
+          - heading "Md Omar Faruq" [level=3] [ref=e850]
+          - generic [ref=e851]: CPCCU Supporter
+        - paragraph [ref=e853]: Website Renewal Fee Contribution
+      - generic [ref=e856]:
+        - img "Mehedi Azad" [ref=e858]
+        - generic [ref=e859]:
+          - heading "Mehedi Azad" [level=3] [ref=e860]
+          - generic [ref=e861]: CPCCU Supporter
+        - paragraph [ref=e863]: Website Renewal Fee Contribution
+      - generic [ref=e866]:
+        - img "Tarikul Islam Topu" [ref=e868]
+        - generic [ref=e869]:
+          - heading "Tarikul Islam Topu" [level=3] [ref=e870]
+          - generic [ref=e871]: CPCCU Supporter
+        - paragraph [ref=e873]: Website Renewal Fee Contribution
+      - generic [ref=e876]:
+        - img "Mosiur Rahman" [ref=e878]
+        - generic [ref=e879]:
+          - heading "Mosiur Rahman" [level=3] [ref=e880]
+          - generic [ref=e881]: CPCCU Supporter
+        - paragraph [ref=e883]: Website Renewal Fee Contribution
+      - generic [ref=e886]:
+        - img "Nafis Chonchol" [ref=e888]
+        - generic [ref=e889]:
+          - heading "Nafis Chonchol" [level=3] [ref=e890]
+          - generic [ref=e891]: CPCCU Supporter
+        - paragraph [ref=e893]: Website Renewal Fee Contribution
+      - generic [ref=e896]:
+        - img "Boni Yeamin Laju" [ref=e898]
+        - generic [ref=e899]:
+          - heading "Boni Yeamin Laju" [level=3] [ref=e900]
+          - generic [ref=e901]: CPCCU Supporter
+        - paragraph [ref=e903]: Website Renewal Fee Contribution
+      - generic [ref=e906]:
+        - img "MD Shahnur" [ref=e908]
+        - generic [ref=e909]:
+          - heading "MD Shahnur" [level=3] [ref=e910]
+          - generic [ref=e911]: CPCCU Supporter
+        - paragraph [ref=e913]: Website Renewal Fee Contribution
+      - generic [ref=e916]:
+        - img "Imrul Hasan Rafi" [ref=e918]
+        - generic [ref=e919]:
+          - heading "Imrul Hasan Rafi" [level=3] [ref=e920]
+          - generic [ref=e921]: CPCCU Supporter
+        - paragraph [ref=e923]: Website Renewal Fee Contribution
+      - generic [ref=e926]:
+        - img "Md Shoriful Islam Ashiq" [ref=e928]
+        - generic [ref=e929]:
+          - heading "Md Shoriful Islam Ashiq" [level=3] [ref=e930]
+          - generic [ref=e931]: CPCCU Supporter
+        - paragraph [ref=e933]: Website Renewal Fee Contribution
+      - generic [ref=e936]:
+        - img "Md Abu Taher Saikat" [ref=e938]
+        - generic [ref=e939]:
+          - heading "Md Abu Taher Saikat" [level=3] [ref=e940]
+          - generic [ref=e941]: CPCCU Supporter
+        - paragraph [ref=e943]: Website Renewal Fee Contribution
+      - generic [ref=e946]:
+        - img "Md. Mahadi Hasan" [ref=e948]
+        - generic [ref=e949]:
+          - heading "Md. Mahadi Hasan" [level=3] [ref=e950]
+          - generic [ref=e951]: CPCCU Supporter
+        - paragraph [ref=e953]: Website Renewal Fee Contribution
+      - generic [ref=e956]:
+        - img "Foysal Ahammed Sami" [ref=e958]
+        - generic [ref=e959]:
+          - heading "Foysal Ahammed Sami" [level=3] [ref=e960]
+          - generic [ref=e961]: CPCCU Supporter
+        - paragraph [ref=e963]: Website Renewal Fee Contribution
+      - generic [ref=e966]:
+        - img "Ahammed Zihad Khan" [ref=e968]
+        - generic [ref=e969]:
+          - heading "Ahammed Zihad Khan" [level=3] [ref=e970]
+          - generic [ref=e971]: CPCCU Supporter
+        - paragraph [ref=e973]: Website Renewal Fee Contribution
+      - generic [ref=e976]:
+        - img "Mohammad Sohag Mia" [ref=e978]
+        - generic [ref=e979]:
+          - heading "Mohammad Sohag Mia" [level=3] [ref=e980]
+          - generic [ref=e981]: CPCCU Supporter
+        - paragraph [ref=e983]: Website Renewal Fee Contribution
+      - generic [ref=e986]:
+        - img "Rahul Roy Nipon" [ref=e988]
+        - generic [ref=e989]:
+          - heading "Rahul Roy Nipon" [level=3] [ref=e990]
+          - generic [ref=e991]: CPCCU Supporter
+        - paragraph [ref=e993]: Website Renewal Fee Contribution
+      - generic [ref=e996]:
+        - img "Zahin Abdullah" [ref=e998]
+        - generic [ref=e999]:
+          - heading "Zahin Abdullah" [level=3] [ref=e1000]
+          - generic [ref=e1001]: CPCCU Supporter
+        - paragraph [ref=e1003]: Website Renewal Fee Contribution
+      - generic [ref=e1006]:
+        - img "Md. Rasel Ahmed Rana" [ref=e1008]
+        - generic [ref=e1009]:
+          - heading "Md. Rasel Ahmed Rana" [level=3] [ref=e1010]
+          - generic [ref=e1011]: CPCCU Supporter
+        - paragraph [ref=e1013]: Website Renewal Fee Contribution
+      - generic [ref=e1016]:
+        - img "Meherin Jahan" [ref=e1018]
+        - generic [ref=e1019]:
+          - heading "Meherin Jahan" [level=3] [ref=e1020]
+          - generic [ref=e1021]: CPCCU Supporter
+        - paragraph [ref=e1023]: Website Renewal Fee Contribution
+      - generic [ref=e1026]:
+        - img "Mahboba Zzaman Tajmim" [ref=e1028]
+        - generic [ref=e1029]:
+          - heading "Mahboba Zzaman Tajmim" [level=3] [ref=e1030]
+          - generic [ref=e1031]: CPCCU Supporter
+        - paragraph [ref=e1033]: Website Renewal Fee Contribution
+      - generic [ref=e1036]:
+        - img "Moidul Islam Mahim" [ref=e1038]
+        - generic [ref=e1039]:
+          - heading "Moidul Islam Mahim" [level=3] [ref=e1040]
+          - generic [ref=e1041]: CPCCU Supporter
+        - paragraph [ref=e1043]: Website Renewal Fee Contribution
+      - generic [ref=e1046]:
+        - img "Abdullah Rahman" [ref=e1048]
+        - generic [ref=e1049]:
+          - heading "Abdullah Rahman" [level=3] [ref=e1050]
+          - generic [ref=e1051]: CPCCU Supporter
+        - paragraph [ref=e1053]: Website Renewal Fee Contribution
+      - generic [ref=e1056]:
+        - img "Md Labib Ibnus Salam" [ref=e1058]
+        - generic [ref=e1059]:
+          - heading "Md Labib Ibnus Salam" [level=3] [ref=e1060]
+          - generic [ref=e1061]: CPCCU Supporter
+        - paragraph [ref=e1063]: Website Renewal Fee Contribution
+      - generic [ref=e1066]:
+        - img "Maimoona Hossain" [ref=e1068]
+        - generic [ref=e1069]:
+          - heading "Maimoona Hossain" [level=3] [ref=e1070]
+          - generic [ref=e1071]: CPCCU Supporter
+        - paragraph [ref=e1073]: Website Renewal Fee Contribution
+      - generic [ref=e1076]:
+        - img "Sabbir Azad" [ref=e1078]
+        - generic [ref=e1079]:
+          - heading "Sabbir Azad" [level=3] [ref=e1080]
+          - generic [ref=e1081]: CPCCU Supporter
+        - paragraph [ref=e1083]: Website Renewal Fee Contribution
+      - generic [ref=e1086]:
+        - img "Ebne Talha Bin Faruk" [ref=e1088]
+        - generic [ref=e1089]:
+          - heading "Ebne Talha Bin Faruk" [level=3] [ref=e1090]
+          - generic [ref=e1091]: CPCCU Supporter
+        - paragraph [ref=e1093]: Website Renewal Fee Contribution
+      - generic [ref=e1096]:
+        - img "Md. Rihad Hasan Rasin" [ref=e1098]
+        - generic [ref=e1099]:
+          - heading "Md. Rihad Hasan Rasin" [level=3] [ref=e1100]
+          - generic [ref=e1101]: CPCCU Supporter
+        - paragraph [ref=e1103]: Website Renewal Fee Contribution
+      - generic [ref=e1106]:
+        - img "Md. Rangu Mia" [ref=e1108]
+        - generic [ref=e1109]:
+          - heading "Md. Rangu Mia" [level=3] [ref=e1110]
+          - generic [ref=e1111]: CPCCU Supporter
+        - paragraph [ref=e1113]: Website Renewal Fee Contribution
+      - generic [ref=e1116]:
+        - img "Md. Maruf" [ref=e1118]
+        - generic [ref=e1119]:
+          - heading "Md. Maruf" [level=3] [ref=e1120]
+          - generic [ref=e1121]: CPCCU Supporter
+        - paragraph [ref=e1123]: Website Renewal Fee Contribution
+      - generic [ref=e1126]:
+        - img "Anisur Rahman Farazi" [ref=e1128]
+        - generic [ref=e1129]:
+          - heading "Anisur Rahman Farazi" [level=3] [ref=e1130]
+          - generic [ref=e1131]: CPCCU Supporter
+        - paragraph [ref=e1133]: Website Renewal Fee Contribution
+      - generic [ref=e1136]:
+        - img "Nabila Islam Samia" [ref=e1138]
+        - generic [ref=e1139]:
+          - heading "Nabila Islam Samia" [level=3] [ref=e1140]
+          - generic [ref=e1141]: CPCCU Supporter
+        - paragraph [ref=e1143]: Website Renewal Fee Contribution
+      - generic [ref=e1146]:
+        - img "Fuad Ahamed Rahim" [ref=e1148]
+        - generic [ref=e1149]:
+          - heading "Fuad Ahamed Rahim" [level=3] [ref=e1150]
+          - generic [ref=e1151]: CPCCU Supporter
+        - paragraph [ref=e1153]: Website Renewal Fee Contribution
+    - generic [ref=e1154]:
+      - button "Go to donator 1" [ref=e1155]
+      - button "Go to donator 2" [ref=e1156]
+      - button "Go to donator 3" [ref=e1157]
+      - button "Go to donator 4" [ref=e1158]
+      - button "Go to donator 5" [ref=e1159]
+      - button "Go to donator 6" [ref=e1160]
+      - button "Go to donator 7" [ref=e1161]
+      - button "Go to donator 8" [ref=e1162]
+      - button "Go to donator 9" [ref=e1163]
+      - button "Go to donator 10" [ref=e1164]
+      - button "Go to donator 11" [ref=e1165]
+      - button "Go to donator 12" [ref=e1166]
+      - button "Go to donator 13" [ref=e1167]
+      - button "Go to donator 14" [ref=e1168]
+      - button "Go to donator 15" [ref=e1169]
+      - button "Go to donator 16" [ref=e1170]
+      - button "Go to donator 17" [ref=e1171]
+      - button "Go to donator 18" [ref=e1172]
+      - button "Go to donator 19" [ref=e1173]
+      - button "Go to donator 20" [ref=e1174]
+      - button "Go to donator 21" [ref=e1175]
+      - button "Go to donator 22" [ref=e1176]
+      - button "Go to donator 23" [ref=e1177]
+      - button "Go to donator 24" [ref=e1178]
+      - button "Go to donator 25" [ref=e1179]
+      - button "Go to donator 26" [ref=e1180]
+      - button "Go to donator 27" [ref=e1181]
+      - button "Go to donator 28" [ref=e1182]
+      - button "Go to donator 29" [ref=e1183]
+      - button "Go to donator 30" [ref=e1184]
+      - button "Go to donator 31" [ref=e1185]
+      - button "Go to donator 32" [ref=e1186]
+      - button "Go to donator 33" [ref=e1187]
+      - button "Go to donator 34" [ref=e1188]
+  - main [ref=e1190]:
+    - generic [ref=e1191]:
+      - img "Members" [ref=e1192]
+      - generic [ref=e1193]:
+        - heading [level=3]
+        - paragraph [ref=e1194]: Members
+    - generic [ref=e1195]:
+      - img "Photos" [ref=e1196]
+      - generic [ref=e1197]:
+        - heading [level=3]
+        - paragraph [ref=e1198]: Photos
+    - generic [ref=e1199]:
+      - img "Events" [ref=e1200]
+      - generic [ref=e1201]:
+        - heading [level=3]
+        - paragraph [ref=e1202]: Events
+    - generic [ref=e1203]:
+      - img "Awards" [ref=e1204]
+      - generic [ref=e1205]:
+        - heading [level=3]
+        - paragraph [ref=e1206]: Awards
+  - generic [ref=e1207]:
+    - heading "Our Gallery" [level=1] [ref=e1208]
+    - generic [ref=e1209]:
+      - button "All" [ref=e1210]
+      - button "Old memories" [ref=e1211]
+      - button "Event" [ref=e1212]
+      - button "Our Picnic" [ref=e1213]
+      - button "Recent" [ref=e1214]
+    - generic [ref=e1215]:
+      - generic [ref=e1216] [cursor=pointer]:
+        - img "gIMG0" [ref=e1217]
+        - generic [ref=e1219]:
+          - heading "Certificates is being signed by our Alumni" [level=3] [ref=e1220]
+          - paragraph [ref=e1221]: 5/1/2024
+      - generic [ref=e1222] [cursor=pointer]:
+        - img "gIMG1" [ref=e1223]
+        - generic [ref=e1225]:
+          - heading "Our Ramadan Contest Winners" [level=3] [ref=e1226]
+          - paragraph [ref=e1227]: 5/1/2024
+      - generic [ref=e1228] [cursor=pointer]:
+        - img "gIMG2" [ref=e1229]
+        - generic [ref=e1231]:
+          - heading "City University Event" [level=3] [ref=e1232]
+          - paragraph [ref=e1233]: 5/1/2024
+      - generic [ref=e1234] [cursor=pointer]:
+        - img "gIMG3" [ref=e1235]
+        - generic [ref=e1237]:
+          - heading "City University Event" [level=3] [ref=e1238]
+          - paragraph [ref=e1239]: 5/1/2024
+      - generic [ref=e1240] [cursor=pointer]:
+        - img "gIMG4" [ref=e1241]
+        - generic [ref=e1243]:
+          - heading "City University Event" [level=3] [ref=e1244]
+          - paragraph [ref=e1245]: 5/1/2024
+      - generic [ref=e1246] [cursor=pointer]:
+        - img "gIMG5" [ref=e1247]
+        - generic [ref=e1249]:
+          - heading "Flower given to Dept Head sir" [level=3] [ref=e1250]
+          - paragraph [ref=e1251]: 5/1/2024
+      - generic [ref=e1252] [cursor=pointer]:
+        - img "gIMG6" [ref=e1253]
+        - generic [ref=e1255]:
+          - heading "IMG-20240505-WA0023" [level=3] [ref=e1256]
+          - paragraph [ref=e1257]: 5/1/2024
+      - generic [ref=e1258] [cursor=pointer]:
+        - img "gIMG7" [ref=e1259]
+        - generic [ref=e1261]:
+          - heading "Winner" [level=3] [ref=e1262]
+          - paragraph [ref=e1263]: 5/1/2024
+      - generic [ref=e1264] [cursor=pointer]:
+        - img "gIMG8" [ref=e1265]
+        - generic [ref=e1267]:
+          - heading "Picnic" [level=3] [ref=e1268]
+          - paragraph [ref=e1269]: 5/1/2024
+  - generic [ref=e1271]:
+    - generic [ref=e1272]:
+      - img [ref=e1274]
+      - generic [ref=e1276]:
+        - heading "24" [level=3] [ref=e1277]
+        - paragraph [ref=e1278]: Total Visitors
+        - paragraph [ref=e1279]: Counting since April 2026
+    - paragraph [ref=e1284]: Live Community Engagement
+  - main [ref=e1285]:
+    - main [ref=e1286]:
+      - generic [ref=e1287]:
+        - img "Logo" [ref=e1288]
+        - generic [ref=e1289]:
+          - heading [level=1]
+          - paragraph [ref=e1290]: CPCCU
+      - generic [ref=e1291]:
+        - list [ref=e1292]:
+          - listitem [ref=e1293]: Sharpen Your Skills.
+          - listitem [ref=e1294]: Compete with the Best.
+          - listitem [ref=e1295]: Excel Together.
+        - text: Join us to tackle challenges, push your limits, and become a coding champion.So, get in touch, and let’s conquer the coding world together!
+      - 'link "Email: cpccu.club@gmail.com" [ref=e1297] [cursor=pointer]':
+        - /url: mailto:cpccu.club@gmail.com
+        - 'button "Email: cpccu.club@gmail.com" [ref=e1298]'
+    - generic [ref=e1299]:
+      - heading "Get In Touch" [level=1] [ref=e1300]
+      - main [ref=e1301]:
+        - paragraph [ref=e1302]: If you have any questions, issues, or suggestions, please email us below. We will contact you as soon as possible.
+        - generic [ref=e1303]:
+          - textbox "Enter your email" [ref=e1304]
+          - button [ref=e1305]:
+            - img [ref=e1306]
+        - generic [ref=e1308]:
+          - link [ref=e1309] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/cpccu/
+            - button [ref=e1310]:
+              - img [ref=e1311]
+          - link [ref=e1313] [cursor=pointer]:
+            - /url: https://chat.whatsapp.com/BxznCy84PILHEcUBxE8orM
+            - button [ref=e1314]:
+              - img [ref=e1315]
+          - link [ref=e1317] [cursor=pointer]:
+            - /url: https://www.linkedin.com/groups/14380055/
+            - button [ref=e1318]:
+              - img [ref=e1319]
+          - link [ref=e1321] [cursor=pointer]:
+            - /url: https://github.com/cpccu
+            - button [ref=e1322]:
+              - img [ref=e1323]
+          - link [ref=e1325] [cursor=pointer]:
+            - /url: https://discord.gg/jStJuvU5Vs
+            - button [ref=e1326]:
+              - img [ref=e1327]
+    - generic [ref=e1329]:
+      - heading "Usefull Link" [level=1] [ref=e1330]
+      - list [ref=e1331]:
+        - link "Codeforces" [ref=e1332] [cursor=pointer]:
+          - /url: https://codeforces.com/ratings/organization/4353
+          - listitem [ref=e1333]:
+            - img [ref=e1334]
+            - paragraph [ref=e1336]: Codeforces
+        - link "HackerRank" [ref=e1337] [cursor=pointer]:
+          - /url: https://hackerrank.com
+          - listitem [ref=e1338]:
+            - img [ref=e1339]
+            - paragraph [ref=e1341]: HackerRank
+        - link "Beecrowd" [ref=e1342] [cursor=pointer]:
+          - /url: https://judge.beecrowd.com/en/users/university/city
+          - listitem [ref=e1343]:
+            - img [ref=e1344]
+            - paragraph [ref=e1346]: Beecrowd
+        - link "Hacker Earth" [ref=e1347] [cursor=pointer]:
+          - /url: https://www.hackerearth.com/
+          - listitem [ref=e1348]:
+            - img [ref=e1349]
+            - paragraph [ref=e1351]: Hacker Earth
+        - link "Code Chef" [ref=e1352] [cursor=pointer]:
+          - /url: https://www.codechef.com/
+          - listitem [ref=e1353]:
+            - img [ref=e1354]
+            - paragraph [ref=e1356]: Code Chef
+        - link "Vjudge" [ref=e1357] [cursor=pointer]:
+          - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+          - listitem [ref=e1358]:
+            - img [ref=e1359]
+            - paragraph [ref=e1361]: Vjudge
+    - generic [ref=e1362]:
+      - heading "University" [level=1] [ref=e1363]
+      - list [ref=e1364]:
+        - link "City University" [ref=e1365] [cursor=pointer]:
+          - /url: https://www.cityuniversity.ac.bd/
+          - listitem [ref=e1366]:
+            - img [ref=e1367]
+            - paragraph [ref=e1369]: City University
+        - link "Faculty of CSE dept" [ref=e1370] [cursor=pointer]:
+          - /url: https://www.cityuniversity.ac.bd/dept-of-computer-science&engineering
+          - listitem [ref=e1371]:
+            - img [ref=e1372]
+            - paragraph [ref=e1374]: Faculty of CSE dept
+        - link "Join Us" [ref=e1375] [cursor=pointer]:
+          - /url: signup
+          - listitem [ref=e1376]:
+            - img [ref=e1377]
+            - paragraph [ref=e1379]: Join Us
+  - contentinfo [ref=e1380]:
+    - text: 2026 ©Competitive Programming Camp City University, All Rights Reserved
+    - link "Collaborated & Developed with ❤️ by the Open Source Software Community City University." [ref=e1381] [cursor=pointer]:
+      - /url: https://ossccu.pro.bd/
+  - button "Open Next.js Dev Tools" [ref=e1387] [cursor=pointer]:
+    - img [ref=e1388]
+  - alert [ref=e1391]

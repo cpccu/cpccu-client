@@ -1,0 +1,157 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "cpccu.club@gmail.com" [ref=e4] [cursor=pointer]:
+      - /url: mailto:cpccu.club@gmail.com
+      - img [ref=e5]
+      - generic [ref=e8]: cpccu.club@gmail.com
+    - generic [ref=e9]:
+      - link "Login" [ref=e10] [cursor=pointer]:
+        - /url: /login
+        - button "Login" [ref=e11]
+      - link "Signup" [ref=e12] [cursor=pointer]:
+        - /url: /signup
+        - button "Signup" [ref=e13]
+  - main [ref=e14]:
+    - link "Logo Competitive Programming Camp City University" [ref=e15] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e16]:
+        - img "Logo" [ref=e17]
+        - generic [ref=e18]:
+          - heading "Competitive Programming Camp" [level=1] [ref=e19]
+          - paragraph [ref=e20]: City University
+    - generic [ref=e21]:
+      - button "Toggle navigation" [ref=e22]:
+        - img "Open" [ref=e23]
+      - navigation [ref=e24]:
+        - generic [ref=e26]:
+          - img "Logo" [ref=e27]
+          - generic [ref=e28]:
+            - heading "CPCCU" [level=1] [ref=e29]
+            - paragraph [ref=e30]: City University
+        - list [ref=e31]:
+          - listitem [ref=e32]:
+            - button "About" [ref=e33] [cursor=pointer]:
+              - generic [ref=e34]: About
+              - img [ref=e35]
+          - listitem [ref=e37]:
+            - link "Event" [ref=e38] [cursor=pointer]:
+              - /url: /event
+          - listitem [ref=e39]:
+            - link "Bootcamp Leaderboard" [ref=e40] [cursor=pointer]:
+              - /url: /bootcamp-leaderboard
+          - listitem [ref=e41]:
+            - link "Gallery" [ref=e42] [cursor=pointer]:
+              - /url: /gallery
+          - listitem [ref=e43]:
+            - link "Certificate" [ref=e44] [cursor=pointer]:
+              - /url: /certificate
+          - listitem [ref=e45]:
+            - link "Job Pipeline" [ref=e46] [cursor=pointer]:
+              - /url: /job-pipeline
+        - link "Login to Portal" [ref=e48] [cursor=pointer]:
+          - /url: /login
+          - button "Login to Portal" [ref=e49]:
+            - img [ref=e50]
+            - generic [ref=e52]: Login to Portal
+  - main [ref=e124]:
+    - main [ref=e125]:
+      - generic [ref=e126]:
+        - img "Logo" [ref=e127]
+        - generic [ref=e128]:
+          - heading [level=1]
+          - paragraph [ref=e129]: CPCCU
+      - generic [ref=e130]:
+        - list [ref=e131]:
+          - listitem [ref=e132]: Sharpen Your Skills.
+          - listitem [ref=e133]: Compete with the Best.
+          - listitem [ref=e134]: Excel Together.
+        - text: Join us to tackle challenges, push your limits, and become a coding champion.So, get in touch, and let’s conquer the coding world together!
+      - 'link "Email: cpccu.club@gmail.com" [ref=e136] [cursor=pointer]':
+        - /url: mailto:cpccu.club@gmail.com
+        - 'button "Email: cpccu.club@gmail.com" [ref=e137]'
+    - generic [ref=e138]:
+      - heading "Get In Touch" [level=1] [ref=e139]
+      - main [ref=e140]:
+        - paragraph [ref=e141]: If you have any questions, issues, or suggestions, please email us below. We will contact you as soon as possible.
+        - generic [ref=e142]:
+          - textbox "Enter your email" [ref=e143]
+          - button [ref=e144]:
+            - img [ref=e145]
+        - generic [ref=e147]:
+          - link [ref=e148] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/cpccu/
+            - button [ref=e149]:
+              - img [ref=e150]
+          - link [ref=e152] [cursor=pointer]:
+            - /url: https://chat.whatsapp.com/BxznCy84PILHEcUBxE8orM
+            - button [ref=e153]:
+              - img [ref=e154]
+          - link [ref=e156] [cursor=pointer]:
+            - /url: https://www.linkedin.com/groups/14380055/
+            - button [ref=e157]:
+              - img [ref=e158]
+          - link [ref=e160] [cursor=pointer]:
+            - /url: https://github.com/cpccu
+            - button [ref=e161]:
+              - img [ref=e162]
+          - link [ref=e164] [cursor=pointer]:
+            - /url: https://discord.gg/jStJuvU5Vs
+            - button [ref=e165]:
+              - img [ref=e166]
+    - generic [ref=e168]:
+      - heading "Usefull Link" [level=1] [ref=e169]
+      - list [ref=e170]:
+        - link "Codeforces" [ref=e171] [cursor=pointer]:
+          - /url: https://codeforces.com/ratings/organization/4353
+          - listitem [ref=e172]:
+            - img [ref=e173]
+            - paragraph [ref=e175]: Codeforces
+        - link "HackerRank" [ref=e176] [cursor=pointer]:
+          - /url: https://hackerrank.com
+          - listitem [ref=e177]:
+            - img [ref=e178]
+            - paragraph [ref=e180]: HackerRank
+        - link "Beecrowd" [ref=e181] [cursor=pointer]:
+          - /url: https://judge.beecrowd.com/en/users/university/city
+          - listitem [ref=e182]:
+            - img [ref=e183]
+            - paragraph [ref=e185]: Beecrowd
+        - link "Hacker Earth" [ref=e186] [cursor=pointer]:
+          - /url: https://www.hackerearth.com/
+          - listitem [ref=e187]:
+            - img [ref=e188]
+            - paragraph [ref=e190]: Hacker Earth
+        - link "Code Chef" [ref=e191] [cursor=pointer]:
+          - /url: https://www.codechef.com/
+          - listitem [ref=e192]:
+            - img [ref=e193]
+            - paragraph [ref=e195]: Code Chef
+        - link "Vjudge" [ref=e196] [cursor=pointer]:
+          - /url: https://vjudge.net/group/cpccu?r=e5n1ED2ylolVtUokPTkD
+          - listitem [ref=e197]:
+            - img [ref=e198]
+            - paragraph [ref=e200]: Vjudge
+    - generic [ref=e201]:
+      - heading "University" [level=1] [ref=e202]
+      - list [ref=e203]:
+        - link "City University" [ref=e204] [cursor=pointer]:
+          - /url: https://www.cityuniversity.ac.bd/
+          - listitem [ref=e205]:
+            - img [ref=e206]
+            - paragraph [ref=e208]: City University
+        - link "Faculty of CSE dept" [ref=e209] [cursor=pointer]:
+          - /url: https://www.cityuniversity.ac.bd/dept-of-computer-science&engineering
+          - listitem [ref=e210]:
+            - img [ref=e211]
+            - paragraph [ref=e213]: Faculty of CSE dept
+        - link "Join Us" [ref=e214] [cursor=pointer]:
+          - /url: signup
+          - listitem [ref=e215]:
+            - img [ref=e216]
+            - paragraph [ref=e218]: Join Us
+  - contentinfo [ref=e219]:
+    - text: 2026 ©Competitive Programming Camp City University, All Rights Reserved
+    - link "Collaborated & Developed with ❤️ by the Open Source Software Community City University." [ref=e220] [cursor=pointer]:
+      - /url: https://ossccu.pro.bd/
+  - button "Open Next.js Dev Tools" [ref=e226] [cursor=pointer]:
+    - img [ref=e227]
