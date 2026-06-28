@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
 import ImageUploadModal from "../PROFILE/ImageUploadModal";
+import ProfileImageCropModal from "../PROFILE/ProfileImageCropModal";
 import { isValidStudentId, detectScientificNotation, normalizeStudentId } from "@/lib/id-validation";
 
 const defaultAvatar = "/assets/avatar/default-avatar.png";
@@ -36,8 +37,11 @@ export default function Profile({ user, isOwnProfile }) {
 
   const [editMode, setEditMode] = useState(false);
   const [newSkill, setNewSkill] = useState({ skillName: "", experience: "" });
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImageSelectModalOpen, setIsImageSelectModalOpen] = useState(false);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [isJobPipelineModalOpen, setIsJobPipelineModalOpen] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [selectedImageSrc, setSelectedImageSrc] = useState("");
   const [jobPipelineTitleInput, setJobPipelineTitleInput] = useState("");
   const [jobPipelineTitleError, setJobPipelineTitleError] = useState("");
   const [emailFieldError, setEmailFieldError] = useState('');
@@ -153,15 +157,30 @@ export default function Profile({ user, isOwnProfile }) {
     setIsJobPipelineModalOpen(true);
   };
 
-  const handleImageUpload = async (file) => {
+  const handleFileSelect = (file) => {
+    setSelectedImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImageSrc(reader.result);
+      setIsCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadCroppedImage = async (croppedFile) => {
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("image", croppedFile);
     try {
       const res = await userImageUpload({ key: "avatar", imageData: formData }).unwrap();
       setProfile(prev => ({ ...prev, avatar: res.data.avatar }));
-      setIsModalOpen(false);
+      setIsCropModalOpen(false);
+      setIsImageSelectModalOpen(false);
+      setSelectedImageFile(null);
+      setSelectedImageSrc("");
     } catch (error) {
       console.error("Upload failed:", error);
+      setSelectedImageFile(null);
+      setSelectedImageSrc("");
     }
   };
 
@@ -407,7 +426,7 @@ export default function Profile({ user, isOwnProfile }) {
               </div>
               {editMode && (
                 <button 
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => setIsImageSelectModalOpen(true)}
                   className="absolute bottom-2 right-2 bg-blue-600 text-white p-3 rounded-full cursor-pointer hover:scale-110 transition-transform shadow-lg"
                 >
                   <FontAwesomeIcon icon={faCloudUploadAlt} />
@@ -563,12 +582,27 @@ export default function Profile({ user, isOwnProfile }) {
       </div>
 
       {/* Upload Modal */}
-      <ImageUploadModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onUpload={handleImageUpload}
+      <ImageUploadModal
+        isOpen={isImageSelectModalOpen}
+        onClose={() => setIsImageSelectModalOpen(false)}
+        onFileSelect={handleFileSelect}
         isUploading={isImageUploading}
       />
+
+      {/* Crop Modal */}
+      {isCropModalOpen && selectedImageSrc && (
+        <ProfileImageCropModal
+          isOpen={isCropModalOpen}
+          imageSrc={selectedImageSrc}
+          onCancel={() => {
+            setIsCropModalOpen(false);
+            setSelectedImageFile(null);
+            setSelectedImageSrc("");
+          }}
+          onCropComplete={uploadCroppedImage}
+          isUploading={isImageUploading}
+        />
+      )}
 
       <Dialog open={isJobPipelineModalOpen} onOpenChange={(open) => {
         setIsJobPipelineModalOpen(open);
