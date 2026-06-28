@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCloudUploadAlt, faTimes, faImage } from "@fortawesome/free-solid-svg-icons";
 
-export default function ImageUploadModal({ isOpen, onClose, onUpload, isUploading }) {
+export default function ImageUploadModal({ isOpen, onClose, onFileSelect, isUploading }) {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -17,13 +17,11 @@ export default function ImageUploadModal({ isOpen, onClose, onUpload, isUploadin
     setError(null);
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       setError("Please select a valid image file (PNG, JPG, etc.)");
       return;
     }
 
-    // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError("File size too large. Profile picture must be less than 5MB.");
       return;
@@ -62,9 +60,9 @@ export default function ImageUploadModal({ isOpen, onClose, onUpload, isUploadin
     }
   };
 
-  const handleSubmit = () => {
-    if (selectedFile) {
-      onUpload(selectedFile);
+  const handleNext = () => {
+    if (selectedFile && onFileSelect) {
+      onFileSelect(selectedFile);
     }
   };
 
@@ -78,10 +76,9 @@ export default function ImageUploadModal({ isOpen, onClose, onUpload, isUploadin
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all">
       <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-        {/* Modal Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-100">
           <h3 className="text-xl font-bold text-gray-800">Update Profile Picture</h3>
-          <button 
+          <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100"
           >
@@ -89,10 +86,9 @@ export default function ImageUploadModal({ isOpen, onClose, onUpload, isUploadin
           </button>
         </div>
 
-        {/* Modal Body */}
         <div className="p-8">
           {!previewUrl ? (
-            <div 
+            <div
               className={`relative border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center transition-all ${
                 dragActive ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-gray-50 hover:bg-gray-100"
               }`}
@@ -102,10 +98,10 @@ export default function ImageUploadModal({ isOpen, onClose, onUpload, isUploadin
               onDrop={handleDrop}
               onClick={() => inputRef.current.click()}
             >
-              <input 
+              <input
                 ref={inputRef}
-                type="file" 
-                className="hidden" 
+                type="file"
+                className="hidden"
                 accept="image/*"
                 onChange={handleChange}
               />
@@ -122,7 +118,7 @@ export default function ImageUploadModal({ isOpen, onClose, onUpload, isUploadin
               <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-blue-50 shadow-lg mb-6">
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
               </div>
-              <button 
+              <button
                 onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}
                 className="text-blue-600 text-sm font-bold hover:underline mb-2"
               >
@@ -138,20 +134,19 @@ export default function ImageUploadModal({ isOpen, onClose, onUpload, isUploadin
           )}
         </div>
 
-        {/* Modal Footer */}
         <div className="p-6 bg-gray-50 flex gap-3">
-          <button 
+          <button
             onClick={handleClose}
             className="flex-1 py-3 bg-white text-gray-700 font-bold rounded-2xl border border-gray-200 hover:bg-gray-100 transition-all"
           >
             Cancel
           </button>
-          <button 
-            onClick={handleSubmit}
-            disabled={!selectedFile || isUploading}
+          <button
+            onClick={handleNext}
+            disabled={!selectedFile}
             className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:opacity-50 disabled:shadow-none"
           >
-            {isUploading ? "Uploading..." : "Upload Photo"}
+            Next
           </button>
         </div>
       </div>
