@@ -11,7 +11,7 @@ import { CertificateStats } from "@/components/CERTIFICATE/certificate-stats";
 import { RecentCertificates } from "@/components/CERTIFICATE/recent-certificates";
 import Link from "next/link";
 
-export default function CertificatePage() {
+export default function CertificatePage({ initialCertificateId }) {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
       <main>
@@ -91,7 +91,7 @@ export default function CertificatePage() {
               </div>
 
               <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-6 md:p-8 shadow-xl shadow-primary/5">
-                <VerifyForm />
+                <VerifyForm initialCertificateId={initialCertificateId} />
               </div>
 
               {/* How it works */}

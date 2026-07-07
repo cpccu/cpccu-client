@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, Hash, User, IdCard, Loader2, AlertCircle } from "lucide-react";
 import { CertificateCard } from "./certificate-card";
 import { useLazyVerifyCertificateQuery } from "@/features/certificate/certificateApi";
@@ -26,7 +26,7 @@ const SEARCH_TYPES = [
   },
 ];
 
-export function VerifyForm() {
+export function VerifyForm({ initialCertificateId }) {
   const [verifyCertificate, { isFetching }] = useLazyVerifyCertificateQuery();
 
   const [searchType, setSearchType] = useState("id");
@@ -34,8 +34,47 @@ export function VerifyForm() {
   const [results, setResults] = useState([]);
   const [error, setError] = useState(null);
   const [searched, setSearched] = useState(false);
+  const initialSearchRef = useRef(false);
 
   const currentType = SEARCH_TYPES.find((t) => t.value === searchType);
+
+  useEffect(() => {
+    if (initialCertificateId && !initialSearchRef.current) {
+      initialSearchRef.current = true;
+      setSearchType("id");
+      setQuery(initialCertificateId);
+
+      verifyCertificate({ certificateId: initialCertificateId }).then((res) => {
+        if (res?.error) {
+          setError(res.error?.data?.message || "Certificate not found.");
+          setResults([]);
+          setSearched(true);
+          return;
+        }
+
+        const certificateData = res?.data?.data;
+        const certificateResults = Array.isArray(certificateData)
+          ? certificateData
+          : certificateData
+            ? [certificateData]
+            : [];
+
+        if (!certificateResults.length) {
+          setError("Certificate not found.");
+          setResults([]);
+          setSearched(true);
+          return;
+        }
+
+        setResults(certificateResults);
+        setSearched(true);
+      }).catch(() => {
+        setError("Something went wrong. Please try again.");
+        setResults([]);
+        setSearched(true);
+      });
+    }
+  }, [initialCertificateId, verifyCertificate]);
 
   const handleSearch = async (e) => {
     e.preventDefault();
