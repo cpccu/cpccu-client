@@ -2,6 +2,7 @@ import "@/app/globals.css";
 import ProviderWrapper from "./redux/ProviderWrapper";
 
 export const metadata = {
+  metadataBase: new URL("https://www.cpccu.club"),
   title: "CPCCU Portal",
   description: "Competitive Programming Camp City University",
   icons: { icon: "/cpccu.png" },
