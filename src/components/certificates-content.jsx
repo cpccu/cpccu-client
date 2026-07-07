@@ -73,7 +73,7 @@ export function CertificatesContent() {
                             ? 'participant'
                             : '1st',
                 issuedAt: certificate.issueDate,
-                verificationUrl: `/verify/${certificate.certificateId}`,
+                verificationUrl: `/certificate/${certificate.certificateId}`,
             })));
         }
     }, [certificatesResponse]);
@@ -290,7 +290,7 @@ export function CertificatesContent() {
         setTimeout(() => setCopiedId(null), 2000);
     };
     const openCertificate = (certificateId, shouldPrint = false) => {
-        const certificateWindow = window.open(`/verify/${certificateId}`, '_blank');
+        const certificateWindow = window.open(`/certificate/${certificateId}`, '_blank');
         if (shouldPrint && certificateWindow) {
             certificateWindow.addEventListener('load', () => certificateWindow.print());
         }
