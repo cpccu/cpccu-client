@@ -1,4 +1,4 @@
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000').replace('/api/v1', '');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
 const SITE_NAME = 'Competitive Programming Camp City University';
 const SITE_URL = 'https://www.cpccu.club';
@@ -60,17 +60,34 @@ export async function getCertificateMetadata(certificateId) {
     return getFallbackMetadata(certificateId);
   }
 
+  const url = `${API_BASE_URL}/certificates/verify?certificateId=${encodeURIComponent(certificateId)}`;
+
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/certificates/verify?certificateId=${encodeURIComponent(certificateId)}`,
-      { credentials: 'include' }
-    );
+    const res = await fetch(url, { credentials: 'include' });
 
     if (!res.ok) {
+      console.log('[Certificate Metadata] Request failed:', {
+        certificateId,
+        url,
+        status: res.status,
+        statusText: res.statusText,
+        reasonForFallback: 'HTTP response was not ok',
+      });
       return getFallbackMetadata(certificateId);
     }
 
-    const json = await res.json();
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError) {
+      console.log('[Certificate Metadata] JSON parsing failed:', {
+        certificateId,
+        url,
+        error: parseError.message,
+        reasonForFallback: 'Failed to parse response JSON',
+      });
+      return getFallbackMetadata(certificateId);
+    }
 
     let certificate = null;
     if (json?.data?.data) {
@@ -81,6 +98,12 @@ export async function getCertificateMetadata(certificateId) {
     }
 
     if (!certificate) {
+      console.log('[Certificate Metadata] Certificate not found in response:', {
+        certificateId,
+        url,
+        responseBody: json,
+        reasonForFallback: 'No certificate data returned from API',
+      });
       return getFallbackMetadata(certificateId);
     }
 
@@ -121,6 +144,12 @@ export async function getCertificateMetadata(certificateId) {
       },
     };
   } catch (error) {
+    console.log('[Certificate Metadata] Fetch error:', {
+      certificateId,
+      url,
+      error: error.message,
+      reasonForFallback: 'Fetch threw an exception',
+    });
     return getFallbackMetadata(certificateId);
   }
 }
