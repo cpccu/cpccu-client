@@ -613,7 +613,7 @@ export const demoCertificates = [
         eventName: 'Beat the Champ CPCCU',
         placement: '3rd',
         issuedAt: '2026-04-19T00:00:00Z',
-        verificationUrl: 'https://cpccu.club/verify/CPCCU-2026-001',
+        verificationUrl: 'https://cpccu.club/certificate/CPCCU-2026-001',
     },
     {
         id: 'cert2',
@@ -623,7 +623,7 @@ export const demoCertificates = [
         eventName: 'Debugging Derby Again CPCCU',
         placement: '2nd',
         issuedAt: '2026-04-19T00:00:00Z',
-        verificationUrl: 'https://cpccu.club/verify/CPCCU-2026-002',
+        verificationUrl: 'https://cpccu.club/certificate/CPCCU-2026-002',
     },
     {
         id: 'cert3',
@@ -633,7 +633,7 @@ export const demoCertificates = [
         eventName: 'CPCCU Contest 3',
         placement: '1st',
         issuedAt: '2026-04-19T00:00:00Z',
-        verificationUrl: 'https://cpccu.club/verify/CPCCU-2026-003',
+        verificationUrl: 'https://cpccu.club/certificate/CPCCU-2026-003',
     },
     {
         id: 'cert4',
@@ -643,7 +643,7 @@ export const demoCertificates = [
         eventName: 'CPCCU Contest 1',
         placement: '2nd',
         issuedAt: '2026-04-19T00:00:00Z',
-        verificationUrl: 'https://cpccu.club/verify/CPCCU-2026-004',
+        verificationUrl: 'https://cpccu.club/certificate/CPCCU-2026-004',
     },
     {
         id: 'cert5',
@@ -653,7 +653,7 @@ export const demoCertificates = [
         eventName: 'Eid Code Fest CPCCU: 2024',
         placement: '1st',
         issuedAt: '2026-04-19T00:00:00Z',
-        verificationUrl: 'https://cpccu.club/verify/CPCCU-2026-005',
+        verificationUrl: 'https://cpccu.club/certificate/CPCCU-2026-005',
     },
     {
         id: 'cert6',
@@ -663,7 +663,7 @@ export const demoCertificates = [
         eventName: 'CP Bootcamp 2026',
         placement: 'completion',
         issuedAt: '2026-03-15T00:00:00Z',
-        verificationUrl: 'https://cpccu.club/verify/CPCCU-2026-006',
+        verificationUrl: 'https://cpccu.club/certificate/CPCCU-2026-006',
     },
 ];
 // ===== Contributor Data =====
