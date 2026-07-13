@@ -12,6 +12,7 @@ export function MemberInfoSection({ member }) {
   const rows = [
     { label: "Batch", value: member.batch },
     { label: "Department", value: member.department },
+    { label: "Section", value: member.section },
     { label: "Student ID", value: member.universityId },
     { label: "Join Date", value: member.joinDate },
     { label: "Current Position", value: member.role },

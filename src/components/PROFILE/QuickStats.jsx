@@ -21,8 +21,12 @@ export function QuickStats({ stats }) {
             <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
               <Icon className="size-4.5" aria-hidden="true" />
             </span>
-            <p className="mt-3 font-serif text-3xl font-bold leading-none text-foreground" aria-label={`${value.toLocaleString()} ${label}`}>
-              <AnimatedCounter value={value} />
+            <p className="mt-3 font-serif text-3xl font-bold leading-none text-foreground" aria-label={typeof value === 'number' ? `${value.toLocaleString()} ${label}` : `${label}: ${value}`}>
+              {typeof value === 'string' ? (
+                <span className="text-muted-foreground/60">{value}</span>
+              ) : (
+                <AnimatedCounter value={value} />
+              )}
             </p>
             <p className="mt-1.5 text-xs font-bold text-muted-foreground">{label}</p>
           </li>

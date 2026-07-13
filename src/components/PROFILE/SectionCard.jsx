@@ -17,9 +17,11 @@ export function SectionCard({ title, icon: Icon, children, className, id }) {
       )}
     >
       <div className="mb-5 flex items-center gap-3">
-        <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-          <Icon className="size-4.5" aria-hidden="true" />
-        </span>
+        {Icon && (
+          <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+            <Icon className="size-4.5" aria-hidden="true" />
+          </span>
+        )}
         <h2 className="font-serif text-lg font-bold text-foreground md:text-xl">{title}</h2>
       </div>
       {children}
