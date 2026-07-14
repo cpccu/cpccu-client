@@ -14,18 +14,17 @@ export default function Footer() {
 
   return (
     <>
-      <main className="bg-count text-white padding grid justify-between gap-y-8 md:gap-y-12 md:gap-x-6 grid-cols-2 lg:grid-cols-11 py-10 md:py-16 lg:py-12">
+      <main className="bg-count text-white padding grid justify-between gap-y-8 md:gap-y-12 md:gap-x-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-11 py-10 md:py-16 lg:py-12">
         <FooterInfo />
         <Touch />
         <UsefullLink />
         <OrgLink />
       </main>
       {/* rights section start */}
-      <footer className="bg-header text-white/90 h-16 flex flex-col items-center justify-center text-center">
-        {currentYear} &copy;{InstituteInfo?.rights}
-        <br />
+      <footer className="bg-header text-white/90 px-4 py-3 flex flex-col items-center justify-center text-center text-xs sm:text-sm">
+        <span className="text-balance">{currentYear} &copy;{InstituteInfo?.rights}</span>
         <a
-          className="hover:underline"
+          className="hover:underline text-balance"
           target="_blank"
           rel="noopener noreferrer"
           href="https://ossccu.pro.bd/"
@@ -42,7 +41,7 @@ export default function Footer() {
 
 export function FooterInfo() {
   return (
-    <main className="flex flex-col gap-5 col-span-2 md:col-span-1 lg:col-span-4">
+    <main className="flex flex-col gap-5 col-span-1 sm:col-span-2 md:col-span-1 lg:col-span-4">
       <section className="flex items-center gap-2">
         <img
           className="h-14 filter grayscale"
@@ -86,7 +85,7 @@ export function FooterInfo() {
 export function Touch() {
   const Allicon = [faFacebookF, faWhatsapp, faLinkedinIn, faGithub, faDiscord];
   return (
-    <section className="col-span-2 md:col-span-1 lg:col-span-3">
+    <section className="col-span-1 sm:col-span-2 md:col-span-1 lg:col-span-3">
       <h1 className="text-2xl font-bold mb-3 md:mb-9">
         {InstituteInfo?.Footer2.header}
       </h1>
@@ -103,23 +102,20 @@ export function Touch() {
             placeholder="Enter your email"
             required
           />
-          <button className="bg-header hover:bg-header-hover w-[21%] trans">
-            <FontAwesomeIcon className="h-5" icon={faPaperPlane} />
+          <button className="bg-header hover:bg-header-hover w-[21%] trans" aria-label="Subscribe to newsletter">
+            <FontAwesomeIcon className="h-5" icon={faPaperPlane} aria-hidden="true" />
           </button>
-        </form>
-
-        <section className="flex gap-5 flex-wrap">
-          {InstituteInfo?.media.map((item, index) => (
-            <Link
-              key={index}
-              href={item?.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <button className="bg-header hover:bg-header-hover trans flex items-center justify-center px-3 py-2 w-10 h-10">
-                <FontAwesomeIcon className="w-7 h-7" icon={Allicon[index]} />
-              </button>
-            </Link>
+        </form>          <section className="flex gap-3 flex-wrap sm:gap-5">
+          {InstituteInfo?.media.map((item, index) => (              <a
+                key={index}
+                href={item?.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-header hover:bg-header-hover trans inline-flex items-center justify-center px-3 py-2 w-10 h-10"
+                aria-label={`Visit ${['Facebook', 'WhatsApp', 'LinkedIn', 'GitHub', 'Discord'][index] || 'social'} profile`}
+              >
+                <FontAwesomeIcon className="w-7 h-7" icon={Allicon[index]} aria-hidden="true" />
+              </a>
           ))}
         </section>
       </main>
