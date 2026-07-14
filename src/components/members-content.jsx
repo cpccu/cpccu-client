@@ -61,14 +61,9 @@ export function MembersContent() {
         status: 'active',
         Section: '',
         phone: '',
-        skills: '',
         batch: '',
         uniID: '',
         password: '',
-        bio: '',
-        github: '',
-        linkedin: '',
-        portfolio: '',
         department: '',
     });
     const [memberValidationError, setMemberValidationError] = useState('');
@@ -87,13 +82,8 @@ export function MembersContent() {
                 Section: member.section || '',
                 joinedAt: member.createdAt || new Date().toISOString(),
                 phone: member.phone || '',
-                skills: member.skills || [],
                 batch: member.batch || '',
                 uniID: member.uniID || '',
-                bio: member.bio || '',
-                github: member.github || '',
-                linkedin: member.linkedin || '',
-                portfolio: member.portfolio || '',
                 department: member.department || '',
             })));
         }
@@ -110,7 +100,7 @@ export function MembersContent() {
     }, [members, search, roleFilter, statusFilter]);
     const openCreate = () => {
         setEditingMember(null);
-        setFormData({ name: '', email: '', role: 'member', cpccuPosition: 'Member', status: 'active', Section: '', phone: '', skills: '', batch: '', uniID: '', password: '', bio: '', github: '', linkedin: '', portfolio: '', department: '' });
+        setFormData({ name: '', email: '', role: 'member', cpccuPosition: 'Member', status: 'active', Section: '', phone: '', batch: '', uniID: '', password: '', department: '' });
         setEmailFieldError('');
         setUniIDFieldError('');
         setShowNewRoleInput(false);
@@ -127,14 +117,9 @@ export function MembersContent() {
             status: member.status,
             Section: member.Section,
             phone: member.phone,
-            skills: (member.skills || []).map(s => s.skillName || '').join(', '),
             batch: member.batch || '',
             uniID: member.uniID || '',
             password: '',
-            bio: member.bio || '',
-            github: member.github || '',
-            linkedin: member.linkedin || '',
-            portfolio: member.portfolio || '',
             department: member.department || '',
         });
         setEmailFieldError('');
@@ -189,16 +174,11 @@ export function MembersContent() {
                     email: formData.email,
                     phone: formData.phone,
                     section: formData.Section,
-                    skills: formData.skills.split(',').map(s => ({ skillName: s.trim(), experience: '' })).filter(s => s.skillName),
                     role: formData.role,
                     positionName: formData.cpccuPosition,
                     isValid: formData.status === 'active',
                     uniID: trimmedUni,
                     batch: String(formData.batch).trim(),
-                    bio: formData.bio,
-                    github: formData.github,
-                    linkedin: formData.linkedin,
-                    portfolio: formData.portfolio,
                     department: formData.department,
                 }).unwrap();
                 showSuccessAlert('Member Updated', `${formData.name}'s profile has been updated.`);
@@ -209,17 +189,12 @@ export function MembersContent() {
                     email: formData.email,
                     phone: formData.phone,
                     section: formData.Section,
-                    skills: formData.skills.split(',').map(s => ({ skillName: s.trim(), experience: '' })).filter(s => s.skillName),
                     batch: String(formData.batch).trim(),
                     uniID: trimmedUni,
                     password: formData.password,
                     role: formData.role,
                     positionName: formData.cpccuPosition,
                     isValid: formData.status === 'active',
-                    bio: formData.bio,
-                    github: formData.github,
-                    linkedin: formData.linkedin,
-                    portfolio: formData.portfolio,
                     department: formData.department,
                 }).unwrap();
                 showSuccessAlert('Member Added', `${formData.name} has been added to the club.`);
@@ -576,40 +551,9 @@ export function MembersContent() {
                 <Input id="phone" value={formData.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} placeholder="+880 1xxx-xxxxxx"/>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="department">Department</Label>
-                <Input id="department" value={formData.department} onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))} placeholder="Computer Science & Engineering"/>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="skills">Skills (comma-separated)</Label>
-                <Input id="skills" value={formData.skills} onChange={(e) => setFormData(prev => ({ ...prev, skills: e.target.value }))} placeholder="Python, React, Machine Learning"/>
-              </div>
-            </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="bio">Bio</Label>
-              <textarea
-                id="bio"
-                value={formData.bio}
-                onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                placeholder="Brief biography..."
-                rows={2}
-                className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/10"
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="github">GitHub URL</Label>
-                <Input id="github" value={formData.github} onChange={(e) => setFormData(prev => ({ ...prev, github: e.target.value }))} placeholder="https://github.com/username"/>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="linkedin">LinkedIn URL</Label>
-                <Input id="linkedin" value={formData.linkedin} onChange={(e) => setFormData(prev => ({ ...prev, linkedin: e.target.value }))} placeholder="https://linkedin.com/in/username"/>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="portfolio">Portfolio URL</Label>
-                <Input id="portfolio" value={formData.portfolio} onChange={(e) => setFormData(prev => ({ ...prev, portfolio: e.target.value }))} placeholder="https://your-portfolio.com"/>
-              </div>
+              <Label htmlFor="department">Department</Label>
+              <Input id="department" value={formData.department} onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))} placeholder="Computer Science & Engineering"/>
             </div>
           </div>
           {memberValidationError && (
