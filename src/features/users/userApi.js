@@ -83,6 +83,38 @@ export const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Auth", "Users"],
     }),
+    // Project CRUD
+    getProjects: builder.query({
+      query: () => "/projects",
+      providesTags: ["Projects"],
+    }),
+    getPublicProjects: builder.query({
+      query: (userId) => `/projects/user/${userId}`,
+      providesTags: (result, error, userId) => [{ type: "Projects", id: userId }],
+    }),
+    createProject: builder.mutation({
+      query: (projectData) => ({
+        url: "/projects",
+        method: "POST",
+        body: projectData,
+      }),
+      invalidatesTags: ["Projects"],
+    }),
+    updateProject: builder.mutation({
+      query: ({ id, ...projectData }) => ({
+        url: `/projects/${id}`,
+        method: "PATCH",
+        body: projectData,
+      }),
+      invalidatesTags: ["Projects"],
+    }),
+    deleteProject: builder.mutation({
+      query: (id) => ({
+        url: `/projects/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Projects"],
+    }),
   }),
 });
 
@@ -97,4 +129,9 @@ export const {
   useDeleteUserMutation,
   useChangePasswordMutation,
   useDeleteOwnAccountMutation,
+  useGetProjectsQuery,
+  useGetPublicProjectsQuery,
+  useCreateProjectMutation,
+  useUpdateProjectMutation,
+  useDeleteProjectMutation,
 } = userApi;

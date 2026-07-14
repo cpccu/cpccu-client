@@ -14,6 +14,7 @@
 
   /* Colors */
   --color-primary: #3b82f6;
+  --color-primary-foreground: #ffffff;
   --color-header: #3b60c9;
   --color-header-hover: #5b80e6;
   --color-footer: #333437;
@@ -63,6 +64,10 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.625rem;
   --radius-xl: 0.875rem;
+
+  /* Custom brand colors */
+  --color-navy: #0f2557;
+  --color-navy-foreground: #ffffff;
 
   /* Font */
   --font-custom: "Inria Sans", sans-serif;
