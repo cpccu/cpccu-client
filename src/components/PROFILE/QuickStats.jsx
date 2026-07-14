@@ -1,4 +1,4 @@
-import { Award, CalendarCheck, FolderGit2, HandHeart, Trophy } from "lucide-react";
+import { Award, CalendarCheck, FolderGit2, HandHeart } from "lucide-react";
 import { AnimatedCounter } from "./AnimatedCounter";
 
 export function QuickStats({ stats }) {
@@ -7,12 +7,11 @@ export function QuickStats({ stats }) {
     { label: "Contributions", value: stats.contributions, icon: HandHeart },
     { label: "Projects", value: stats.projects, icon: FolderGit2 },
     { label: "Events", value: stats.events, icon: CalendarCheck },
-    { label: "Achievements", value: stats.achievements, icon: Trophy },
   ];
 
   return (
     <section aria-label="Quick statistics">
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-5">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4">
         {items.map(({ label, value, icon: Icon }) => (
           <li
             key={label}

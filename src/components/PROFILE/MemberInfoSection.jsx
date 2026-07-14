@@ -1,21 +1,15 @@
 import { ClipboardList } from "lucide-react";
 import { SectionCard } from "./SectionCard";
-import { cn } from "@/lib/utils";
-
-const statusStyles = {
-  Active: "bg-success/10 text-success",
-  Executive: "bg-accent text-accent-foreground",
-  Alumni: "bg-muted text-muted-foreground",
-};
+import { getDisplayRole } from "@/lib/roles";
 
 export function MemberInfoSection({ member }) {
   const rows = [
+    { label: "Department", value: "Computer Science & Engineering" },
     { label: "Batch", value: member.batch },
-    { label: "Department", value: member.department },
     { label: "Section", value: member.section },
     { label: "Student ID", value: member.universityId },
-    { label: "Join Date", value: member.joinDate },
-    { label: "Current Position", value: member.role },
+    { label: "Member Since", value: member.joinDate || member.memberSince },
+    { label: "Official Role", value: getDisplayRole(member.officialRole) },
     { label: "Phone", value: member.phone },
   ];
 
@@ -25,23 +19,9 @@ export function MemberInfoSection({ member }) {
         {rows.map((row) => (
           <div key={row.label} className="flex items-center justify-between gap-4 py-3 first:pt-0">
             <dt className="text-sm text-muted-foreground">{row.label}</dt>
-            <dd className="text-right text-sm font-semibold text-foreground">{row.value}</dd>
+            <dd className="text-right text-sm font-semibold text-foreground">{row.value || "—"}</dd>
           </div>
         ))}
-        <div className="flex items-center justify-between gap-4 py-3 last:pb-0">
-          <dt className="text-sm text-muted-foreground">Status</dt>
-          <dd>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold",
-                statusStyles[member.status] || statusStyles.Active,
-              )}
-            >
-              <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
-              {member.status}
-            </span>
-          </dd>
-        </div>
       </dl>
     </SectionCard>
   );

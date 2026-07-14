@@ -1,6 +1,6 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, MoreHorizontal, Pencil, Trash2, Mail, Shield, UserCheck, UserX } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, Mail, Shield, UserCheck, UserX, ExternalLink, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import { AdminDataTable } from '@/components/admin-data-table';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import { isValidStudentId, detectScientificNotation, normalizeStudentId } from '@/lib/id-validation';
-import { useCreateAdminMemberMutation, useDeleteAdminMemberMutation, useGetAdminMembersQuery, useUpdateAdminMemberMutation } from '@/features/admin/adminApi';
+import { useCreateAdminMemberMutation, useCreateAdminRoleMutation, useDeleteAdminMemberMutation, useGetAdminMembersQuery, useGetAdminRolesQuery, useUpdateAdminMemberMutation } from '@/features/admin/adminApi';
 const statusStyles = {
     active: 'bg-success/15 text-success border-success/30',
     inactive: 'bg-muted text-muted-foreground border-border',
@@ -30,7 +30,9 @@ const roleStyles = {
 export function MembersContent() {
     const [members, setMembers] = useState([]);
     const { data: membersResponse } = useGetAdminMembersQuery();
+    const { data: rolesResponse, isLoading: rolesLoading } = useGetAdminRolesQuery();
     const [createAdminMember] = useCreateAdminMemberMutation();
+    const [createAdminRole] = useCreateAdminRoleMutation();
     const [deleteAdminMember] = useDeleteAdminMemberMutation();
     const [updateAdminMember] = useUpdateAdminMemberMutation();
     const [search, setSearch] = useState('');
@@ -39,10 +41,23 @@ export function MembersContent() {
     const [selectedIds, setSelectedIds] = useState([]);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingMember, setEditingMember] = useState(null);
+    const [newRoleInput, setNewRoleInput] = useState('');
+    const [showNewRoleInput, setShowNewRoleInput] = useState(false);
+    const [roleCreateError, setRoleCreateError] = useState('');
+
+    // Build the CPCCU role list from the API response
+    const cpccuRoles = useMemo(() => {
+      if (!rolesResponse?.data) return ['Member'];
+      const activeRoles = rolesResponse.data
+        .filter((r) => r.active)
+        .map((r) => r.name);
+      return ['Member', ...activeRoles];
+    }, [rolesResponse]);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         role: 'member',
+        cpccuPosition: 'Member',
         status: 'active',
         Section: '',
         phone: '',
@@ -50,6 +65,11 @@ export function MembersContent() {
         batch: '',
         uniID: '',
         password: '',
+        bio: '',
+        github: '',
+        linkedin: '',
+        portfolio: '',
+        department: '',
     });
     const [memberValidationError, setMemberValidationError] = useState('');
     const [emailFieldError, setEmailFieldError] = useState('');
@@ -62,6 +82,7 @@ export function MembersContent() {
                 email: member.email || '',
                 avatar: member.avatar || '',
                 role: member.roles?.role || 'member',
+                cpccuPosition: member.roles?.positionName || 'Member',
                 status: member.isValid ? 'active' : 'pending',
                 Section: member.section || '',
                 joinedAt: member.createdAt || new Date().toISOString(),
@@ -69,6 +90,11 @@ export function MembersContent() {
                 skills: member.skills || [],
                 batch: member.batch || '',
                 uniID: member.uniID || '',
+                bio: member.bio || '',
+                github: member.github || '',
+                linkedin: member.linkedin || '',
+                portfolio: member.portfolio || '',
+                department: member.department || '',
             })));
         }
     }, [membersResponse]);
@@ -84,9 +110,11 @@ export function MembersContent() {
     }, [members, search, roleFilter, statusFilter]);
     const openCreate = () => {
         setEditingMember(null);
-        setFormData({ name: '', email: '', role: 'member', status: 'active', Section: '', phone: '', skills: '', batch: '', uniID: '', password: '' });
+        setFormData({ name: '', email: '', role: 'member', cpccuPosition: 'Member', status: 'active', Section: '', phone: '', skills: '', batch: '', uniID: '', password: '', bio: '', github: '', linkedin: '', portfolio: '', department: '' });
         setEmailFieldError('');
         setUniIDFieldError('');
+        setShowNewRoleInput(false);
+        setNewRoleInput('');
         setDialogOpen(true);
     };
     const openEdit = (member) => {
@@ -95,18 +123,47 @@ export function MembersContent() {
             name: member.name,
             email: member.email,
             role: member.role,
+            cpccuPosition: member.cpccuPosition || 'Member',
             status: member.status,
             Section: member.Section,
             phone: member.phone,
-            skills: (member.skills || []).join(', '),
+            skills: (member.skills || []).map(s => s.skillName || '').join(', '),
             batch: member.batch || '',
             uniID: member.uniID || '',
             password: '',
+            bio: member.bio || '',
+            github: member.github || '',
+            linkedin: member.linkedin || '',
+            portfolio: member.portfolio || '',
+            department: member.department || '',
         });
         setEmailFieldError('');
         setUniIDFieldError('');
+        setShowNewRoleInput(false);
+        setNewRoleInput('');
         setDialogOpen(true);
     };
+    const handleSaveCustomRole = async () => {
+      const trimmed = newRoleInput.trim();
+      if (!trimmed) {
+        setRoleCreateError('Role name is required');
+        return;
+      }
+      setRoleCreateError('');
+      try {
+        const result = await createAdminRole({ name: trimmed }).unwrap();
+        const newRole = result?.data;
+        if (newRole) {
+          setFormData(prev => ({ ...prev, cpccuPosition: newRole.name }));
+        }
+        setShowNewRoleInput(false);
+        setNewRoleInput('');
+      } catch (err) {
+        const msg = err?.data?.message || err?.message || 'Failed to create role';
+        setRoleCreateError(msg);
+      }
+    };
+
     const handleSave = async () => {
         setMemberValidationError('');
         setEmailFieldError('');
@@ -132,10 +189,17 @@ export function MembersContent() {
                     email: formData.email,
                     phone: formData.phone,
                     section: formData.Section,
-                    skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
+                    skills: formData.skills.split(',').map(s => ({ skillName: s.trim(), experience: '' })).filter(s => s.skillName),
                     role: formData.role,
+                    positionName: formData.cpccuPosition,
                     isValid: formData.status === 'active',
                     uniID: trimmedUni,
+                    batch: String(formData.batch).trim(),
+                    bio: formData.bio,
+                    github: formData.github,
+                    linkedin: formData.linkedin,
+                    portfolio: formData.portfolio,
+                    department: formData.department,
                 }).unwrap();
                 showSuccessAlert('Member Updated', `${formData.name}'s profile has been updated.`);
             }
@@ -145,12 +209,18 @@ export function MembersContent() {
                     email: formData.email,
                     phone: formData.phone,
                     section: formData.Section,
-                    skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
+                    skills: formData.skills.split(',').map(s => ({ skillName: s.trim(), experience: '' })).filter(s => s.skillName),
                     batch: String(formData.batch).trim(),
                     uniID: trimmedUni,
                     password: formData.password,
                     role: formData.role,
+                    positionName: formData.cpccuPosition,
                     isValid: formData.status === 'active',
+                    bio: formData.bio,
+                    github: formData.github,
+                    linkedin: formData.linkedin,
+                    portfolio: formData.portfolio,
+                    department: formData.department,
                 }).unwrap();
                 showSuccessAlert('Member Added', `${formData.name} has been added to the club.`);
             }
@@ -239,9 +309,17 @@ export function MembersContent() {
         },
         {
             key: 'role',
-            header: 'Role',
+            header: 'Panel Role',
             accessor: 'role',
             cell: (member) => <Badge variant="outline" className={`capitalize ${roleStyles[member.role] || ''}`}>{member.role}</Badge>,
+        },
+        {
+            key: 'cpccuPosition',
+            header: 'Position',
+            accessor: 'cpccuPosition',
+            cell: (member) => <Badge variant="secondary" className="capitalize">{member.cpccuPosition}</Badge>,
+            cellClassName: 'hidden md:table-cell',
+            className: 'hidden md:table-cell',
         },
         {
             key: 'status',
@@ -271,6 +349,9 @@ export function MembersContent() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => openEdit(member)}>
                   <Pencil className="mr-2 size-4"/> Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.open(`/profile/${member.uniID || member.id}`, '_blank')}>
+                  <ExternalLink className="mr-2 size-4"/> Open Profile
                 </DropdownMenuItem>
                 {member.status === 'pending' && (<DropdownMenuItem onClick={() => handleApprove(member)}>
                     <UserCheck className="mr-2 size-4"/> Approve
@@ -420,9 +501,49 @@ export function MembersContent() {
                 {uniIDFieldError && <p className="text-xs font-semibold text-red-600">{uniIDFieldError}</p>}
               </div>
             </div>)}
+            {/* CPCCU Official Role (positionName) */}
+            <div className="flex flex-col gap-2">
+              <Label>CPCCU Position</Label>
+              {showNewRoleInput ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={newRoleInput}
+                    onChange={(e) => setNewRoleInput(e.target.value)}
+                    placeholder="Enter new role name..."
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSaveCustomRole(); } }}
+                    autoFocus
+                  />
+                  <Button onClick={handleSaveCustomRole} size="sm">Add</Button>
+                  <Button onClick={() => { setShowNewRoleInput(false); setNewRoleInput(''); }} variant="outline" size="sm">Cancel</Button>
+                </div>
+              ) : (
+                <Select
+                  value={formData.cpccuPosition}
+                  onValueChange={(v) => {
+                    if (v === '__add_new__') {
+                      setShowNewRoleInput(true);
+                      setNewRoleInput('');
+                    } else {
+                      setFormData(prev => ({ ...prev, cpccuPosition: v }));
+                    }
+                  }}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-56">
+                    {cpccuRoles.map((role) => (
+                      <SelectItem key={role} value={role}>{role}</SelectItem>
+                    ))}
+                    <SelectItem value="__add_new__" className="text-primary font-semibold border-t border-border mt-1 pt-2">
+                      + Add New Role
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Role</Label>
+                <Label>Panel Role</Label>
                 <Select value={formData.role} onValueChange={(v) => setFormData(prev => ({ ...prev, role: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -452,12 +573,43 @@ export function MembersContent() {
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" value={formData.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} placeholder="+91 98765 43210"/>
+                <Input id="phone" value={formData.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} placeholder="+880 1xxx-xxxxxx"/>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="department">Department</Label>
+                <Input id="department" value={formData.department} onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))} placeholder="Computer Science & Engineering"/>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="skills">Skills (comma-separated)</Label>
+                <Input id="skills" value={formData.skills} onChange={(e) => setFormData(prev => ({ ...prev, skills: e.target.value }))} placeholder="Python, React, Machine Learning"/>
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="skills">Skills (comma-separated)</Label>
-              <Input id="skills" value={formData.skills} onChange={(e) => setFormData(prev => ({ ...prev, skills: e.target.value }))} placeholder="Python, React, Machine Learning"/>
+              <Label htmlFor="bio">Bio</Label>
+              <textarea
+                id="bio"
+                value={formData.bio}
+                onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                placeholder="Brief biography..."
+                rows={2}
+                className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/10"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="github">GitHub URL</Label>
+                <Input id="github" value={formData.github} onChange={(e) => setFormData(prev => ({ ...prev, github: e.target.value }))} placeholder="https://github.com/username"/>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="linkedin">LinkedIn URL</Label>
+                <Input id="linkedin" value={formData.linkedin} onChange={(e) => setFormData(prev => ({ ...prev, linkedin: e.target.value }))} placeholder="https://linkedin.com/in/username"/>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="portfolio">Portfolio URL</Label>
+                <Input id="portfolio" value={formData.portfolio} onChange={(e) => setFormData(prev => ({ ...prev, portfolio: e.target.value }))} placeholder="https://your-portfolio.com"/>
+              </div>
             </div>
           </div>
           {memberValidationError && (

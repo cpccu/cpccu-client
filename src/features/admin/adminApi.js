@@ -138,6 +138,37 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["AdminCertificates", "AdminOverview"],
     }),
+    // ===== Role Management =====
+    getAdminRoles: builder.query({
+      query: () => "/admin/roles",
+      providesTags: ["AdminRoles"],
+    }),
+    getActiveRoles: builder.query({
+      query: () => "/admin/roles/active",
+    }),
+    createAdminRole: builder.mutation({
+      query: (body) => ({
+        url: "/admin/roles",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AdminRoles"],
+    }),
+    updateAdminRole: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/admin/roles/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["AdminRoles"],
+    }),
+    toggleAdminRole: builder.mutation({
+      query: (id) => ({
+        url: `/admin/roles/${id}/toggle`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["AdminRoles"],
+    }),
   }),
 });
 
@@ -160,4 +191,9 @@ export const {
   useGetAdminSystemSettingsQuery,
   useUpdateAdminSystemSettingsMutation,
   useUploadAdminImageMutation,
+  useGetAdminRolesQuery,
+  useGetActiveRolesQuery,
+  useCreateAdminRoleMutation,
+  useUpdateAdminRoleMutation,
+  useToggleAdminRoleMutation,
 } = adminApi;

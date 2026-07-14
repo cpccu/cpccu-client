@@ -2,28 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, BriefcaseBusiness, Edit3, Globe, GraduationCap, IdCard, LogOut, Mail, User } from "lucide-react";
-import { AchievementBadges } from "./AchievementBadges";
+import { BadgeCheck, BriefcaseBusiness, Edit3, Globe, GraduationCap, IdCard, LogOut, Mail } from "lucide-react";
 import { GithubIcon, LinkedinIcon } from "./BrandIcons";
-import { cn } from "@/lib/utils";
+import { getDisplayRole, isOfficialRole, roleIcon } from "@/lib/roles";
 
 const defaultAvatar = "/assets/avatar/default-avatar.png";
-
-const roleIcons = {
-  President: "👑",
-  "Vice President": "👑",
-  "General Secretary": "🛡",
-  Treasurer: "💼",
-  Advisor: "🎓",
-  Moderator: "🏅",
-  "Former President": "🎖",
-  "Former Vice President": "🎖",
-  Alumni: "👨‍🎓",
-};
-
-function getRoleIcon(role) {
-  return roleIcons[role] ?? "⭐";
-}
 
 export function ProfileHero({ member, isOwner, editMode, onEditToggle, onJobPipeline, onLogout, avatarUrl, onImageUploadClick }) {
   const socials = [
@@ -35,29 +18,18 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, onJobPipe
 
   return (
     <section aria-label="Member overview" className="relative">
-      <div className="h-36 bg-navy md:h-44">
+      <div className="relative h-36 bg-navy md:h-44">
         <div className="mx-auto flex h-full max-w-6xl items-start justify-between px-4 pt-6 md:px-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-navy-foreground/70">
+          <p className="relative z-10 text-xs font-semibold uppercase tracking-[0.16em] text-navy-foreground/70">
             CPCCU Member Profile
           </p>
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold",
-              member.status === "Executive"
-                ? "bg-accent text-accent-foreground"
-                : member.status === "Alumni"
-                  ? "bg-muted text-muted-foreground"
-                  : "bg-success/10 text-success",
-            )}
-          >
-            <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
-            {member.status}
-          </span>
         </div>
+        {/* Gradient overlay to prevent text from blending into white card below */}
+        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-navy/0 to-navy/0 md:hidden" aria-hidden="true" />
       </div>
 
       <div className="mx-auto max-w-6xl px-4 md:px-6">
-        <div className="relative -mt-16 overflow-visible rounded-xl border border-border bg-card p-7 shadow-[0_16px_45px_rgba(15,37,87,0.08)] md:-mt-14 md:p-9">
+        <div className="relative -mt-12 overflow-visible rounded-xl border border-border bg-card p-5 shadow-[0_16px_45px_rgba(15,37,87,0.08)] md:-mt-14 md:p-9">
           <div
             className="pointer-events-none absolute inset-x-4 top-20 h-44 max-w-6xl overflow-hidden rounded-xl opacity-[0.03] md:inset-x-auto md:left-1/2 md:top-24 md:w-[72rem] md:-translate-x-1/2"
             aria-hidden="true"
@@ -66,7 +38,7 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, onJobPipe
             <div className="absolute right-8 top-6 font-mono text-5xl font-bold text-navy">&#x7b;&#x7d; &#x3c;&#x3e; 0101</div>
           </div>
           <div className="relative flex flex-col gap-7 md:flex-row md:items-start md:gap-8">
-            <div className="relative -mt-20 shrink-0 md:-mt-24">
+            <div className="relative -mt-16 shrink-0 md:-mt-24">
               <div className="relative">
                 <Image
                   src={avatarUrl || defaultAvatar}
@@ -74,7 +46,7 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, onJobPipe
                   width={144}
                   height={144}
                   priority
-                  className="size-32 rounded-xl border-4 border-card bg-white object-contain object-center shadow-md md:size-40"
+                  className="size-28 rounded-xl border-4 border-card bg-white object-contain object-center shadow-md md:size-40"
                 />
                 {isOwner && editMode && (
                   <button
@@ -95,20 +67,20 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, onJobPipe
               </h1>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-foreground shadow-sm">
-                  {getRoleIcon(member.officialRole)} {member.officialRole}
+                  {roleIcon(member.officialRole)} {getDisplayRole(member.officialRole)}
                 </span>
               </div>
-
-              <AchievementBadges badges={member.achievementBadges} />
 
               <dl className="mt-5 grid grid-cols-1 gap-x-8 gap-y-2.5 text-sm sm:grid-cols-2">
                 <div className="flex items-center gap-2">
                   <GraduationCap className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <dt className="sr-only">Department</dt>
-                  <dd className="text-muted-foreground">
-                    {member.department}
-                    {member.batch ? ` · ${member.batch}` : ""}
-                  </dd>
+                  <dd className="text-muted-foreground">{member.department || "Computer Science & Engineering"}</dd>
+                </div>
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <dt className="sr-only">Batch</dt>
+                  <dd className="text-muted-foreground">{member.batch || "—"}</dd>
                 </div>
                 <div className="flex items-center gap-2">
                   <IdCard className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

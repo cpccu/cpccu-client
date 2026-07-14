@@ -100,30 +100,7 @@ export function ProfileEditSkeleton() {
   );
 }
 
-const ROLE_STATUS_MAP = {
-  admin: "Executive",
-  moderator: "Executive",
-  mentor: "Executive",
-  member: "Active",
-};
-
-function getRoleStatus(role) {
-  return ROLE_STATUS_MAP[role] || "Active";
-}
-
-function deriveAchievementBadges(user) {
-  const badges = [];
-  if (user?.roles?.role && user.roles.role !== "member") {
-    badges.push(`⭐ ${user.roles.positionName || "Executive"}`);
-  }
-  if (user?.jobPipelineStatus === "approved") {
-    badges.push("💼 Job Pipeline");
-  }
-  if (user?.jobPipelineStatus === "pending") {
-    badges.push("⏳ Pending Review");
-  }
-  return badges;
-}
+// deriveAchievementBadges removed: only official CPCCU roles are shown in ProfileHero, no generic badges
 
 function mapSkillsToGroups(skills = []) {
   if (!skills.length) return [];
@@ -729,9 +706,7 @@ export default function Profile({ user, isOwnProfile }) {
     universityId: profile.uniID || user?.uniID || "",
     memberSince: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "",
     joinDate: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "",
-    status: getRoleStatus(user?.roles?.role),
     officialRole: user?.roles?.positionName || "Member",
-    achievementBadges: deriveAchievementBadges(user),
     isOwner: isOwnProfile,
     photo: profile.avatar || user?.avatar || "",
     bio: profile.bio || user?.bio || "",
@@ -747,7 +722,6 @@ export default function Profile({ user, isOwnProfile }) {
       contributions: contributorMatch ? contributorMatch.commitCount : '—',
       projects: projectsList.length,
       events: 0,
-      achievements: certificatesList.length,
     },
     skillGroups: mapSkillsToGroups(profile.skills || user?.skills || []),
     certificates: certificatesList.map((cert) => ({
