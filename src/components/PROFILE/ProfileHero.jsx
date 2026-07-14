@@ -62,12 +62,12 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, onJobPipe
             </div>
 
             <div className="min-w-0 flex-1">
-              <h1 className="font-serif text-[1.7rem] font-bold leading-tight text-foreground text-balance md:text-4xl">
+              <h1 className="font-serif text-[1.7rem] font-bold leading-tight text-foreground text-balance break-words md:text-4xl">
                 {member.fullName}
               </h1>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-foreground shadow-sm">
-                  {roleIcon(member.officialRole)} {getDisplayRole(member.officialRole)}
+                  <span aria-hidden="true">{roleIcon(member.officialRole)}</span> <span>{getDisplayRole(member.officialRole)}</span>
                 </span>
               </div>
 
@@ -80,12 +80,12 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, onJobPipe
                 <div className="flex items-center gap-2">
                   <GraduationCap className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <dt className="sr-only">Batch</dt>
-                  <dd className="text-muted-foreground">{member.batch || "—"}</dd>
+                  <dd className="text-muted-foreground">Batch : {member.batch || "—"}</dd>
                 </div>
                 <div className="flex items-center gap-2">
                   <IdCard className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <dt className="sr-only">University ID</dt>
-                  <dd className="text-muted-foreground">{member.universityId}</dd>
+                  <dd className="text-muted-foreground">ID : {member.universityId}</dd>
                 </div>
                 <div className="flex items-center gap-2">
                   <BadgeCheck className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

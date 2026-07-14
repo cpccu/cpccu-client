@@ -679,14 +679,17 @@ export default function Profile({ user, isOwnProfile }) {
     }
   };
 
-  const memberProjects = projectsList.map((p) => ({
-    id: p._id || p.id,
-    name: p.title,
-    description: p.description,
-    technologies: Array.isArray(p.technologies) ? p.technologies : [],
-    repoUrl: p.repoUrl,
-    liveUrl: p.liveUrl,
-  }));
+  const memberProjects = useMemo(() =>
+    projectsList.map((p) => ({
+      id: p._id || p.id,
+      name: p.title,
+      description: p.description,
+      technologies: Array.isArray(p.technologies) ? p.technologies : [],
+      repoUrl: p.repoUrl,
+      liveUrl: p.liveUrl,
+    })),
+    [projectsList]
+  );
 
   // Resolve GitHub contribution data for QuickStats and the ContributionsSection
   const contributorMatch = useMemo(() => {
