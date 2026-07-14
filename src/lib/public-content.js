@@ -94,6 +94,67 @@ export const groupGalleryItemsByEvent = (items, eventMap = {}) => {
   return Object.values(groups);
 };
 
+/**
+ * Extract a GitHub username from various GitHub URL formats.
+ * Supported:
+ *   https://github.com/username
+ *   http://github.com/username
+ *   github.com/username
+ *   username (bare username)
+ * Returns lowercase username or null.
+ */
+export function extractGithubUsername(url) {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  // Try to match github.com/username pattern
+  const match = trimmed.match(
+    /(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9._-]+)(?:\/.*)?$/
+  );
+  if (match) {
+    return match[1].toLowerCase();
+  }
+
+  // If the string looks like a bare username (no dots, no http), use it directly
+  if (/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(trimmed)) {
+    return trimmed.toLowerCase();
+  }
+
+  return null;
+}
+
+/**
+ * Find a contributor record from the contributors JSON by GitHub username.
+ * Returns the contributor object or null.
+ */
+export function findContributorByGithub(githubUrl, contributors) {
+  if (!githubUrl || !Array.isArray(contributors) || !contributors.length) return null;
+  const username = extractGithubUsername(githubUrl);
+  if (!username) return null;
+  return contributors.find(
+    (c) => extractGithubUsername(c.github) === username
+  ) || null;
+}
+
+/**
+ * Normalize a contributor's contribution text into structured data.
+ */
+export function parseContributionInfo(contributor) {
+  if (!contributor) return null;
+  const text = contributor.contribution || '';
+  const commitMatch = text.match(/(\d+)\s+commits?/i);
+  return {
+    commitCount: commitMatch ? parseInt(commitMatch[1], 10) : null,
+    displayText: text,
+    avatar: contributor.avatar || null,
+    name: contributor.name || null,
+    batch: contributor.batch || null,
+    department: contributor.department || null,
+    rank: contributor.rank || null,
+  };
+}
+
 export const toPublicDeveloperProfile = (profile) => ({
   id: profile._id || profile.id,
   img: profile.photoUrl,
