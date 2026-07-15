@@ -8,7 +8,7 @@ import { getDisplayRole, isOfficialRole, roleIcon } from "@/lib/roles";
 
 const defaultAvatar = "/assets/avatar/default-avatar.png";
 
-export function ProfileHero({ member, isOwner, editMode, onEditToggle, onJobPipeline, onLogout, avatarUrl, onImageUploadClick }) {
+export function ProfileHero({ member, isOwner, editMode, onEditToggle, jobPipelineStatus, onJobPipelineOpen, onJobPipelineRemove, isRequestingJobPipeline, isRemovingJobPipeline, onLogout, avatarUrl, onImageUploadClick }) {
   const socials = [
     { label: "GitHub", href: member.github, icon: GithubIcon },
     { label: "LinkedIn", href: member.linkedin, icon: LinkedinIcon },
@@ -123,14 +123,43 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, onJobPipe
                   <Edit3 className="size-4" aria-hidden="true" />
                   {editMode ? "Cancel Editing" : "Edit Profile"}
                 </button>
-                <button
-                  type="button"
-                  onClick={onJobPipeline}
-                  className="inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-bold text-foreground transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-full"
-                >
-                  <BriefcaseBusiness className="size-4" aria-hidden="true" />
-                  Job Pipeline
-                </button>
+                {jobPipelineStatus === "pending" ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 text-sm font-bold text-amber-700 md:w-full cursor-not-allowed opacity-80"
+                  >
+                    <BriefcaseBusiness className="size-4" aria-hidden="true" />
+                    Requested for Job Pipeline
+                  </button>
+                ) : jobPipelineStatus === "approved" ? (
+                  <>
+                    <span className="inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-bold text-emerald-700 md:w-full">
+                      <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      Shown in Job Pipeline
+                    </span>
+                    <button
+                      type="button"
+                      onClick={onJobPipelineRemove}
+                      disabled={isRemovingJobPipeline}
+                      className="inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-bold text-foreground transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-full disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isRemovingJobPipeline ? "Removing..." : "Remove from Job Pipeline"}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onJobPipelineOpen}
+                    disabled={isRequestingJobPipeline}
+                    className="inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-bold text-foreground transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-full disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <BriefcaseBusiness className="size-4" aria-hidden="true" />
+                    {isRequestingJobPipeline ? "Requesting..." : "Show in Job Pipeline"}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={onLogout}

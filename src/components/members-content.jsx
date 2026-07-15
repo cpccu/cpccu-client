@@ -92,7 +92,8 @@ export function MembersContent() {
         return members.filter((m) => {
             const matchesSearch = (m.name || '').toLowerCase().includes(search.toLowerCase()) ||
                 (m.email || '').toLowerCase().includes(search.toLowerCase()) ||
-                (m.Section || '').toLowerCase().includes(search.toLowerCase());
+                (m.Section || '').toLowerCase().includes(search.toLowerCase()) ||
+                (m.batch || '').toLowerCase().includes(search.toLowerCase());
             const matchesRole = roleFilter === 'all' || m.role === roleFilter;
             const matchesStatus = statusFilter === 'all' || m.status === statusFilter;
             return matchesSearch && matchesRole && matchesStatus;
@@ -274,6 +275,14 @@ export function MembersContent() {
                 <p className="text-xs text-muted-foreground">{member.email}</p>
               </div>
             </div>),
+        },
+        {
+            key: 'batch',
+            header: 'Batch',
+            accessor: 'batch',
+            cell: (member) => member.batch || '—',
+            cellClassName: 'text-muted-foreground',
+            className: 'hidden md:table-cell',
         },
         {
             key: 'Section',
