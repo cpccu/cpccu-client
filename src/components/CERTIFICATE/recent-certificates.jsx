@@ -4,6 +4,7 @@ import { CertificateBadge } from "./certificate-badge";
 import { CalendarDays, Loader2, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetRecentCertificatesQuery } from "@/features/certificate/certificateApi";
+import { getCertificatesFromResponse } from "@/lib/certificates";
 
 export function RecentCertificates() {
   const { data, isLoading, isError } = useGetRecentCertificatesQuery();
@@ -43,7 +44,7 @@ export function RecentCertificates() {
     );
   }
 
-  const recent = data?.data || [];
+  const recent = getCertificatesFromResponse(data);
 
   if (recent.length === 0) {
     return (

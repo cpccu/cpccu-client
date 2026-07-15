@@ -26,6 +26,7 @@ import ErrorAlert from "../ALERT/ErrorAlert";
 import ImageUploadModal from "../PROFILE/ImageUploadModal";
 import ProfileImageCropModal from "../PROFILE/ProfileImageCropModal";
 import { isValidStudentId, detectScientificNotation, normalizeStudentId } from "@/lib/id-validation";
+import { getCertificatesFromResponse } from "@/lib/certificates";
 
 import { ProfileHero } from "@/components/PROFILE/ProfileHero";
 import { QuickStats } from "@/components/PROFILE/QuickStats";
@@ -155,6 +156,7 @@ export default function Profile({ user, isOwnProfile }) {
   const uploadProgressRef = useRef(0);
   const originalProfileRef = useRef(null);
   const [certificatesList, setCertificatesList] = useState([]);
+  const [certificatesLoading, setCertificatesLoading] = useState(false);
   const [projectsList, setProjectsList] = useState([]);
   const [newProject, setNewProject] = useState({ title: "", description: "", technologies: "", repoUrl: "", liveUrl: "" });
   const [editingProject, setEditingProject] = useState(null);
@@ -276,16 +278,26 @@ export default function Profile({ user, isOwnProfile }) {
   }, [editMode, autoResizeTextarea]);
 
   useEffect(() => {
-    if (isOwnProfile && user?._id) {
-      setCertificatesList([]);
-      fetchCertificates({ recipientId: user._id });
-    }
-  }, [isOwnProfile, user?._id, fetchCertificates]);
+    const studentId = user?.uniID;
+    if (!studentId) return;
+    setCertificatesList([]);
+    setCertificatesLoading(true);
+    fetchCertificates({ recipientId: studentId }).finally(() =>
+      setCertificatesLoading(false),
+    );
+  }, [user?.uniID, fetchCertificates]);
 
   useEffect(() => {
     if (certResponse?.data) {
-      const raw = certResponse.data;
-      setCertificatesList(Array.isArray(raw) ? raw : raw ? [raw] : []);
+      setCertificatesLoading(false);
+      setCertificatesList(getCertificatesFromResponse(certResponse));
+    }
+  }, [certResponse]);
+
+  useEffect(() => {
+    if (certResponse?.data) {
+      setCertificatesLoading(false);
+      setCertificatesList(getCertificatesFromResponse(certResponse));
     }
   }, [certResponse]);
 
@@ -731,10 +743,14 @@ export default function Profile({ user, isOwnProfile }) {
       id: cert.certificateId || cert._id,
       title: cert.contestName || "Certificate",
       issuer: cert.issuedBy || "CPCCU",
-      date: cert.issueDate ? new Date(cert.issueDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "",
+      date: cert.issueDate ? new Date(cert.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : "",
+      certificateId: cert.certificateId || "",
       verified: true,
-      url: `/verify/${cert.certificateId}`,
-      achievementBadge: cert.rank ? `🏆 ${cert.rank}` : "🎖 Participant",
+      url: `/certificate/${cert.certificateId}`,
+      certificateType: cert.certificateType || "participation",
+      achievementBadge: cert.certificateType
+        ? ({ winner: '1st Place', 'runner-up': '2nd Place', '2nd-runner-up': '3rd Place', participation: 'Participant' }[cert.certificateType] || 'Certified')
+        : 'Certified',
     })),
     projects: memberProjects,
   }), [profile, user, certificatesList, projectsList, isOwnProfile, contributorMatch]);
@@ -793,11 +809,13 @@ export default function Profile({ user, isOwnProfile }) {
                 setNewSkill={setNewSkill}
               />
             </div>
-            {isOwnProfile && (
-              <div className="order-5 lg:col-span-3">
-                <CertificatesSection certificates={memberProfile.certificates} />
-              </div>
-            )}
+            <div className="order-5 lg:col-span-3">
+              <CertificatesSection
+                certificates={memberProfile.certificates}
+                isLoading={certificatesLoading && certificatesList.length === 0}
+                isOwner={isOwnProfile}
+              />
+            </div>
             <div className="order-6 lg:col-span-3">
               <ProjectsSection projects={memberProjects} />
             </div>
@@ -1203,11 +1221,13 @@ export default function Profile({ user, isOwnProfile }) {
             </div>
 
             {/* Certificates - Read-only */}
-            {isOwnProfile && (
-              <div className="order-6 lg:col-span-3">
-                <CertificatesSection certificates={memberProfile.certificates} />
-              </div>
-            )}
+            <div className="order-6 lg:col-span-3">
+              <CertificatesSection
+                certificates={memberProfile.certificates}
+                isLoading={certificatesLoading && certificatesList.length === 0}
+                isOwner={isOwnProfile}
+              />
+            </div>
 
             {/* Projects - Edit */}
             <div className="order-7 lg:col-span-3">
