@@ -7,10 +7,7 @@ import {
   Hash,
   Code2,
   CheckCircle2,
-  Download,
-  Share2,
 } from "lucide-react";
-import { useState } from "react";
 
 const CONTEST_TYPE_LABELS = {
   "programming-contest": "Programming Contest",
@@ -20,8 +17,6 @@ const CONTEST_TYPE_LABELS = {
 };
 
 export function CertificateCard({ certificate }) {
-  console.log(certificate);
-  const [copied, setCopied] = useState(false);
 
   const formattedDate = new Date(certificate.issueDate).toLocaleDateString(
     "en-US",
@@ -31,13 +26,6 @@ export function CertificateCard({ certificate }) {
       day: "numeric",
     },
   );
-
-  const handleShare = () => {
-    const url = `${window.location.origin}/certificate?q=${certificate.certificateId}&type=id`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
     <div className="relative overflow-hidden rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-card to-card/80 shadow-xl shadow-primary/10">
@@ -149,22 +137,11 @@ export function CertificateCard({ certificate }) {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t border-border/50">
-          <button
-            onClick={handleShare}
-            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-primary/40 bg-primary/5 text-primary text-sm font-bold hover:bg-primary/15 hover:border-primary/60 transition-all"
-          >
-            <Share2 className="w-4 h-4" />
-            {copied ? "Link Copied!" : "Share Certificate"}
-          </button>
-          <button
-            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground text-sm font-bold hover:shadow-lg hover:shadow-primary/30 transition-all"
-            onClick={() => window.print()}
-          >
-            <Download className="w-4 h-4" />
-            Download
-          </button>
+        {/* Footer note */}
+        <div className="pt-4 border-t border-border/50">
+          <p className="text-center text-xs text-muted-foreground">
+            This certificate is verified by CPCCU — Competitive Programming Camp City University
+          </p>
         </div>
       </div>
     </div>
