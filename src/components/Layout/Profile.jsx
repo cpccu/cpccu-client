@@ -779,7 +779,11 @@ export default function Profile({ user, isOwnProfile }) {
           setPhoneFieldError('');
           setSocialUrlError('');
         }}
-        onJobPipeline={openJobPipelineModal}
+        jobPipelineStatus={profile.jobPipelineStatus}
+        onJobPipelineOpen={openJobPipelineModal}
+        onJobPipelineRemove={handleJobPipelineRemove}
+        isRequestingJobPipeline={isRequestingJobPipeline}
+        isRemovingJobPipeline={isRemovingJobPipeline}
         onLogout={handleLogout}
         avatarUrl={profile.avatar || defaultAvatar}
         onImageUploadClick={() => setIsImageSelectModalOpen(true)}
