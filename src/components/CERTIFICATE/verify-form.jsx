@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Search, Hash, User, IdCard, Loader2, AlertCircle } from "lucide-react";
 import { CertificateCard } from "./certificate-card";
 import { useLazyVerifyCertificateQuery } from "@/features/certificate/certificateApi";
+import { getCertificatesFromResponse } from "@/lib/certificates";
 
 const SEARCH_TYPES = [
   {
@@ -52,12 +53,7 @@ export function VerifyForm({ initialCertificateId }) {
           return;
         }
 
-        const certificateData = res?.data?.data;
-        const certificateResults = Array.isArray(certificateData)
-          ? certificateData
-          : certificateData
-            ? [certificateData]
-            : [];
+        const certificateResults = getCertificatesFromResponse(res?.data || {});
 
         if (!certificateResults.length) {
           setError("Certificate not found.");
@@ -69,7 +65,7 @@ export function VerifyForm({ initialCertificateId }) {
         setResults(certificateResults);
         setSearched(true);
       }).catch(() => {
-        setError("Something went wrong. Please try again.");
+        setError("Something went wrong. Please try again.")
         setResults([]);
         setSearched(true);
       });
@@ -108,13 +104,7 @@ export function VerifyForm({ initialCertificateId }) {
         return;
       }
 
-      const certificateData = res?.data?.data;
-
-      const certificateResults = Array.isArray(certificateData)
-        ? certificateData
-        : certificateData
-          ? [certificateData]
-          : [];
+      const certificateResults = getCertificatesFromResponse(res?.data || {});
 
       if (!certificateResults.length) {
         setError("Certificate not found.");
@@ -126,7 +116,7 @@ export function VerifyForm({ initialCertificateId }) {
       setResults(certificateResults);
       setSearched(true);
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      setError("Something went wrong. Please try again.")
       setResults([]);
       setSearched(true);
     }

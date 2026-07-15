@@ -21,6 +21,7 @@ import {
   useGetCertificateStatsQuery,
   useGetRecentCertificatesQuery,
 } from "@/features/certificate/certificateApi";
+import { getCertificatesFromResponse } from "@/lib/certificates";
 
 const roles = ["admin", "moderator", "mentor", "member"];
 
@@ -85,7 +86,7 @@ export default function AdminPanel() {
   const members = membersResponse?.data || [];
   const overview = overviewResponse?.data;
   const certificateStats = certificateStatsResponse?.data;
-  const recentCertificates = recentCertificatesResponse?.data || [];
+  const recentCertificates = getCertificatesFromResponse(recentCertificatesResponse);
   const visibleMembers = useMemo(() => {
     const term = search.trim().toLowerCase();
 

@@ -1,5 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
 
+import { getCertificatesFromResponse } from './certificates';
+
 const SITE_NAME = 'Competitive Programming Camp City University';
 const SITE_URL = 'https://www.cpccu.club';
 const OG_IMAGE = `${SITE_URL}/cpccu.png`;
@@ -89,13 +91,8 @@ export async function getCertificateMetadata(certificateId) {
       return getFallbackMetadata(certificateId);
     }
 
-    let certificate = null;
-    if (json?.data?.data) {
-      const data = json.data.data;
-      certificate = Array.isArray(data) ? data[0] : data;
-    } else if (json?.data && typeof json.data === 'object' && !Array.isArray(json.data)) {
-      certificate = json.data;
-    }
+    const certs = getCertificatesFromResponse(json);
+    const certificate = certs.length > 0 ? certs[0] : null;
 
     if (!certificate) {
       console.log('[Certificate Metadata] Certificate not found in response:', {
