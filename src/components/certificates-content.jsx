@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import { isValidStudentId, detectScientificNotation, normalizeStudentId } from '@/lib/id-validation';
+import { getCertificatesFromResponse } from '@/lib/certificates';
 import * as XLSX from 'xlsx';
 import { useCreateAdminCertificateMutation, useDeleteAdminCertificateMutation, useGetAdminCertificatesQuery, useUpdateAdminCertificateMutation } from '@/features/admin/adminApi';
 import { AdminDataTable } from '@/components/admin-data-table';
@@ -56,8 +57,9 @@ export function CertificatesContent() {
         batch: '',
     });
     useEffect(() => {
-        if (certificatesResponse?.data) {
-            setCertificates(certificatesResponse.data.map((certificate) => ({
+        const certData = getCertificatesFromResponse(certificatesResponse);
+        if (certData.length > 0) {
+            setCertificates(certData.map((certificate) => ({
                 id: certificate._id,
                 certificateId: certificate.certificateId,
                 recipientName: certificate.recipientName,
