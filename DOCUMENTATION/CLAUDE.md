@@ -51,7 +51,7 @@ src/
     Global/             # Shared UI: Header, NavBar, Footer, GoToTop, Pagination, SideProfile
     Layout/             # Page-level layout components (Home, Blog, Contact, Event, Gallery, Profile, JobPipeline, AboutLayout)
     [Domain folders]    # ABOUT, BLOG, CONTACT, EVENT, GALLERY, HOME, PROFILE, ADMIN, CERTIFICATE, LOGINSIGNUP, ALERT, etc.
-    CERTIFICATE/ui/     # shadcn/ui-style components (accordion, alert, avatar, badge, button, card, carousel, chart, checkbox, dialog, dropdown, form, input, select, table, tabs, toast, tooltip, etc.)
+    ui/                 # shadcn/ui-style components (accordion, alert, avatar, badge, button, card, carousel, chart, checkbox, dialog, dropdown, form, input, select, table, tabs, toast, tooltip, etc.)
     admin-*.jsx         # Admin-specific components (admin-layout, admin-sidebar, admin-data-table, admin-image-upload-field, etc.)
   Context/              # React contexts for scroll-based sections: BlogScroll, ContactScroll, EventScroll, GalleryScroll, OurMessionScroll
   features/             # Feature modules (auth, certificate, members, posts, users, content, contact, admin)
@@ -101,9 +101,31 @@ Three-tier role system on the backend:
 - **Moderator**: Dashboard, Posts, Events, Gallery, Statistics, Account Settings (content-focused)
 - **Mentor**: Dashboard, Members, Certificates, Statistics, Account Settings (read-oriented)
 
-### Known File Inconsistencies
+### Key Library Modules
+
+### `src/lib/roles.js`
+Role utilities for the profile system:
+- `normalizeRole(name)` — Normalize role name (title case)
+- `isOfficialRole(role)` — Check if role is a known CPCCU role
+- `getDisplayRole(officialRole)` — Get display-safe role name
+- `roleIcon(role)` — Get emoji icon for a role
+- `roleBadgeColor(role)` — Get Tailwind badge color class
+- `sortRoles(roles)` — Sort roles alphabetically
+
+### `src/lib/certificates/`
+Certificate display utilities:
+- `badges.js` — Badge color/size configuration
+- `parser.js` — Certificate data parsing
+- `permissions.js` — Certificate visibility permissions
+- `sorting.js` — Certificate sorting utilities
+- `index.js` — Re-exports
+
+## Known File Inconsistencies
 
 - `src/features/certificate/certificateSlise.js` — typo in filename (should be `certificateSlice.js`), but wired correctly
 - `src/features/posts/postApi.js` — currently empty; posts handled via generic admin content API
 - `src/app/redux/rootReducer.js` — stale, not used by active store
 - `src/features/users/userSlice.js` and `src/features/members/memberSlice.js` — not registered in store
+- `generateCertificateId.js` — empty file (IDs are manually entered)
+- `src/proxy.ts` — Next.js middleware for security headers
+- `generateCertificateId.js` — empty file (IDs are manually entered)

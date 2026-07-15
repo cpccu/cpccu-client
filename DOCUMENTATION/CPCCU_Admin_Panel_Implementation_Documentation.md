@@ -9,7 +9,7 @@ The panel is API-first. Admin screens no longer load fake demo data from `src/li
 ## Roles
 
 ### Admin
-Full access to all admin modules and all write actions.
+Full access to all admin modules and all write actions. Can also manage dynamic roles.
 
 ### Moderator
 Can manage content-focused modules:
@@ -17,6 +17,7 @@ Can manage content-focused modules:
 - Posts
 - Events
 - Gallery
+- Gallery Events
 - Site Statistics
 - Account Settings
 
@@ -31,6 +32,17 @@ Read-oriented access:
 - Account Settings
 
 Mentors can view operational data but backend rules block write actions.
+
+## Dynamic Role Management
+
+Admins can manage official CPCCU position titles (e.g., President, Vice President, General Secretary, Treasurer) via the admin panel. These roles are separate from system permissions (admin/moderator/mentor/member) and are used for display on member profiles.
+
+### Endpoints
+- `GET /admin/roles` — List all roles
+- `POST /admin/roles` — Create a new role
+- `GET /admin/roles/active` — List only active roles
+- `PATCH /admin/roles/:id` — Update a role
+- `PATCH /admin/roles/:id/toggle` — Toggle role active/inactive
 
 ## Main Routes
 
@@ -234,6 +246,17 @@ It is used by:
 - Post cover images
 
 Admins can still paste an existing image URL if needed.
+
+## Gallery Events Management
+
+Gallery events (`gallery-events`) are a separate content resource managed via the generic content API. They represent event groupings for gallery items. Each gallery event has:
+- Title
+- Description
+- Event date
+- Featured toggle
+- Sort order
+
+Gallery items can be linked to a gallery event via `eventId`.
 
 ## JSON Data Migration
 
