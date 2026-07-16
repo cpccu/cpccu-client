@@ -147,10 +147,50 @@ Middleware:
     * Exists but is **not registered in the active store**.
 * **posts slice** (`src/features/posts/postSlice.js`):
     * Exists but is **not registered in the active store** (and `postApi.js` is empty).
+* **users slice** (`src/features/users/userSlice.js`):
+    * Exists but is **not registered in the active store**.
+
+### 4.4 Project State Management
+
+Project CRUD operations are performed via `userApi.js` which injects project endpoints into `baseApi`. Key RTK Query endpoints:
+
+* `getProjects` — Fetch own projects (authenticated)
+* `getPublicProjects` — Fetch public projects by user ID
+* `createProject` — Create a new project
+* `updateProject` — Update existing project
+* `deleteProject` — Delete a project
+
+These use a `Projects` tag type for cache invalidation.
+
+### 4.5 Admin Role Management
+
+Admin role management endpoints are injected via `adminApi.js`:
+
+* `getAdminRoles` — List all dynamic roles
+* `getActiveRoles` — List only active roles
+* `createAdminRole` — Create a new role
+* `updateAdminRole` — Update a role
+* `toggleAdminRole` — Toggle role active/inactive
+
+These use an `AdminRoles` tag type for cache invalidation.
 
 ## 5. API Layer Design
 
-### 5.1 Base API
+### 5.1 Security Middleware (proxy.ts)
+
+The file `src/proxy.ts` is a Next.js middleware that applies security headers to all routes:
+
+* **Content-Security-Policy** — Restricts script/style sources (production only)
+* **X-Content-Type-Options** — nosniff
+* **Referrer-Policy** — strict-origin-when-cross-origin
+* **Permissions-Policy** — Disables camera, microphone, geolocation, etc.
+* **X-Frame-Options** — DENY
+* **Cross-Origin-Embedder-Policy** — unsafe-none
+* **Cross-Origin-Opener-Policy** — same-origin
+* **Cross-Origin-Resource-Policy** — same-origin
+* **Strict-Transport-Security** — HSTS (production only)
+
+### 5.2 Base API
 
 `baseApi` in `src/services/baseApi.js` defines:
 
@@ -159,11 +199,11 @@ Middleware:
 * Automatic Bearer token injection from Redux auth state
 * JSON content-type by default, except multipart upload endpoints (`userImageUpload`, `uploadAdminImage`)
 * Centralized tag types for cache invalidation:
-    * `Auth`, `Users`, `Posts`, `PublicContent`
-    * `AdminOverview`, `AdminMembers`, `AdminContent`
+    * `Auth`, `Users`, `Posts`, `Projects`, `PublicContent`
+    * `AdminOverview`, `AdminMembers`, `AdminContent`, `AdminRoles`
     * `AdminStatistics`, `AdminCertificates`, `AdminSystemSettings`
 
-### 5.2 Endpoint Injection Modules
+### 5.3 Endpoint Injection Modules
 
 Feature modules inject endpoints into `baseApi`:
 
@@ -179,14 +219,14 @@ Additionally:
 
 * `publicApi` (separate `createApi` instance) handles unauthenticated certificate verification route at `/verify/:certificateId`.
 
-### 5.3 Non-RTK Fetch Calls
+### 5.4 Non-RTK Fetch Calls
 
 A small number of components use direct fetch:
 
 * **Visitor counter** (`src/components/HOME/VisitorCounter.jsx`) — external hosted endpoint
 * **Bootcamp leaderboard** (`src/components/BOOTCAMPLEADERBOARD/BootcampLeaderboard.jsx`) — direct API call
 
-### 5.4 Hooks
+### 5.5 Hooks
 
 * `useAdminContent(resource, fallback)` — Custom hook for admin generic content CRUD with local state management and fallback data.
 * `useIsMobile()` — Mobile breakpoint detection (768px) using `matchMedia`.
@@ -200,7 +240,29 @@ A small number of components use direct fetch:
 * Login/signup components in `src/components/LOGINSIGNUP`.
 * Alert components in `src/components/ALERT` (ErrorAlert, SuccessAlert, OtpVerifyPopup).
 * Admin-specific components at `src/components/` root level (admin-layout, admin-sidebar, admin-data-table, admin-image-upload-field, etc.).
-* **Shadcn/ui-style components** in `src/components/CERTIFICATE/ui/` — built on Radix UI primitives with `class-variance-authority` and `tailwind-merge`. Includes: accordion, alert, alert-dialog, avatar, badge, breadcrumb, button, calendar, card, carousel, chart, checkbox, collapsible, command, context-menu, dialog, drawer, dropdown-menu, form, hover-card, input, input-otp, label, menubar, navigation-menu, pagination, popover, progress, radio-group, resizable, scroll-area, select, separator, sheet, skeleton, slider, sonner, switch, table, tabs, textarea, toast, toggle, toggle-group, tooltip, and more.
+* **Profile system components** in `src/components/PROFILE/`:
+    * ProfileHero — Hero section with avatar, cover image, badges
+    * ProfileCard — Summary profile card
+    * ProfileDetails — Detailed profile information
+    * ProfileID — ID card display
+    * ProfileBlog — Profile blog posts
+    * Profile_Blog_Modal — Blog post modal
+    * ProfileNotFound — Not found state
+    * AboutSection — About/biography section
+    * SkillsSection — Skills display with proficiency
+    * ProjectsSection — Project portfolio display
+    * CertificatesSection — Certificate badges display
+    * ContributionsSection — GitHub contributions display
+    * ContactSection — Contact information display
+    * QuickStats — Quick statistics counters
+    * AchievementBadges — Achievement badges display
+    * BrandIcons — Technology brand icons
+    * SectionCard — Reusable section card wrapper
+    * AnimatedCounter — Animated number counter
+    * ImageUploadModal — Image upload modal
+    * ProfileImageCropModal — Image crop modal
+    * MemberInfoSection — Member information section
+* **Shadcn/ui-style components** in `src/components/ui/` — built on Radix UI primitives with `class-variance-authority` and `tailwind-merge`. Includes: accordion, alert, alert-dialog, avatar, badge, breadcrumb, button, calendar, card, carousel, chart, checkbox, collapsible, command, context-menu, dialog, drawer, dropdown-menu, form, hover-card, input, input-otp, label, menubar, navigation-menu, pagination, popover, progress, radio-group, resizable, scroll-area, select, separator, sheet, skeleton, slider, sonner, switch, table, tabs, textarea, toast, toggle, toggle-group, tooltip, and more.
 * Client-side interactive pages/components are widely used where stateful behavior is required.
 
 ## 7. Content Strategy
@@ -231,3 +293,5 @@ These are implementation details visible in the current repo:
 * `src/app/redux/rootReducer.js` appears stale and is **not** the reducer used by the active store configuration.
 * `src/features/users/userSlice.js` and `src/features/members/memberSlice.js` exist but are **not registered** in the active store.
 * Some endpoint URLs in `userApi.js` and `memberApi.js` omit the leading `/`, which is inconsistent with the rest of the codebase but still functional due to `fetchBaseQuery` path resolution.
+* The `src/proxy.ts` file uses Next.js middleware conventions but is imported by the app router automatically.
+* `generateCertificateId.js` is an empty file (certificate IDs are manually entered).

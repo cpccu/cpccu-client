@@ -21,7 +21,8 @@ The official web portal for the Competitive Programming Camp at City University.
 *   **Scroll-to-Top**: Global scroll-to-top button on all pages.
 
 ### Admin Panel (`/admin`)
-*   **Role-Based Access**: Three-tier roles — Admin (full access), Moderator (content management), Mentor (read-only operational data).
+*   **Role-Based Access**: Three-tier roles — Admin (full access), Moderator (content management), Mentor (read-only operational data). Plus dynamic role management for official CPCCU position titles.
+*   **Role Management**: Admins can create, update, toggle, and view official CPCCU roles (President, Vice President, General Secretary, etc.) via `/admin/roles` endpoints.
 *   **Dashboard**: Live overview with member status charts, content charts, and operational cards from database.
 *   **Members**: Member approval, role assignment, and status management.
 *   **Content Management**: Generic CRUD for committees, contributors, donators, events, gallery, messages, posts, and profiles.
@@ -36,14 +37,27 @@ The official web portal for the Competitive Programming Camp at City University.
 *   **Messages**: Contact message triage and management.
 *   **Cloudinary Uploads**: Direct image upload support for admin-managed content.
 *   **Account Settings**: Admin profile and password management.
+*   **Audit Logs**: Read-only log viewer for admin create/update/delete actions.
+
+### Profile System
+*   **Profile Page**: Dynamic user profile at `/profile/[id]` with modular sections: Hero, About, Skills, Projects, Certificates, Contributions, Contact, Quick Stats.
+*   **Profile Editing**: Users can update their profile info, upload avatar/cover images, manage skills, and manage projects.
+*   **Projects CRUD**: Users can create, update, delete, and reorder personal projects displayed on their profile.
+*   **Job Pipeline Request**: Users can request to appear in the public job pipeline; requests require admin approval.
 
 ### UI & UX
 *   **Responsive UI**: Optimized for desktop, laptop, and mobile using Tailwind CSS, Framer Motion, and Radix UI primitives.
 *   **Animations**: Framer Motion scroll animations, page transitions, and interactive effects.
 *   **Toast Notifications**: Global toast system using Sonner and SweetAlert2.
 *   **Image Handling**: Cloudinary-backed image uploads with Upload.js support.
-*   **Carousel Components**: Embla Carousel for home page contributors and donators.
-*   **Charts**: Recharts-powered dashboard charts for admin analytics.
+    *   **Command Palette**: cmdk
+*   **OTP Input**: input-otp
+*   **Upload**: upload-js (Cloudinary)
+*   **Scroll**: react-scroll, react-scroll-trigger
+*   **Panels**: react-resizable-panels
+*   **Counters**: react-countup
+*   **Security**: Helmet (backend), built-in Next.js middleware (frontend proxy.ts)
+*   **Package Manager**: npm / Bun
 *   **Accessibility**: Radix UI primitives for accessible dialogs, dropdowns, accordions, and more.
 
 ## 🛠️ Tech Stack
@@ -78,22 +92,46 @@ For a detailed explanation of the architecture, see [ARCHITECTURE.md](./DOCUMENT
 cpccu-client/
 ├── data/                    # Static JSON content sources (fallback data)
 ├── DOCUMENTATION/           # Project documentation
+├── lib/                     # Shared utilities (cn.js tailwind-merge)
 ├── public/                  # Static assets
 ├── scripts/                 # Utility scripts (e.g., update_contributors.py)
 ├── src/
 │   ├── app/                 # Next.js App Router pages & layouts
 │   │   ├── (main)/          # Public pages with shared layout
+│   │   │   ├── alumni/      # Alumni page
+│   │   │   ├── blog/        # Blog page
+│   │   │   ├── bootcamp-leaderboard/
+│   │   │   ├── certificate/ # Certificate search page
+│   │   │   ├── committee/   # Committee page
+│   │   │   ├── contact/     # Contact page
+│   │   │   ├── contributors/# Contributors page
+│   │   │   ├── donators/    # Donators page
+│   │   │   ├── event/       # Event page
+│   │   │   ├── gallery/     # Gallery page
+│   │   │   ├── history/     # Club history page
+│   │   │   ├── job-pipeline/# Developer job pipeline page
+│   │   │   ├── member/      # Member directory page
+│   │   │   ├── page.jsx     # Homepage
+│   │   │   ├── profile/[id] # Public profile pages
+│   │   │   └── users/profile/[id]
 │   │   ├── admin/           # Admin panel routes
 │   │   ├── login/           # Login page
-│   │   ├── signup/          # Signup page
-│   │   ├── redux/           # Redux store, ProviderWrapper, rootReducer
+│   │   ├── signup/          # Signup page with OTP verification
+│   │   ├── reset-password/[code]/[token]/  # Password reset
+│   │   ├── verify/[certificateId]/          # Public certificate verification
+│   │   ├── redux/           # Redux store, ProviderWrapper
 │   │   ├── not-found.jsx    # 404 page
 │   │   └── ScrollToTop.jsx  # Global scroll-to-top behavior
 │   ├── components/          # Feature and shared UI components
+│   │   ├── PROFILE/         # Profile page components (Hero, Card, Skills, Projects, etc.)
+│   │   ├── ui/              # shadcn/ui-style components (Radix UI primitives)
+│   │   ├── Global/          # Shared UI: Header, NavBar, Footer, GoToTop
+│   │   └── [other domains]  # ABOUT, ADMIN, ALERT, BLOG, CERTIFICATE, CONTACT, etc.
 │   ├── Context/             # Scroll-based section contexts
 │   ├── features/            # Redux slices and RTK Query endpoint modules
 │   ├── hooks/               # Reusable hooks (use-admin-content, use-mobile, use-toast)
-│   ├── lib/                 # Utilities (cn.js — tailwind-merge helper)
+│   ├── lib/                 # Utilities (roles, certificates, public-content, format-date, etc.)
+│   ├── proxy.ts             # Security headers middleware (Next.js middleware)
 │   └── services/            # RTK Query base API setup
 ```
 
@@ -183,11 +221,13 @@ https://i.ibb.co.com/Nm3q6c0/Artboard-1.png
 *   The app uses a shared public layout for main site pages and a separate admin area under `/admin`.
 *   API requests are driven through RTK Query with a shared base API and a separate public certificate verifier.
 *   Public content is split between static JSON data in `data/` and API-backed managed content. Admin-managed content falls back to JSON when the database is empty.
-*   The `certificateSlise.js` filename contains a typo but is currently wired and working.
+*   The `certificateSlise.js` filename contains a typo (`Slise` vs `Slice`) but is currently wired and working.
 *   `src/features/posts/postApi.js` exists but is currently empty (posts are handled via generic admin content API).
 *   `src/app/redux/rootReducer.js` appears stale and is not the reducer used by the active store configuration.
 *   Admin image uploads go through Cloudinary via `POST /api/v1/admin/uploads/image`.
 *   Certificate verification attempts are logged to `CertificateVerificationLog` for analytics.
+*   Security headers are applied via `src/proxy.ts` (Next.js middleware) on the frontend and `helmet` middleware on the backend.
+*   The project uses a dual-token JWT strategy (access + refresh tokens) with automatic refresh on expiry. Tokens are stored in HTTP-only cookies with `SameSite=None; Secure` for cross-site support.
 
 ## 📄 License
 
