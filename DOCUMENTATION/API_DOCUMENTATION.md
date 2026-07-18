@@ -13,7 +13,7 @@ This document describes the API integrations currently used by `cpccu-client`.
 * **Multipart exceptions**: `Content-Type` is intentionally not forced for:
   * `userImageUpload`
   * `uploadAdminImage`
-* **Tag Types**: `Auth`, `Users`, `Posts`, `PublicContent`, `AdminOverview`, `AdminMembers`, `AdminContent`, `AdminStatistics`, `AdminCertificates`, `AdminSystemSettings`
+* **Tag Types**: `Auth`, `Users`, `Posts`, `Projects`, `PublicContent`, `AdminOverview`, `AdminMembers`, `AdminContent`, `AdminStatistics`, `AdminCertificates`, `AdminSystemSettings`, `AdminRoles`
 
 ### 1.2 Public Certificate API (`publicApi`)
 
@@ -30,8 +30,11 @@ This document describes the API integrations currently used by `cpccu-client`.
 | `/auth/send-otp` | `POST` | Request registration OTP | `{ email }` |
 | `/auth/verify-registration` | `POST` | Verify registration OTP | `{ email, otp }` |
 | `/auth/logout` | `GET` | Logout current user/session | None |
-| `/auth/reset-link/:email` | `GET` | Send password reset link | Path param: encoded `email` | — |
+| `/auth/reset-link/:email` | `GET` | Send password reset link | Path param: encoded `email` |
 | `/auth/reset-password` | `PATCH` | Reset password | `resetData` |
+| `/auth/refresh-token` | `GET` | Refresh access token using refresh token cookie | None |
+| `/auth/google-signin` | `POST` | Sign in with Google OAuth (Firebase ID token) | `{ idToken }` |
+| `/auth/google-signup` | `POST` | Sign up with Google OAuth (Firebase ID token) | `{ idToken }` |
 | `/users/user` | `GET` | Fetch current authenticated user | None |
 
 ## 3. Users (`userApi`)
@@ -48,6 +51,19 @@ This document describes the API integrations currently used by `cpccu-client`.
 | `/users/:id` | `DELETE` | Delete user by ID (admin flow) | Path param: `id` |
 | `/users/password` | `PATCH` | Change current user password | `body` |
 | `/users/user` | `DELETE` | Delete own account | None |
+| `/users/member` | `GET` | List all registered members | None |
+
+## 3.1 Projects (`userApi`)
+
+Projects are managed through userApi endpoints (injected into `baseApi`):
+
+| Endpoint | Method | Purpose | Auth |
+| :--- | :--- | :--- | :--- |
+| `/projects` | `GET` | Fetch own projects | Required |
+| `/projects` | `POST` | Create a new project | Required |
+| `/projects/:id` | `PATCH` | Update own project | Required |
+| `/projects/:id` | `DELETE` | Delete own project | Required |
+| `/projects/user/:userId` | `GET` | Fetch public projects by user ID | No |
 
 ## 4. Members (`memberApi`)
 
@@ -119,22 +135,32 @@ This document describes the API integrations currently used by `cpccu-client`.
 | `/admin/content/:resource/:id` | `PATCH` | Update content item | Path param `id`, `body` | Invalidates `AdminContent`, `PublicContent`, `AdminOverview` |
 | `/admin/content/:resource/:id` | `DELETE` | Delete content item | Path param `id` | Invalidates `AdminContent`, `PublicContent`, `AdminOverview` |
 
-**Supported generic content resources**: `committees`, `contributors`, `donators`, `events`, `gallery`, `messages`, `posts`, `profiles`
+**Supported generic content resources**: `committees`, `contributors`, `donators`, `events`, `gallery`, `gallery-events`, `messages`, `posts`, `profiles`, `alumni`, `audit-logs`
 
-### 8.4 File Upload
+### 8.4 Role Management
+
+| Endpoint | Method | Purpose | Notes |
+| :--- | :--- | :--- | :--- |
+| `/admin/roles` | `GET` | List all dynamic roles | Provides `AdminRoles` tag |
+| `/admin/roles` | `POST` | Create a new role | |
+| `/admin/roles/active` | `GET` | List only active roles | |
+| `/admin/roles/:id` | `PATCH` | Update a role | |
+| `/admin/roles/:id/toggle` | `PATCH` | Toggle role active/inactive | |
+
+### 8.5 File Upload
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | `/admin/uploads/image` | `POST` | Upload admin image asset to Cloudinary | Multipart `body` | Used by gallery, events, committees, contributors, donators |
 
-### 8.5 Statistics
+### 8.6 Statistics
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | `/admin/statistics` | `GET` | Fetch editable statistics | None | Provides `AdminStatistics` tag |
 | `/admin/statistics` | `PATCH` | Update statistics | `body` | Invalidates `AdminStatistics`, `PublicContent:statistics` |
 
-### 8.6 System Settings
+### 8.7 System Settings
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
@@ -143,7 +169,7 @@ This document describes the API integrations currently used by `cpccu-client`.
 
 **System settings include**: site metadata, maintenance mode, appearance settings.
 
-### 8.7 Certificates
+### 8.8 Certificates
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
@@ -152,21 +178,21 @@ This document describes the API integrations currently used by `cpccu-client`.
 | `/admin/certificates/:id` | `PATCH` | Update certificate | Path param `id`, `body` | Invalidates `AdminCertificates` |
 | `/admin/certificates/:id` | `DELETE` | Delete certificate | Path param `id` | Invalidates `AdminCertificates`, `AdminOverview` |
 
-## 9. Direct Fetch Integrations (Non-RTK Query)
+## 10. Direct Fetch Integrations (Non-RTK Query)
 
 | Location | Endpoint | Method | Purpose |
 | :--- | :--- | :--- | :--- |
 | `src/components/HOME/VisitorCounter.jsx` | `https://cpccu-server.onrender.com/api/visitor` | `GET` | Fetch total visitor count |
 | `src/components/BOOTCAMPLEADERBOARD/BootcampLeaderboard.jsx` | `${NEXT_PUBLIC_API_BASE_URL}/bootcamp-leaderboard` | `GET` | Fetch bootcamp leaderboard |
 
-## 10. Certificate Verification Logs
+## 11. Certificate Verification Logs
 
 Certificate verification attempts (both public and authenticated) are logged server-side to `CertificateVerificationLog`. The statistics now include:
 
 * `certificateVerifications` — total successful verifications
 * `failedCertificateVerifications` — failed verification attempts
 
-## 11. Admin Audit Logs
+## 12. Admin Audit Logs
 
 Admin create/update/delete actions for generic content and certificates write to `AdminAuditLog`. These logs are visible at `/admin/audit-logs` and store:
 
@@ -176,7 +202,7 @@ Admin create/update/delete actions for generic content and certificates write to
 * Resource ID
 * Summary of changes
 
-## 12. Cache Invalidation Strategy
+## 13. Cache Invalidation Strategy
 
 RTK Query tag types are used aggressively for cache invalidation:
 
@@ -185,3 +211,5 @@ RTK Query tag types are used aggressively for cache invalidation:
 * **Admin content mutations** invalidate `AdminContent`, `PublicContent`, and `AdminOverview` to keep both admin and public views in sync.
 * **Statistics mutations** invalidate `AdminStatistics` and `PublicContent:statistics`.
 * **System settings mutations** invalidate `AdminSystemSettings`.
+* **Admin role mutations** invalidate `AdminRoles`.
+* **Project mutations** invalidate `Projects`.
