@@ -1,16 +1,18 @@
 # Contribution Guide
 
-Thank you for contributing to this project.
+Thank you for contributing to the **CPCCU Client** project.
 This document explains the **branching strategy, development workflow, and pull request process** to keep the repository organized and maintainable.
+
+> New to the codebase? Read the [Architecture Overview](./ARCHITECTURE.md), [API Documentation](./API_DOCUMENTATION.md), and [CLAUDE.md](./CLAUDE.md) first. For AI coding agents, [CLAUDE.md](./CLAUDE.md) contains the most up-to-date technical map of the repository.
 
 ---
 
-**`CONTRIBUTION.md`** overview:
+**`CONTRIBUTION.md`** overview (current repository state):
 
 * `main` → production
-* `dev` → development integration
+* `dev` → development integration (default base branch for PRs)
 * `feature branches` → created from `dev`
-* `release` → release preparation
+* `release` → deployment/automation branch (e.g., the contributor GitHub Action checks out `release`)
 
 ---
 
@@ -35,7 +37,7 @@ The repository follows a structured Git workflow.
 
 ### `release`
 
-* Used for preparing production releases
+* Used for preparing production releases and running deployment automations (for example, the `update-contributors.yml` workflow commits `data/contributors.json` on this branch)
 * Created from `main`
 * Only used for **release-related updates**
 
@@ -235,6 +237,14 @@ release -> deploy
 ```
 
 ---
+
+# Additional Resources
+
+- [README.md](../README.md) — features, setup, and quick start
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — codebase structure and system design
+- [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) — backend endpoint contracts
+- [DEPLOYMENT.md](./DEPLOYMENT.md) — Vercel (frontend) and Render (backend) deployment
+- [CLAUDE.md](./CLAUDE.md) — technical notes for AI coding agents
 
 # Thank You
 
