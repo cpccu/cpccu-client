@@ -6,25 +6,26 @@ The admin panel is a role-based management area under `/admin`. It uses Next.js 
 
 The panel is API-first. Admin screens no longer load fake demo data from `src/lib/demo-data.js`. When a database collection is empty, admin screens show an empty state so administrators know what still needs to be added.
 
+The admin area is client-side guarded in `src/app/admin/layout.jsx`: unauthenticated users are redirected to `/login`, and users whose role is not `admin`/`moderator`/`mentor` see an "Admin access required" screen. Navigation is role-filtered in `src/components/admin-sidebar.jsx`.
+
 ## Roles
 
 ### Admin
 Full access to all admin modules and all write actions. Can also manage dynamic roles.
 
 ### Moderator
-Can manage content-focused modules:
+Can manage content-focused modules (per the admin sidebar):
 - Dashboard
 - Posts
 - Events
 - Gallery
-- Gallery Events
 - Site Statistics
 - Account Settings
 
-Moderators can create, update, and delete allowed content resources.
+Moderators can create, update, and delete allowed content resources. (`gallery-events` is not a separate sidebar module — it is a generic content resource used to group gallery items and is managed within the Gallery module.)
 
 ### Mentor
-Read-oriented access:
+Read-oriented access (per the admin sidebar):
 - Dashboard
 - Members
 - Certificates
@@ -43,6 +44,9 @@ Admins can manage official CPCCU position titles (e.g., President, Vice Presiden
 - `GET /admin/roles/active` — List only active roles
 - `PATCH /admin/roles/:id` — Update a role
 - `PATCH /admin/roles/:id/toggle` — Toggle role active/inactive
+
+### Where the UI lives
+There is **no dedicated `/admin/roles` page**. Role management UI (role dropdown, create role, activate/deactivate) lives inside the Members module (`src/components/members-content.jsx`), which uses `useGetAdminRolesQuery`, `useCreateAdminRoleMutation`, and `useUpdateAdminRoleMutation`.
 
 ## Main Routes
 
@@ -67,8 +71,7 @@ Admins can manage official CPCCU position titles (e.g., President, Vice Presiden
 
 ## Data Flow
 
-### Admin API
-The frontend uses `src/features/admin/adminApi.js`.
+The frontend uses `src/features/admin/adminApi.js`. All admin requests go through the shared RTK Query `baseApi` (Bearer token from `localStorage`, `credentials: include`).
 
 Generic content modules use:
 - `GET /api/v1/admin/content/:resource`
@@ -260,11 +263,11 @@ Gallery items can be linked to a gallery event via `eventId`.
 
 ## JSON Data Migration
 
-The data migration script is:
+The data migration script lives in the **backend** repository (`cpccu-server`):
 
 - `cpccu-server/scripts/seedDataFromJson.js`
 
-Package scripts:
+Package scripts (run from `cpccu-server`, not this frontend repo):
 
 - `npm run data:export` creates ready MongoDB JSON files in `docs/mongodb-import`.
 - `npm run data:seed` upserts mapped data into the configured MongoDB database.
@@ -378,16 +381,21 @@ Name and student ID searches can return multiple certificates.
 
 ## Dashboard
 
-The dashboard no longer uses demo chart data. It maps `overviewResponse` from `/api/v1/admin/overview` into:
-- Member status chart (Recharts pie/bar chart)
-- Content overview chart (Recharts bar chart)
-- Live operational cards (total members, pending approvals, total events, etc.)
-- Recent signals (recent member registrations, certificate issues, content updates)
+`src/components/dashboard-content.jsx` is the active dashboard implementation (`src/components/ADMIN/AdminPanel.jsx` is unused). It maps `overviewResponse` from `/api/v1/admin/overview` into:
+- Member Breakdown (Recharts **area** chart: verified / pending / admins)
+- Content Overview (Recharts **bar** chart: posts, events, certificates, profiles)
+- Member Status (Recharts **pie/donut** chart: verification distribution)
+- Live operational cards (total members, pending approvals, active events, developer profiles, unread messages, certificates issued)
+- Recent signals (pending membership requests, unread contact messages, developer profiles pending approval)
 
 ## Mobile Auth Button Fix
 
 The mobile navbar now reads the authenticated Redux user instead of stale API cache data. Logged-out users see Login, normal logged-in users see Profile, and only logged-in users with `roles.role === "admin"` see the Admin Panel shortcut.
 
+## Deployment
+
+The frontend admin panel is part of the single Next.js app deployed on **Vercel** (production: https://cpccu.club/). The backend (all `/api/v1/admin/*` endpoints) is deployed on **Render** as `cpccu-server`. See [DEPLOYMENT.md](./DEPLOYMENT.md) for environment configuration.
+
 ## Notes For Future Work
 
-The main public content JSON files are now mapped to MongoDB collections, and raw copies are preserved in `SiteData`. `contributors.json` remains intentionally JSON-backed.
+The main public content JSON files are now mapped to MongoDB collections, and raw copies are preserved in `SiteData`. `contributors.json` remains intentionally JSON-backed (regenerated by GitHub Actions).
