@@ -28,7 +28,9 @@ jobs:
 
       - name: Run update script
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Dedicated fine-grained PAT with read access to cpccu/cpccu-client
+          # AND the private cpccu/cpccu-server repository. The default
+          GITHUB_TOKEN: ${{ secrets.CONTRIBUTOR_GITHUB_TOKEN }}
         run: python scripts/update_contributors.py
 
       - name: Commit and push changes

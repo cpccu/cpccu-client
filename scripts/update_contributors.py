@@ -1,6 +1,7 @@
 import json
 import os
 import requests
+import sys
 import time
 
 def load_json(filename):
@@ -12,11 +13,50 @@ def load_json(filename):
         print(f"Error loading {filename}: {e}")
     return []
 
+def check_auth():
+    """
+    Validates that a GitHub token is configured for the contributor fetch.
+    Only reports whether the token is configured - never prints its value.
+    """
+    token = os.getenv('GITHUB_TOKEN')
+    if not token:
+        print("ERROR: GITHUB_TOKEN is not configured.")
+        print("Set the CONTRIBUTOR_GITHUB_TOKEN secret so the workflow can read")
+        print("both cpccu/cpccu-client and the private cpccu/cpccu-server repository.")
+        sys.exit(1)
+    print("GitHub token: configured")
+
+def print_fetch_error(repo, status_code):
+    """
+    Prints a clear, diagnosable error for a failed repository fetch.
+    Never prints the token.
+    """
+    print(f"ERROR: Failed to fetch contributors from {repo}")
+    print(f"HTTP status: {status_code}")
+    if status_code == 401:
+        print("Authentication failed: the GitHub token is invalid or expired.")
+        print("Check that the CONTRIBUTOR_GITHUB_TOKEN secret is configured correctly.")
+    elif status_code == 403:
+        print("Permission denied: the GitHub token does not have access to this repository.")
+        print("Ensure the token has read access to this repository and is not rate limited.")
+    elif status_code == 404:
+        print("The repository may be private or the GitHub token may not have access.")
+        print("Ensure the token has read access to this repository and the branch exists.")
+    elif status_code == 429:
+        print("Rate limit exceeded. Wait and retry, or check the token's rate limit usage.")
+    elif status_code >= 500:
+        print("GitHub API server error. Try running the workflow again later.")
+    else:
+        print("Unexpected error while fetching commits.")
+
 def fetch_contributors_from_branch(repo, branch='release'):
     """
     Fetches contributors and their commit counts for a specific branch.
     Since the /contributors endpoint doesn't support branch filtering,
     we use the /commits endpoint with pagination.
+
+    Exits with a non-zero status if the repository cannot be fetched,
+    so the workflow never generates incomplete contributor data.
     """
     url = f"https://api.github.com/repos/{repo}/commits"
     headers = {
@@ -41,8 +81,8 @@ def fetch_contributors_from_branch(repo, branch='release'):
         try:
             response = requests.get(url, headers=headers, params=params)
             if response.status_code != 200:
-                print(f"Error fetching commits for {repo}: {response.status_code} - {response.text}")
-                break
+                print_fetch_error(repo, response.status_code)
+                sys.exit(1)
             
             commits = response.json()
             if not commits:
@@ -68,13 +108,20 @@ def fetch_contributors_from_branch(repo, branch='release'):
             # Simple rate limit safety
             time.sleep(0.1)
             
+        except requests.exceptions.RequestException as e:
+            print(f"ERROR: Network error fetching commits for {repo}: {e}")
+            sys.exit(1)
         except Exception as e:
-            print(f"Exception fetching commits for {repo}: {e}")
-            break
+            print(f"ERROR: Unexpected exception fetching commits for {repo}: {e}")
+            sys.exit(1)
             
+    print(f"Successfully fetched {repo} commits.")
     return list(contributor_stats.values())
 
 def main():
+    # 0. Validate authentication before fetching anything
+    check_auth()
+
     # 1. Load existing contributors to preserve manual edits
     existing_file = 'data/contributors.json'
     existing_data = load_json(existing_file)
@@ -86,6 +133,7 @@ def main():
     server_contributors = fetch_contributors_from_branch('cpccu/cpccu-server', 'release')
 
     # 3. Merge contributors by login
+    print("Merging contributors...")
     all_contributors = {}
     
     # LIST OF BOTS TO EXCLUDE
