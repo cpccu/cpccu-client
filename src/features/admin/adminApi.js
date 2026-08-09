@@ -111,6 +111,18 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["AdminSystemSettings"],
     }),
+    getAdminContributors: builder.query({
+      query: () => "/admin/contributors",
+      providesTags: ["AdminContributors"],
+    }),
+    updateContributorMetadata: builder.mutation({
+      query: ({ githubUsername, body }) => ({
+        url: `/admin/contributors/${githubUsername}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["AdminContributors"],
+    }),
     getAdminCertificates: builder.query({
       query: () => "/admin/certificates",
       providesTags: ["AdminCertificates"],
@@ -184,6 +196,8 @@ export const {
   useDeleteAdminContentMutation,
   useGetAdminCertificatesQuery,
   useGetAdminContentQuery,
+  useGetAdminContributorsQuery,
+  useUpdateContributorMetadataMutation,
   useGetAdminStatisticsQuery,
   useUpdateAdminCertificateMutation,
   useUpdateAdminContentMutation,
