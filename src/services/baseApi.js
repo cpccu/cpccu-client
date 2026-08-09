@@ -19,7 +19,7 @@ export const baseApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Auth', 'Users', 'Posts', 'Projects', 'PublicContent', 'AdminOverview', 'AdminMembers', 'AdminContent', 'AdminStatistics', 'AdminCertificates', 'AdminSystemSettings', 'AdminRoles'],
+  tagTypes: ['Auth', 'Users', 'Posts', 'Projects', 'PublicContent', 'AdminOverview', 'AdminMembers', 'AdminContent', 'AdminContributors', 'AdminStatistics', 'AdminCertificates', 'AdminSystemSettings', 'AdminRoles'],
   endpoints: () => ({})
 });
 
