@@ -5,7 +5,7 @@
     "role": "Contributor",
     "department": "CSE",
     "batch": "67th",
-    "contribution": "Contributed 382 commits to the project",
+    "contribution": "Contributed 542 commits to the project",
     "github": "https://github.com/anisurrahmanfarazi17",
     "linkedin": "https://www.linkedin.com/in/anisurrahmanfarazi17/",
     "avatar": "https://avatars.githubusercontent.com/u/71831499?v=4"
@@ -16,7 +16,7 @@
     "role": "Contributor",
     "department": "CSE",
     "batch": "60th",
-    "contribution": "Contributed 206 commits to the project",
+    "contribution": "Contributed 242 commits to the project",
     "github": "https://github.com/mdsiaofficial",
     "linkedin": "https://www.linkedin.com/in/mdsiaofficial/",
     "avatar": "https://avatars.githubusercontent.com/u/22385106?v=4"
@@ -27,13 +27,24 @@
     "role": "Contributor",
     "department": "CSE",
     "batch": "63rd",
-    "contribution": "Contributed 95 commits to the project",
+    "contribution": "Contributed 96 commits to the project",
     "github": "https://github.com/rahulroynipon",
     "linkedin": "https://www.linkedin.com/in/rahulroynipon/",
     "avatar": "https://avatars.githubusercontent.com/u/134964341?v=4"
   },
   {
     "id": 4,
+    "name": "Md-Masum-Hossain",
+    "role": "Contributor",
+    "department": "CSE",
+    "batch": "63rd",
+    "contribution": "Contributed 25 commits to the project",
+    "github": "https://github.com/Md-Masum-Hossain",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://avatars.githubusercontent.com/u/97906106?v=4"
+  },
+  {
+    "id": 5,
     "name": "Abraralvi2002",
     "role": "Contributor",
     "department": "CSE",
@@ -42,17 +53,6 @@
     "github": "https://github.com/Abraralvi2002",
     "linkedin": "https://www.linkedin.com/in/md-abrar-siddiqui/",
     "avatar": "https://avatars.githubusercontent.com/u/123486091?v=4"
-  },
-  {
-    "id": 5,
-    "name": "Md-Masum-Hossain",
-    "role": "Contributor",
-    "department": "CSE",
-    "batch": "63rd",
-    "contribution": "Contributed 14 commits to the project",
-    "github": "https://github.com/Md-Masum-Hossain",
-    "linkedin": "https://linkedin.com",
-    "avatar": "https://avatars.githubusercontent.com/u/97906106?v=4"
   },
   {
     "id": 6,
@@ -67,6 +67,17 @@
   },
   {
     "id": 7,
+    "name": "boniyeamincse",
+    "role": "Contributor",
+    "department": "CSE",
+    "batch": "TBD",
+    "contribution": "Contributed 12 commits to the project",
+    "github": "https://github.com/boniyeamincse",
+    "linkedin": "https://linkedin.com",
+    "avatar": "https://avatars.githubusercontent.com/u/82962750?v=4"
+  },
+  {
+    "id": 8,
     "name": "sizan14789",
     "role": "Contributor",
     "department": "CSE",
@@ -77,7 +88,7 @@
     "avatar": "https://avatars.githubusercontent.com/u/195941736?v=4"
   },
   {
-    "id": 8,
+    "id": 9,
     "name": "Rifat-Shahariar",
     "role": "Contributor",
     "department": "CSE",
@@ -88,7 +99,7 @@
     "avatar": "https://avatars.githubusercontent.com/u/234933937?v=4"
   },
   {
-    "id": 9,
+    "id": 10,
     "name": "FAsami",
     "role": "Contributor",
     "department": "CSE",
@@ -99,7 +110,7 @@
     "avatar": "https://avatars.githubusercontent.com/u/43314398?v=4"
   },
   {
-    "id": 10,
+    "id": 11,
     "name": "Redooyyy",
     "role": "Contributor",
     "department": "CSE",
@@ -110,7 +121,7 @@
     "avatar": "https://avatars.githubusercontent.com/u/122115413?v=4"
   },
   {
-    "id": 11,
+    "id": 12,
     "name": "MH-Alok",
     "role": "Contributor",
     "department": "CSE",
@@ -121,7 +132,7 @@
     "avatar": "https://avatars.githubusercontent.com/u/207171962?v=4"
   },
   {
-    "id": 12,
+    "id": 13,
     "name": "abu-taher-saikat",
     "role": "Contributor",
     "department": "CSE",
