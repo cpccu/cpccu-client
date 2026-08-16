@@ -180,9 +180,3 @@ export const CONTEST_NAMES = [
   "Eid Code Fest CPCCU: 2024",
 ];
 
-export const STATS = {
-  totalCertificates: 248,
-  totalContests: 25,
-  totalParticipants: 512,
-  totalWinners: 75,
-};

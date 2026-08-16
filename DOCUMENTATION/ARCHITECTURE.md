@@ -424,7 +424,7 @@ flowchart LR
 | Contributors | Generic content `contributors` | Contributor records |
 | Donators | Generic content `donators` | Donator recognition |
 | Committees | Generic content `committees` | Running/previous committees |
-| Statistics | `GET/PATCH /admin/statistics` | Editable public stats |
+| Statistics | `GET /admin/statistics` | Live stats aggregated from real data sources |
 | Audit Logs | Generic content `audit-logs` (read-only) | Admin action log |
 | Messages | Generic content `messages` | Contact message triage |
 | Account Settings | `userApi` + auth | Profile + password |
