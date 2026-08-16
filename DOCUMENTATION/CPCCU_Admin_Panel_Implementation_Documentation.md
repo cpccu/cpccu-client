@@ -99,8 +99,7 @@ Specialized admin endpoints (not generic content):
 - `POST /api/v1/admin/certificates` — create certificate
 - `PATCH /api/v1/admin/certificates/:id` — update certificate
 - `DELETE /api/v1/admin/certificates/:id` — delete certificate
-- `GET /api/v1/admin/statistics` — editable statistics
-- `PATCH /api/v1/admin/statistics` — update statistics
+- `GET /api/v1/admin/statistics` — live site statistics (computed from the real data sources)
 - `GET /api/v1/admin/system-settings` — system settings
 - `PATCH /api/v1/admin/system-settings` — update system settings
 - `POST /api/v1/admin/uploads/image` — Cloudinary image upload
@@ -326,17 +325,19 @@ Request flow:
 
 ## Statistics Management
 
-Public statistics are managed at `/admin/statistics`.
+Site statistics are viewed at `/admin/statistics`.
 
-Statistics fields are editable and drive the public site display. Common statistic fields include:
-- Total members
-- Total alumni
-- Total events held
-- Total certificates issued
-- Certificate verifications
-- Failed certificate verifications
+All statistics are **calculated automatically** from the real CPCCU data sources and are read-only:
+- Total members — `User` collection count
+- Gallery photos — `GalleryItem` collection count
+- Total events — `Event` collection count
+- Contests held — events classified as `type: "contest"`
+- Total visitors — the same visitor counter record the homepage uses
+- Certificates issued — `Certificate` collection count
+- Certificate verifications / failed verifications — `CertificateVerificationLog` counts
+- Winners recognized — certificates with a winner certificate type (same definition as the public certificate page)
 
-Changes are immediately reflected on the public site via the `/api/v1/content/statistics` endpoint.
+There is no manual edit form: values are derived from the database and cannot be overridden. The public `/api/v1/content/statistics` endpoint serves the same live values as the admin endpoint.
 
 ## System Settings
 
