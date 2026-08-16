@@ -790,14 +790,3 @@ export const demoDonators = [
         isAnonymous: true,
     },
 ];
-// ===== Site Statistics =====
-export const siteStatistics = {
-    members: 248,
-    photos: 156,
-    events: 32,
-    awards: 48,
-    totalVisitors: 659,
-    certificatesIssued: 64,
-    contestsHeld: 19,
-    winnersRecognized: 36,
-};

@@ -171,8 +171,8 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `/admin/statistics` | `GET` | Fetch editable statistics | None | Provides `AdminStatistics` tag |
-| `/admin/statistics` | `PATCH` | Update statistics | `body` | Invalidates `AdminStatistics`, `PublicContent:statistics` |
+| `/admin/statistics` | `GET` | Fetch live site statistics computed from the real data sources (members, gallery, events, visitors, certificates, verification logs) | None | Provides `AdminStatistics` tag |
+| `/content/statistics` | `GET` | Public site statistics — same live values as the admin endpoint | None | Public |
 
 ### 8.7 System Settings
 

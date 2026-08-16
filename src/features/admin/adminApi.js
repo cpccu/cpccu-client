@@ -91,14 +91,6 @@ export const adminApi = baseApi.injectEndpoints({
       query: () => "/admin/statistics",
       providesTags: ["AdminStatistics"],
     }),
-    updateAdminStatistics: builder.mutation({
-      query: (body) => ({
-        url: "/admin/statistics",
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: ["AdminStatistics", { type: "PublicContent", id: "statistics" }],
-    }),
     getAdminSystemSettings: builder.query({
       query: () => "/admin/system-settings",
       providesTags: ["AdminSystemSettings"],
@@ -201,7 +193,6 @@ export const {
   useGetAdminStatisticsQuery,
   useUpdateAdminCertificateMutation,
   useUpdateAdminContentMutation,
-  useUpdateAdminStatisticsMutation,
   useGetAdminSystemSettingsQuery,
   useUpdateAdminSystemSettingsMutation,
   useUploadAdminImageMutation,
