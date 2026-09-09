@@ -241,9 +241,12 @@ release -> deploy
 # Additional Resources
 
 - [README.md](../README.md) — features, setup, and quick start
+- [Documentation Index](./README.md) — table of contents for all docs
+- [DEVELOPER_ONBOARDING.md](./DEVELOPER_ONBOARDING.md) — new-developer setup guide
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — codebase structure and system design
 - [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) — backend endpoint contracts
 - [DEPLOYMENT.md](./DEPLOYMENT.md) — Vercel (frontend) and Render (backend) deployment
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — common problems and fixes
 - [CLAUDE.md](./CLAUDE.md) — technical notes for AI coding agents
 
 # Thank You

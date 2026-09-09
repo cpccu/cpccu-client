@@ -20,7 +20,8 @@ Defined in `src/services/baseApi.js`.
 - **Tag Types**:
   ```
   Auth, Users, Posts, Projects, PublicContent, AdminOverview, AdminMembers,
-  AdminContent, AdminStatistics, AdminCertificates, AdminSystemSettings, AdminRoles
+  AdminContent, AdminContributors, AdminStatistics, AdminCertificates,
+  AdminSystemSettings, AdminRoles
   ```
 
 > ⚠️ `memberApi.js` provides a `Members` tag for `fetchMemberById`, but `Members` is **not** registered in `baseApi.tagTypes`.
@@ -52,18 +53,18 @@ Defined in `src/features/certificate/certificateApi.js` (separate `createApi` in
 
 | Endpoint | Method | Purpose | Payload / Params |
 | :--- | :--- | :--- | :--- |
-| `/users/user` | `GET` | Fetch users list | None |
+| `/users/user` | `GET` | Fetch current authenticated user (session validation — same endpoint as `authApi.getCurrentUser`) | None |
 | `/users/user/:id` | `GET` | Fetch user by ID | Path param: `id` |
-| `/users/user` | `POST` | Create user | `userData` |
 | `users/userInfo-update` | `PATCH` | Update current user profile | `userData` |
 | `users/user/upload-image/:key` | `PATCH` | Upload user image (avatar/cover by key) | `FormData` (`imageData`) |
 | `users/job-pipeline-request` | `POST` | Request job pipeline profile | Optional body (`{ title }`) |
 | `users/job-pipeline-request` | `DELETE` | Remove job pipeline profile request | None |
-| `/users/:id` | `DELETE` | Delete user by ID (admin flow) | Path param: `id` |
 | `/users/password` | `PATCH` | Change current user password | `body` |
 | `/users/user` | `DELETE` | Delete own account | None |
 
 > Note: several `userApi` URLs omit the leading `/` (e.g. `users/userInfo-update`). This is functional but inconsistent with the rest of the codebase.
+>
+> ⚠️ **Dead client-side definitions (no matching backend route):** `createUser` (`POST /users/user`) and `deleteUser` (`DELETE /users/:id`) in `userApi.js`, and `fetchMemberById` (`GET /users/member/:id`) in `memberApi.js`. The backend has no such routes — these are unused leftovers. (The backend's `GET /auth/refresh-token` likewise exists but is never called by the frontend.)
 
 ### 3.1 Projects (`userApi`)
 
@@ -81,8 +82,8 @@ Tag: `Projects`.
 
 | Endpoint | Method | Purpose | Notes |
 | :--- | :--- | :--- | :--- |
-| `users/member` | `GET` | Fetch validated members | — |
-| `/users/member/:id` | `GET` | Fetch member details by ID | Provides a `Members` tag (not registered in `baseApi.tagTypes`) |
+| `users/member` | `GET` | Fetch members (public fields) | — |
+| `/users/member/:id` | `GET` | ⚠️ **Dead** — no backend route; provides a `Members` tag (not registered in `baseApi.tagTypes`) |
 
 ## 5. Certificates
 
@@ -115,7 +116,7 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 | `/content/:resource` | `GET` | Fetch public content by resource key | Provides `PublicContent` tag with resource ID |
 | `/content/statistics` | `GET` | Fetch public statistics payload | Provides `PublicContent:statistics` tag |
 
-**Supported public resources**: `alumni`, `committees`, `donators`, `events`, `gallery`, `profiles`
+**Supported public resources** (backend `content.controller.js`): `alumni`, `committees`, `contributors`, `donators`, `events`, `gallery`, `gallery-events`, `profiles` (only **approved** developer profiles are returned)
 
 ## 7. Contact (`contactApi`)
 
@@ -171,10 +172,17 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `/admin/statistics` | `GET` | Fetch live site statistics computed from the real data sources (members, gallery, events, visitors, certificates, verification logs) | None | Provides `AdminStatistics` tag |
+| `/admin/statistics` | `GET` | Fetch live derived site statistics — `{ members, photos, events, totalVisitors, certificatesIssued, certificateVerifications, failedCertificateVerifications, contestsHeld, winnersRecognized }` — computed server-side from real data (members, gallery, events, visitor counter, certificates, verification logs). Read-only; there is no `PATCH /admin/statistics`. | None | Provides `AdminStatistics` tag |
 | `/content/statistics` | `GET` | Public site statistics — same live values as the admin endpoint | None | Public |
 
-### 8.7 System Settings
+### 8.7 GitHub-Synced Contributors (admin)
+
+| Endpoint | Method | Purpose | Payload | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| `/admin/contributors` | `GET` | List contributors — backend reads `data/contributors.json` live from GitHub (Contents API) | None | Provides `AdminContributors` tag; requires `CONTRIBUTOR_GITHUB_TOKEN` on the backend (503 otherwise) |
+| `/admin/contributors/:githubUsername` | `PATCH` | Update contributor metadata — **only `batch` and `linkedin`** are writable; written back to `data/contributors.json` on the `release` branch | `{ batch?, linkedin? }` (at least one required) | Invalidates `AdminContributors`; admin-only; 404 if the username is not in the file |
+
+### 8.8 System Settings
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
@@ -183,7 +191,7 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 
 **System settings include**: site metadata, maintenance mode, appearance settings.
 
-### 8.8 Certificates
+### 8.9 Certificates
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |

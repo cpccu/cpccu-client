@@ -6,7 +6,7 @@ The admin panel is a role-based management area under `/admin`. It uses Next.js 
 
 The panel is API-first. Admin screens no longer load fake demo data from `src/lib/demo-data.js`. When a database collection is empty, admin screens show an empty state so administrators know what still needs to be added.
 
-The admin area is client-side guarded in `src/app/admin/layout.jsx`: unauthenticated users are redirected to `/login`, and users whose role is not `admin`/`moderator`/`mentor` see an "Admin access required" screen. Navigation is role-filtered in `src/components/admin-sidebar.jsx`.
+The admin area is client-side guarded by `src/components/admin-layout.jsx`, which every admin page imports: unauthenticated users are redirected to `/login` (after auth hydration), and users whose role is not `admin`/`moderator`/`mentor` see an "Admin access required" screen. Navigation is role-filtered in `src/components/admin-sidebar.jsx`. (`src/app/admin/layout.jsx` is only a metadata pass-through.)
 
 ## Roles
 
@@ -99,10 +99,12 @@ Specialized admin endpoints (not generic content):
 - `POST /api/v1/admin/certificates` — create certificate
 - `PATCH /api/v1/admin/certificates/:id` — update certificate
 - `DELETE /api/v1/admin/certificates/:id` — delete certificate
-- `GET /api/v1/admin/statistics` — live site statistics (computed from the real data sources)
+- `GET /api/v1/admin/statistics` — live site statistics (computed from the real data sources; **read-only** — there is no `PATCH /admin/statistics`)
 - `GET /api/v1/admin/system-settings` — system settings
 - `PATCH /api/v1/admin/system-settings` — update system settings
 - `POST /api/v1/admin/uploads/image` — Cloudinary image upload
+- `GET /api/v1/admin/contributors` — GitHub-synced contributors (Contents API read)
+- `PATCH /api/v1/admin/contributors/:githubUsername` — write `batch`/`linkedin` back to `data/contributors.json`
 
 ### Public Content API
 Public content is exposed through `/api/v1/content/:resource`.
@@ -200,16 +202,22 @@ Posts support:
 - Publication date
 - Sort order
 
-## Contributors & Donators Management
+## Contributors Management (GitHub-Synced)
 
-Contributors (`/admin/contributors`) and Donators (`/admin/donators`) are managed via the generic content API.
+Contributors (`/admin/contributors`) are **no longer generic content**. The page (`src/components/contributors-content.jsx`) reads from the backend's GitHub Contents API endpoints:
 
-Contributor fields:
-- Name
-- GitHub username
-- Avatar (uploaded or URL)
-- Contribution type
-- Sort order
+- `GET /api/v1/admin/contributors` — the backend fetches `data/contributors.json` (cpccu-client, `release` branch) live from GitHub.
+- `PATCH /api/v1/admin/contributors/:githubUsername` — writes back **only `batch` and `linkedin`** to the same JSON file (admin-only; requires `CONTRIBUTOR_GITHUB_TOKEN` on the server).
+
+Important constraints:
+- GitHub-derived fields (name, username, avatar, commit count, GitHub profile) are **read-only** — they come from the daily GitHub Action sync.
+- **Role is fixed as "Contributor"** and cannot be changed by an admin.
+- There is **no second database source** — edits go straight back to the JSON that the public pages consume.
+- If the live fetch fails (e.g. missing token), the page falls back to the bundled `data/contributors.json` and shows a warning banner.
+
+## Donators Management
+
+Donators (`/admin/donators`) are managed via the generic content API.
 
 Donator fields:
 - Name
@@ -327,7 +335,7 @@ Request flow:
 
 Site statistics are viewed at `/admin/statistics`.
 
-All statistics are **calculated automatically** from the real CPCCU data sources and are read-only:
+All statistics are **calculated automatically** from the real CPCCU data sources and are read-only. The backend computes them live via `statistics.service.js` (`getSiteStatistics`) — there is no `SiteStatistics` collection anymore:
 - Total members — `User` collection count
 - Gallery photos — `GalleryItem` collection count
 - Total events — `Event` collection count
@@ -337,7 +345,7 @@ All statistics are **calculated automatically** from the real CPCCU data sources
 - Certificate verifications / failed verifications — `CertificateVerificationLog` counts
 - Winners recognized — certificates with a winner certificate type (same definition as the public certificate page)
 
-There is no manual edit form: values are derived from the database and cannot be overridden. The public `/api/v1/content/statistics` endpoint serves the same live values as the admin endpoint.
+There is no manual edit form: values are derived from the data and cannot be overridden (there is no `PATCH /admin/statistics` route). There is intentionally **no "Total Awards" statistic** — that feature was removed. The public `/api/v1/content/statistics` endpoint serves the same live values as the admin endpoint.
 
 ## System Settings
 
