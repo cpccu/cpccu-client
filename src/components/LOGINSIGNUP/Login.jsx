@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setCredentials } from "@/features/auth/authSlice";
 import SuccessAlert from "../ALERT/SuccessAlert";
 import ErrorAlert from "../ALERT/ErrorAlert";
+import OtpVerifyPopup from "../ALERT/OtpVerifyPopup";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
@@ -39,6 +40,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [resetValidationError, setResetValidationError] = useState("");
+  const [showOtpPopup, setShowOtpPopup] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -63,6 +66,17 @@ export default function Login() {
       router.push(`/profile/${response.data.user?.uniID || response.data.user._id}`);
     } catch (err) {
       console.error("Login failed:", err);
+      const data = err?.data || err?.originalError || {};
+      const isEmailNotVerified =
+        Array.isArray(data?.errors) &&
+        data.errors.some((item) => item?.code === "EMAIL_NOT_VERIFIED");
+
+      if (isEmailNotVerified) {
+        // Account exists but email verification is incomplete. Reuse the
+        // existing OTP verification popup so the user can finish verifying.
+        // No credentials are stored and no redirect happens.
+        setShowOtpPopup(true);
+      }
     }
   };
 
@@ -91,6 +105,15 @@ export default function Login() {
       return () => clearTimeout(timer);
     }
   }, [isSuccess, isError, reset]);
+
+  useEffect(() => {
+    if (verificationSuccess) {
+      const timer = setTimeout(() => {
+        setVerificationSuccess(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [verificationSuccess]);
 
   useEffect(() => {
     if (isResetLinkSuccess || isResetLinkError || resetValidationError) {
@@ -193,7 +216,7 @@ export default function Login() {
             Login to Access Dashboard
           </h1>
         </section>
-        {isError && (
+        {isError && !showOtpPopup && (
           <ErrorAlert
             title="Login failed!"
             text={
@@ -204,6 +227,19 @@ export default function Login() {
         )}
         {isSuccess && (
           <SuccessAlert title={data?.message || "Login successful!"} />
+        )}
+        {showOtpPopup && (
+          <OtpVerifyPopup
+            email={email}
+            onVerified={() => {
+              setShowOtpPopup(false);
+              setVerificationSuccess(true);
+            }}
+            onClosed={() => setShowOtpPopup(false)}
+          />
+        )}
+        {verificationSuccess && (
+          <SuccessAlert title="Email verified successfully! Please log in to continue." />
         )}
         {resetValidationError && (
           <ErrorAlert title="Email required" text={resetValidationError} />
