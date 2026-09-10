@@ -14,7 +14,7 @@ The official web portal for the Competitive Programming Camp at City University.
 
 - **Homepage**: Hero section, visitor counter, mission & responsibility, upcoming events, gallery preview, contributors carousel, donators carousel, statistics counters.
 - **Member Management**: Public member directory (`/member`) with profiles, skill tracking, academic details, and admin-managed member records.
-- **Authentication**: Login, registration with email OTP verification, password reset, and persistent session hydration.
+- **Authentication**: Login, registration with email OTP verification, password reset, and persistent session hydration. Email verification is **enforced by the backend** — an unverified account cannot log in (the login page reopens the OTP popup automatically).
 - **Profile System**: Dynamic public profiles at `/profile/[id]` with Hero, About, Skills, Projects, Certificates, Contributions, Contact, and Quick Stats sections, plus owner-only edit mode.
 - **Certificate System**: Public certificate verification portal at `/certificate` with search by certificate ID / recipient name / student ID, certificate statistics, recent certificates, and per-certificate detail pages (`/certificate/[certificateId]`).
 - **Dynamic Content**: Blog posts, event pages, galleries, contributors, donators, and public site content managed via the admin panel.
@@ -32,12 +32,13 @@ The official web portal for the Competitive Programming Camp at City University.
 - **Dynamic Role Management**: Admins can create, update, toggle, and view official CPCCU position titles (President, Vice President, General Secretary, etc.) via `/admin/roles` endpoints from the Members page.
 - **Dashboard**: Live overview with member status charts, content charts, and operational cards from the database.
 - **Members**: Member approval, official-role assignment, and status management.
-- **Content Management**: Generic CRUD for committees, contributors, donators, events, gallery, messages, posts, alumni, and profiles.
+- **Content Management**: Generic CRUD for committees, donators, events, gallery, messages, posts, alumni, and profiles.
+- **Contributors Management**: GitHub-synced contributor records — GitHub fields are read-only, only `batch`/`linkedin` are editable, and the role is fixed as Contributor.
 - **Alumni Management**: Alumni profile CRUD with fallback to static JSON.
 - **Event Management**: Event creation with date phases (remaining, running, ended), reward rules, and button links.
 - **Gallery Management**: Image upload and gallery organization, including gallery-event groupings.
 - **Certificates**: Certificate issue, bulk issue, update, delete, and public verification.
-- **Statistics**: Editable public statistics displayed on the site.
+- **Statistics**: Live public statistics derived automatically from real site data (read-only — no manual counters).
 - **System Settings**: Site metadata, maintenance mode, and appearance configuration.
 - **Audit Logs**: Read-only log viewer for admin create/update/delete actions.
 - **Job Pipeline Admin**: Review and approve/reject/remove member job pipeline requests.
@@ -202,10 +203,7 @@ cpccu-client/
     bun run build
     bun run start
     ```
-- **Linting**:
-    ```bash
-    npm run lint
-    ```
+- **Linting**: ⚠️ `npm run lint` is currently **broken** — `next lint` was removed in Next.js 16 and ESLint 10 requires a flat config the repo doesn't have. Use `npm run build` as the main verification (see [TROUBLESHOOTING.md](./DOCUMENTATION/TROUBLESHOOTING.md#10-build--lint-failures)).
 
 ## 🔐 Environment Variables
 
@@ -219,10 +217,14 @@ See [DEPLOYMENT.md](./DOCUMENTATION/DEPLOYMENT.md) for full production environme
 
 ## 📖 Documentation
 
+- [Documentation Index](./DOCUMENTATION/README.md) — Table of contents for all docs.
+- [Developer Onboarding](./DOCUMENTATION/DEVELOPER_ONBOARDING.md) — "I just joined the team — what do I do?"
 - [Architecture Overview](./DOCUMENTATION/ARCHITECTURE.md) — Deep dive into folder structure, routing, state management, data flow, and all major systems (Profile, Certificate, Job Pipeline, Roles, Projects, Contributors).
 - [Architecture Decision Records](./DOCUMENTATION/ADR.md) — Why the project is built this way (deployment, certificates, roles, profile, job pipeline, auth, and planned decisions).
 - [API Documentation](./DOCUMENTATION/API_DOCUMENTATION.md) — List of integrated endpoints and request contracts.
 - [Admin Panel Implementation](./DOCUMENTATION/CPCCU_Admin_Panel_Implementation_Documentation.md) — Admin roles, data flow, content management, and migration notes.
+- [Security](./DOCUMENTATION/SECURITY.md) — Security architecture, auth enforcement, and known debt.
+- [Troubleshooting](./DOCUMENTATION/TROUBLESHOOTING.md) — Common problems and how to fix them.
 - [Deployment Guide](./DOCUMENTATION/DEPLOYMENT.md) — Vercel (frontend) and Render (backend) deployment.
 - [Contribution Guide](./DOCUMENTATION/CONTRIBUTION.md) — Branching strategy, development workflow, and pull request process.
 
@@ -253,7 +255,7 @@ https://i.ibb.co.com/Nm3q6c0/Artboard-1.png
 
 ## 📌 Notes
 
-- The app uses a shared public layout (`src/app/(main)/layout.jsx`) for main site pages (Header, NavBar, Footer, GoToTop) and a separate admin area under `/admin` with its own client-side access guard.
+- The app uses a shared public layout (`src/app/(main)/layout.jsx`) for main site pages (Header, NavBar, Footer, GoToTop) and a separate admin area under `/admin` guarded by `src/components/admin-layout.jsx`.
 - API requests are driven through RTK Query with a shared `baseApi` and a separate unauthenticated `publicApi` for public certificate verification.
 - Public content is split between static JSON data in `data/` and API-backed managed content. Admin-managed content falls back to JSON when the database is empty.
 - **Authentication**: the access token is stored in `localStorage` (`token`) and sent as a `Bearer` token via RTK Query headers (`credentials: 'include'` is also set for cookie-based flows). There is **no refresh-token or Google OAuth flow implemented on the frontend** — if the stored token becomes invalid, the session is cleared on the next `getCurrentUser` call.

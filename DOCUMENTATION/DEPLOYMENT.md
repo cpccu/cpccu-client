@@ -79,6 +79,7 @@ Variables the frontend references indirectly or that the backend needs:
 | `MONGODB_URI` | MongoDB connection string (used by the seed/migration scripts) |
 | `GOOGLE_SHEETS_API_KEY` | Google Sheets API key used by the bootcamp leaderboard data source |
 | `BOOTCAMP_SHEET_ID` | Google Sheets ID for the bootcamp leaderboard |
+| `CONTRIBUTOR_GITHUB_TOKEN` | GitHub PAT used by `GET/PATCH /admin/contributors` to read/write `data/contributors.json` on the `release` branch. Same secret name as the `update-contributors.yml` workflow. |
 
 > `GOOGLE_SHEETS_API_KEY` and `BOOTCAMP_SHEET_ID` are **backend-only**; the frontend leaderboard page shows a hint to add them when the leaderboard API errors.
 

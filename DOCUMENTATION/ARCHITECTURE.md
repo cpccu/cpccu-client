@@ -6,6 +6,8 @@ This document describes the current architecture of the `cpccu-client` repositor
 
 > **Looking for the reasoning behind key decisions?** See [ADR.md](./ADR.md) — Architecture Decision Records covering deployment, certificates, roles, the profile system, the job pipeline, RTK Query, security headers, and auth.
 
+> **Cross-repository note:** this document describes the frontend half of CPCCU. The system is completed by `cpccu-server` (Express + MongoDB API on Render) — see [`cpccu-server/docs/ARCHITECTURE.md`](https://github.com/cpccu/cpccu-server/blob/dev/docs/ARCHITECTURE.md) for the backend half, and [DEPLOYMENT.md](./DEPLOYMENT.md) for how the two connect.
+
 ## 1. Technology Stack
 
 | Layer | Technology |
@@ -97,7 +99,8 @@ cpccu-client/
 
 ### 3.4 Admin Routes (`/admin`)
 
-- Client-side guarded layout: `src/app/admin/layout.jsx` redirects unauthenticated users to `/login` and shows an "Admin access required" screen for non-admin roles (`admin`, `moderator`, `mentor`).
+- Client-side guard: each admin page imports `src/components/admin-layout.jsx`, which redirects unauthenticated users to `/login` once auth hydration completes, shows a loading state before hydration, and renders an "Admin access required" screen for non-admin roles (`admin`, `moderator`, `mentor`). (`src/app/admin/layout.jsx` is only a metadata pass-through; the actual guard lives in the `admin-layout` component.)
+- Navigation is role-filtered in `src/components/admin-sidebar.jsx` (see the module table in §13).
 
 | Route | Module |
 | --- | --- |
@@ -177,8 +180,8 @@ flowchart TD
 
 ```
 Auth, Users, Posts, Projects, PublicContent,
-AdminOverview, AdminMembers, AdminContent, AdminStatistics,
-AdminCertificates, AdminSystemSettings, AdminRoles
+AdminOverview, AdminMembers, AdminContent, AdminContributors,
+AdminStatistics, AdminCertificates, AdminSystemSettings, AdminRoles
 ```
 
 > ⚠️ Code quirk: `memberApi.js` provides a `Members` tag, but `Members` is **not** declared in `baseApi.tagTypes`.
@@ -221,13 +224,28 @@ AdminCertificates, AdminSystemSettings, AdminRoles
 
 The frontend uses a **single access-token** JWT flow (there is no refresh-token or Google OAuth flow on the frontend):
 
-1. **Login** (`POST /auth/login`) returns `{ user, token }`; the token is stored in `localStorage` (`token`) and the user in `localStorage` (`user`).
+1. **Login** (`POST /auth/login`) returns `{ user, token }`; the token is stored in `localStorage` (`token`) and the user in `localStorage` (`user`). An **unverified** account gets `403 EMAIL_NOT_VERIFIED` — no token is stored and the OTP popup reopens.
 2. **Requests** — `baseApi` attaches `Authorization: Bearer <token>` when a token exists and sets `credentials: 'include'` for cookie-based backend flows.
 3. **Session validation** — `ProviderWrapper` re-validates the token on app load via `GET /users/user`.
 4. **Logout** — `GET /auth/logout` + `clearCredentials` (removes localStorage).
 5. **Protected routes** — the admin layout is guarded client-side for roles `admin`, `moderator`, `mentor`. Non-admin users see "Admin access required".
 
 Registration uses **email OTP verification**: `POST /auth/send-otp` → `POST /auth/verify-registration`, handled by `OtpVerifyPopup` after `POST /auth/register`.
+
+**Email verification is enforced by the backend** — the frontend cannot obtain a session for an unverified account:
+
+```mermaid
+flowchart TD
+    A[POST /auth/login] --> B{Backend: isValid?}
+    B -- No --> C[403 EMAIL_NOT_VERIFIED - no JWT, no session]
+    B -- Yes --> D[200 - tokens + user]
+    C --> E[Login.jsx catches the code and reopens OtpVerifyPopup]
+    E --> F[verify OTP - isValid=true]
+    F --> G[User returns to login]
+```
+
+- `Login.jsx` (`src/components/LOGINSIGNUP/Login.jsx`) inspects the error payload for the `EMAIL_NOT_VERIFIED` code, opens the existing OTP verification popup, and stores **no** credentials.
+- `OtpVerifyPopup` (6-char input, 60s resend countdown) calls `sendOtp` (resend) and `otpVerify` (`POST /auth/verify-registration`). On success it asks the user to log in again.
 
 Password reset: `GET /auth/reset-link/:email` sends the reset email; `PATCH /auth/reset-password` (with `code` + `token` from the URL) completes it. Passwords are validated with `src/lib/password-validation.js`.
 
@@ -284,9 +302,9 @@ Visitors can view all sections; owner-only controls (edit, image upload, project
 
 | Endpoint | API | Auth |
 | --- | --- | --- |
-| `GET /certificates/verify?certificateId=&recipientName=&recipientId=` | `certificateApi.verifyCertificate` | Yes (lazy, used by profile) |
-| `GET /certificates/stats` | `certificateApi.getCertificateStats` | Yes |
-| `GET /certificates/recent` | `certificateApi.getRecentCertificates` | Yes |
+| `GET /certificates/verify?certificateId=&recipientName=&recipientId=` | `certificateApi.verifyCertificate` | No (public — backend attaches no auth requirement; a token is sent only if one exists) |
+| `GET /certificates/stats` | `certificateApi.getCertificateStats` | No (public) |
+| `GET /certificates/recent` | `certificateApi.getRecentCertificates` | No (public) |
 | `GET /verify/:certificateId` | `publicApi.verifyCertificatePublic` | No |
 
 Search behavior: `certificateId` exact match; `recipientName` partial case-insensitive; `recipientId` case-insensitive. Name/ID searches can return multiple certificates.
@@ -391,16 +409,17 @@ flowchart LR
     A[GitHub Actions daily on release] --> B[scripts/update_contributors.py]
     B --> C[Fetch commits: cpccu/cpccu-client + cpccu/cpccu-server]
     C --> D[Exclude bots, merge by login]
-    D --> E[data/contributors.json - preserve manual fields]
-    E --> F[Profile ContributionsSection - match github URL]
-    E --> G[Contributors page + homepage carousel]
-    F --> H[Quick Stats - contribution count]
+    D --> E[data/contributors.json - preserves batch/linkedin]
+    E --> F[Admin /admin/contributors - backend GitHub Contents API]
+    F -->|PATCH batch/linkedin only| E
+    E --> G[Profile ContributionsSection - match github URL]
+    E --> H[Contributors page + homepage carousel]
 ```
 
-- `.github/workflows/update-contributors.yml` runs the Python script every day at 19:05 UTC (01:05 BST) on the `release` branch and commits the updated `data/contributors.json`.
-- `scripts/update_contributors.py` fetches commits from both repos, excludes bots, merges counts, sorts by contribution, and preserves manually-curated fields (name, role, department, batch, linkedin).
-- `src/lib/public-content.js` provides `extractGithubUsername` and `findContributorByGithub`; `ContributionsSection` matches the member's GitHub URL to a contributor record and renders rank/commits.
-- The admin-managed `contributors` content resource backs the Contributors page with fallback JSON.
+- **Single source of truth:** `data/contributors.json` in this repo (`release` branch). The daily GitHub Action regenerates it from commits in **both** `cpccu/cpccu-client` and `cpccu/cpccu-server`, excluding bots and preserving the manually-managed fields (`name`, `role`, `department`, `batch`, `linkedin`).
+- **Admin interaction (GitHub-synced, not generic content):** the `/admin/contributors` page (`src/components/contributors-content.jsx`) calls `GET /admin/contributors` (backend reads the JSON live from GitHub) and `PATCH /admin/contributors/:githubUsername` to write back **only `batch` and `linkedin`**. The role is fixed as "Contributor" (read-only), and GitHub info (name, username, avatar, commit count) is auto-synced. The backend requires `CONTRIBUTOR_GITHUB_TOKEN`; without it the page falls back to the bundled JSON with a warning banner.
+- `src/lib/public-content.js` provides `extractGithubUsername`, `findContributorByGithub`, and `parseContributionInfo`; `ContributionsSection` matches the member's GitHub URL to a contributor record and renders rank/commits.
+- The **public** Contributors page (`src/components/CONTRIBUTORS/ContributorsPage.jsx`) reads `GET /content/contributors` (legacy DB-backed resource) and falls back to `data/contributors.json` when the collection is empty or the request fails. Because the migration deliberately excluded `contributors.json`, the JSON is what actually renders.
 
 ## 12. Projects
 
@@ -421,7 +440,7 @@ flowchart LR
 | Certificates | `GET/POST/PATCH/DELETE /admin/certificates` | Issue, bulk issue, delete |
 | Jobs | `GET /admin/content/profiles` | Developer profile review |
 | Alumni | Generic content `alumni` | Alumni records with job history |
-| Contributors | Generic content `contributors` | Contributor records |
+| Contributors | `GET/PATCH /admin/contributors` (GitHub Contents API) | GitHub-synced records — read-only GitHub fields, edit `batch`/`linkedin`; role fixed as Contributor |
 | Donators | Generic content `donators` | Donator recognition |
 | Committees | Generic content `committees` | Running/previous committees |
 | Statistics | `GET /admin/statistics` | Live stats aggregated from real data sources |
@@ -484,6 +503,8 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for production configuration.
 - `userSlice.js`, `memberSlice.js`, `postSlice.js` are not registered in the store.
 - `memberApi.js` provides a `Members` tag that is not declared in `baseApi.tagTypes`.
 - Several endpoint URLs in `userApi.js` omit the leading `/` (functional due to `fetchBaseQuery` resolution).
+- `userApi.js` defines `createUser` (`POST /users/user`) and `deleteUser` (`DELETE /users/:id`) and `memberApi.js` defines `fetchMemberById` (`GET /users/member/:id`) — **none of these have a matching backend route**; they are unused/dead client definitions.
+- `GET /auth/refresh-token` exists on the backend but the frontend never calls it — the frontend has no refresh-token flow (sessions rely on the access token + backend cookie renewal).
 - `src/components/ADMIN/AdminPanel.jsx`, `src/components/Layout/Profile1.jsx`, and the legacy `PROFILE` components (`ProfileCard`, `ProfileDetails`, `ProfileID`, `ProfileBlog`, `Profile_Blog_Modal`, `ProfileNotFound`) are unused code kept in the tree.
 - There are two `ui/` folders (`src/components/ui/` and `src/components/CERTIFICATE/ui/`) with duplicated shadcn-style components.
 - `generateCertificateId` is a **local function** inside `src/components/certificates-content.jsx` (there is no `generateCertificateId.js` file).

@@ -19,7 +19,7 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, Copilot, e
 npm run dev        # Start dev server (localhost:3000)
 npm run build      # Production build
 npm run start      # Start production server
-npm run lint       # Next.js lint
+npm run lint       # ⚠️ currently broken (next lint was removed in Next.js 16) — use `npm run build` as the main check
 ```
 
 Bun variants also exist: `bun-dev`, `bun-build`, `bun-start`.
@@ -82,7 +82,7 @@ scripts/                # update_contributors.py
 - Root layout (`src/app/layout.jsx`) wraps everything in Redux Provider + AuthHydrator.
 - `(main)` route group uses its own layout with Header → NavBar → Footer → GoToTop chrome.
 - `not-found.jsx` for 404 handling.
-- Admin routes under `src/app/admin/` with a client-side guard in `src/app/admin/layout.jsx` (redirects to `/login` when unauthenticated; blocks non-admin roles).
+- Admin routes under `src/app/admin/` each import `src/components/admin-layout.jsx`, the client-side guard (redirects to `/login` once hydration completes; blocks non-admin roles with an "Admin access required" screen). `src/app/admin/layout.jsx` is only a metadata pass-through.
 - Static JSON data in `data/` is imported directly into components as fallback.
 
 ### State Management
@@ -90,8 +90,8 @@ scripts/                # update_contributors.py
 - **Single base API**: `src/services/baseApi.js` with tag types:
   ```
   ['Auth', 'Users', 'Posts', 'Projects', 'PublicContent', 'AdminOverview',
-   'AdminMembers', 'AdminContent', 'AdminStatistics', 'AdminCertificates',
-   'AdminSystemSettings', 'AdminRoles']
+   'AdminMembers', 'AdminContent', 'AdminContributors', 'AdminStatistics',
+   'AdminCertificates', 'AdminSystemSettings', 'AdminRoles']
   ```
   Feature API files (e.g., `features/auth/authApi.js`) extend it via `baseApi.injectEndpoints()`.
 - **Redux slices** live alongside their APIs in `features/<name>/`.
@@ -107,7 +107,8 @@ scripts/                # update_contributors.py
 - Tailwind uses `@/lib/utils` (`cn`) for class merging (root `lib/cn.js` is an equivalent fallback).
 - Font Awesome + Lucide React for icons.
 - API calls go through RTK Query — not fetch/axios directly — except the visitor counter, bootcamp leaderboard, and the server-side certificate metadata fetch.
-- `scripts/update_contributors.py` + `.github/workflows/update-contributors.yml` auto-update `data/contributors.json` daily on the `release` branch.
+- `scripts/update_contributors.py` + `.github/workflows/update-contributors.yml` auto-update `data/contributors.json` daily on the `release` branch from commits in **both** `cpccu/cpccu-client` and `cpccu/cpccu-server` (bots excluded, `batch`/`linkedin` preserved).
+- **Contributors admin is GitHub-synced, NOT generic content:** `/admin/contributors` uses `GET /admin/contributors` + `PATCH /admin/contributors/:githubUsername` (backend GitHub Contents API, requires `CONTRIBUTOR_GITHUB_TOKEN`). Only `batch`/`linkedin` are editable; role is fixed as `Contributor`.
 - Admin content uses generic CRUD endpoints: `GET/POST /admin/content/:resource`, `PATCH/DELETE /admin/content/:resource/:id`.
 - Admin image uploads go to Cloudinary via `POST /admin/uploads/image` using the `uploadAdminImage` mutation.
 - `useAdminContent(resource, fallback)` manages local state for admin content tables with fallback JSON data.
@@ -117,7 +118,8 @@ scripts/                # update_contributors.py
 ### Auth & Security
 
 - Single access token stored in **localStorage** (`token`), sent as `Authorization: Bearer <token>` with `credentials: 'include'`.
-- **No refresh-token and no Google OAuth flow exists on the frontend** — do not document or assume otherwise.
+- **No refresh-token and no Google OAuth flow exists on the frontend** — do not document or assume otherwise. (`GET /auth/refresh-token` exists on the backend but is never called by this app.)
+- **Email verification is enforced by the backend.** Unverified login returns `403` with the error code `EMAIL_NOT_VERIFIED`; `Login.jsx` detects the code and reopens the OTP popup (`OtpVerifyPopup`) without storing credentials. Backend enforcement is the security authority — do not implement client-side-only verification gates.
 - `src/proxy.ts` is the Next.js 16 proxy (middleware) applying CSP (production only), X-Frame-Options DENY, HSTS, Referrer-Policy, Permissions-Policy, and COOP/COEP/CORP headers.
 
 ### Admin Roles
@@ -159,6 +161,7 @@ Official CPCCU position roles (President, Vice President, etc.) are **display-on
 - `src/app/redux/rootReducer.js` — stale (imports files that don't exist); not used by the active store.
 - `src/features/users/userSlice.js`, `src/features/members/memberSlice.js`, `src/features/posts/postSlice.js` — not registered in the store.
 - `src/features/members/memberApi.js` — provides a `Members` tag not declared in `baseApi.tagTypes`.
+- `userApi.js` `createUser` (`POST /users/user`) / `deleteUser` (`DELETE /users/:id`) and `memberApi.js` `fetchMemberById` (`GET /users/member/:id`) — dead client definitions with **no matching backend route** (the backend has no `POST /users/user`, no `DELETE /users/:id`, and no `/users/member/:id`).
 - `src/components/ADMIN/AdminPanel.jsx` — unused (dashboard is `dashboard-content.jsx`).
 - `src/components/Layout/Profile1.jsx` + legacy `PROFILE` components (`ProfileCard`, `ProfileDetails`, `ProfileID`, `ProfileBlog`, `Profile_Blog_Modal`, `ProfileNotFound`) — unused.
 - There is **no** `generateCertificateId.js` file; `generateCertificateId` is a local function inside `src/components/certificates-content.jsx`.
