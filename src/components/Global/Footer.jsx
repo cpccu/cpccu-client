@@ -1,3 +1,17 @@
+"use client";
+
+// This directive is load-bearing, not decorative. The newsletter `<form>` below
+// passes `onSubmit={(e) => e.preventDefault()}`, and a Server Component cannot
+// hand an event-handler function to a DOM element — React fails the build with
+// "Event handlers cannot be passed to Client Component props."
+//
+// It used to be inherited instead: `src/app/(main)/layout.jsx` carried its own
+// `'use client'`, which silently made this whole file part of the client graph.
+// That directive has been removed from that layout, because the layout is pure
+// composition and needs no client runtime of its own — but removing it without
+// adding this one broke the build, which is how the missing boundary was found.
+// Every component under that layout that needs interactivity must now declare
+// its OWN boundary; the layout no longer provides one.
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane } from "@fortawesome/free-regular-svg-icons";
 import { faFacebookF } from "@fortawesome/free-brands-svg-icons";

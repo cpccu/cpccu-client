@@ -46,30 +46,29 @@ export default function Member() {
 
   const users = response?.data || [];
 
-  const roleOrder = {
-    committee: 0,
-    admin: 1,
-    moderator: 2,
-    mentor: 3,
-    member: 4,
-    alumni: 5,
-  };
-
-  const Data = users
-    .filter((user) => user?.isValid !== false)
-    .map((user) => ({
-      ...user,
-      displayPosition: "member",
-    }))
-    .sort((a, b) => {
-      const roleA = a?.roles?.role || "member";
-      const roleB = b?.roles?.role || "member";
-      const orderA = roleOrder[roleA] ?? 99;
-      const orderB = roleOrder[roleB] ?? 99;
-
-      if (orderA !== orderB) return orderA - orderB;
-      return (a?.fullName || "").localeCompare(b?.fullName || "");
-    });
+  // No `isValid` filter here: the server owns that rule. `memberHandler` selects
+  // `User.find({ isValid: true }, PUBLIC_MEMBER_ITEM)`, so unverified accounts are
+  // already excluded at the QUERY, and `isValid` is not in the projection, so
+  // the client has nothing left to re-derive. The `user?.isValid !== false`
+  // filter that used to sit here was a provable no-op. Filtering client-side as
+  // well would be a second, weaker copy of a rule that belongs in one place —
+  // do not reintroduce it.
+  //
+  // The `.map` is what actually does the work: it stamps `displayPosition:
+  // "member"` onto every row, which is what `AboutCard.jsx:23` renders. There is
+  // no role-based sort any more either — the `roleOrder` table and its
+  // `.sort()` that used to follow are gone, because `roles` is deliberately NOT
+  // projected (publishing it anonymously would hand out a ranked list of
+  // `admin`/`moderator`/`mentor` accounts, the exact field `adminAuth.js`
+  // authorises on). With `roles` absent, `a?.roles?.role` was always
+  // `undefined`, both operands fell back to `"member"`, the order comparison
+  // always tied, and the sort degraded to `fullName.localeCompare` — i.e. it was
+  // paying for a comparator that could never fire. The visible order is
+  // unchanged: it was already alphabetical.
+  const Data = users.map((user) => ({
+    ...user,
+    displayPosition: "member",
+  }));
 
   if (Data.length === 0) {
     return (

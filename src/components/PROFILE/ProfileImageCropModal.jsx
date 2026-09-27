@@ -16,6 +16,20 @@ export default function ProfileImageCropModal({ isOpen, imageSrc, onCropComplete
   const previewUrlRef = useRef("");
   const rafIdRef = useRef(null);
 
+  // EVERY hook in this component is called unconditionally, on every render, in
+  // the same order. The "not open" guard lives INSIDE the effect and callback
+  // bodies below, never between two hook calls.
+  //
+  // It used to sit between the reset effect and `updatePreview`, which meant the
+  // component ran 8 hooks when closed and 11 when open. That is a
+  // `rules-of-hooks` violation and it happens to be latent rather than live only
+  // because the sole call site (`Profile.jsx:1583`) renders this component as
+  // `{isCropModalOpen && selectedImageSrc && <ProfileImageCropModal .../>}`, so
+  // the component UNMOUNTS when it closes and its hook count never changes
+  // within a single mounted lifetime. Remove that guard from the parent, or
+  // render this component unconditionally, and React would throw
+  // "Rendered more hooks than during the previous render" on the first close.
+  // Keeping the hooks unconditional makes the component safe under either usage.
   useEffect(() => {
     if (!isOpen || !imageSrc) return;
     setCrop({ x: 0, y: 0 });
@@ -25,8 +39,10 @@ export default function ProfileImageCropModal({ isOpen, imageSrc, onCropComplete
     setError(null);
   }, [isOpen, imageSrc]);
 
-  if (!isOpen || !imageSrc) return null;
-
+  // Guarded inside the callback rather than by an early return above: the preview
+  // is recomputed from `croppedAreaPixels`/`imageSrc`, and both are reset to
+  // `null`/`""` while the modal is closed, so this returns immediately in that
+  // state. It is the FIRST of the two guards that make the hoisted hook safe.
   const updatePreview = useCallback(async () => {
     if (!croppedAreaPixels || !imageSrc) return;
     try {
@@ -64,7 +80,14 @@ export default function ProfileImageCropModal({ isOpen, imageSrc, onCropComplete
     }
   }, [croppedAreaPixels, imageSrc]);
 
+  // SECOND guard: bail before scheduling a frame at all while the modal is
+  // closed, so a closed modal does no work. This reproduces the old behaviour
+  // exactly — the effect used to not exist at all in that state, because the
+  // early return sat above it. `isOpen` and `imageSrc` are in the dependency
+  // list so the guard can never read a stale value.
   useEffect(() => {
+    if (!isOpen || !imageSrc) return;
+
     if (rafIdRef.current) {
       cancelAnimationFrame(rafIdRef.current);
     }
@@ -76,8 +99,11 @@ export default function ProfileImageCropModal({ isOpen, imageSrc, onCropComplete
         cancelAnimationFrame(rafIdRef.current);
       }
     };
-  }, [updatePreview]);
+  }, [updatePreview, isOpen, imageSrc]);
 
+  // Deliberately NOT guarded. This one must run for the whole mounted lifetime,
+  // closed or not: it is the unmount cleanup that revokes the last object URL
+  // the preview created. Guarding it would leak the blob.
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) {
@@ -85,6 +111,10 @@ export default function ProfileImageCropModal({ isOpen, imageSrc, onCropComplete
       }
     };
   }, []);
+
+  // Early return is now BELOW every hook, so the render output is still `null`
+  // when the modal is closed and the hook count is constant either way.
+  if (!isOpen || !imageSrc) return null;
 
   const onCropCompleteHandler = (_, croppedAreaPixels) => {
     setCroppedAreaPixels(croppedAreaPixels);

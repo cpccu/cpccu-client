@@ -18,6 +18,8 @@ import {
 } from "@/features/users/userApi";
 import { useLazyVerifyCertificateQuery } from "@/features/certificate/certificateApi";
 import { setCredentials, clearCredentials } from "@/features/auth/authSlice";
+import { useLogoutMutation } from "@/features/auth/authApi";
+import { baseApi } from "@/services/baseApi";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -123,6 +125,9 @@ export default function Profile({ user, isOwnProfile }) {
   const [requestJobPipelineProfile, { isLoading: isRequestingJobPipeline, isSuccess: isJobPipelineSuccess, isError: isJobPipelineError, error: jobPipelineError, reset: resetJobPipeline }] = useRequestJobPipelineProfileMutation();
   const [removeJobPipelineProfile, { isLoading: isRemovingJobPipeline }] = useRemoveJobPipelineProfileMutation();
   const [fetchCertificates, { data: certResponse }] = useLazyVerifyCertificateQuery();
+  // The ONLY thing that actually ends the server-side session. See the comment
+  // on `handleLogout` below for why the Redux clear alone is not enough.
+  const [logout] = useLogoutMutation();
   const { data: currentUserResponse } = useFetchUsersQuery(undefined, {
     skip: !isOwnProfile || !token,
     refetchOnFocus: true,
@@ -287,13 +292,10 @@ export default function Profile({ user, isOwnProfile }) {
     );
   }, [user?.uniID, fetchCertificates]);
 
-  useEffect(() => {
-    if (certResponse?.data) {
-      setCertificatesLoading(false);
-      setCertificatesList(getCertificatesFromResponse(certResponse));
-    }
-  }, [certResponse]);
-
+  // The duplicate that used to sit directly below this effect was a copy-paste
+  // artefact — byte-identical body, same `[certResponse]` key — not a second
+  // data source. It was removed rather than "completed", so nobody goes looking
+  // for the other field it was meant to handle.
   useEffect(() => {
     if (certResponse?.data) {
       setCertificatesLoading(false);
@@ -312,9 +314,45 @@ export default function Profile({ user, isOwnProfile }) {
     }
   }, [isUpdateSuccess, isUpdateError, isImageSuccess, isImageError, isJobPipelineSuccess, isJobPipelineError, resetUpdate, resetImage, resetJobPipeline]);
 
-  const handleLogout = () => {
-    dispatch(clearCredentials());
-    router.push("/");
+  const handleLogout = async () => {
+    // CLEARING REDUX IS A UI ACTION, NOT A SECURITY ACTION.
+    //
+    // `clearCredentials` only empties the Redux store and `localStorage`
+    // (`src/features/auth/authSlice.js:30-41`). The real session lives in the
+    // `accessToken` / `refreshToken` cookies, which are set with
+    // `httpOnly: true` (`src/lib/server/constants.js:112`) — so client-side
+    // JavaScript cannot read OR delete them, and `clearCredentials` provably
+    // does not. The only place the server-side session is actually revoked is
+    // `auth.controller.js:570-574`, which is reached through the logout
+    // endpoint; until that runs, the refresh token stays live in
+    // `user.refreshTokens` for the full seven days its cookie is scoped to
+    // (`constants.js:154`, `maxAge: 7 * 24 * 60 * 60 * 1000`), and
+    // `GET /api/v1/auth/refresh-token` is `public: true`, so anyone holding the
+    // surviving cookie can mint a fresh access token with no credentials at
+    // all. Calling the endpoint is what ends the session; everything below it
+    // only makes the UI agree.
+    //
+    // `try/finally` (not a bare `await`) so a failed or offline logout still
+    // clears the client — a user who pressed "Log out" must never be left
+    // looking at a signed-in UI just because the network was down.
+    try {
+      // `.unwrap()` so the failure mode is a real `catch` rather than a
+      // resolved `{ error }` that would be silently ignored.
+      await logout().unwrap();
+    } catch (logoutError) {
+      console.error('Logout request failed; clearing local session anyway.', {
+        message: logoutError?.message,
+      });
+    } finally {
+      dispatch(clearCredentials());
+      // Drop every RTK-Query cache entry as well. The cache is keyed by
+      // endpoint, not by user, so without this the next person to use a shared
+      // machine sees the previous member's profile data render before any
+      // refetch happens. This runs in `finally` for the same reason as the
+      // clear above: the cached data is stale either way.
+      dispatch(baseApi.util.resetApiState());
+      router.push('/');
+    }
   };
 
   const handleUpdate = async () => {

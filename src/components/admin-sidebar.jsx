@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { useLogoutMutation } from '@/features/auth/authApi';
 import { clearCredentials } from '@/features/auth/authSlice';
+import { baseApi } from '@/services/baseApi';
 const navItems = [
     { title: 'Dashboard', href: '/admin', icon: LayoutDashboard, roles: ['admin', 'moderator', 'mentor'] },
     { title: 'Posts', href: '/admin/posts', icon: FileText, roles: ['admin', 'moderator'] },
@@ -39,8 +40,21 @@ export function AdminSidebar() {
     const visibleSettingsItems = settingsItems.filter((item) => item.roles.includes(role));
     const [logout] = useLogoutMutation();
     const handleLogout = async () => {
+        // The endpoint call below is what revokes the session; the Redux clear
+        // that follows is only a UI action. `httpOnly` cookies
+        // (`src/lib/server/constants.js:112`) cannot be deleted by client-side
+        // JavaScript, so without the request the refresh token survives until it
+        // expires on its own.
+        //
+        // `resetApiState()` drops the RTK-Query cache, which is keyed by
+        // endpoint rather than by user — without it, the previous admin's cached
+        // member/post data stays on screen for whoever signs in next on a shared
+        // machine. This is the identical omission that was fixed in
+        // `src/components/Layout/Profile.jsx`; the two sign-out buttons must
+        // not drift apart.
         await logout();
         dispatch(clearCredentials());
+        dispatch(baseApi.util.resetApiState());
         router.push('/login');
     };
     return (<Sidebar collapsible="icon" variant="sidebar">

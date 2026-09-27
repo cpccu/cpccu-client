@@ -38,8 +38,7 @@ import {
  * THE CONTRACT. A route uses it as:
  *
  *     export const POST = apiRoute({
- *       auth: true,
- *       handler: async (ctx) => {
+ *       handler: async (ctx, request, routeContext) => {
  *         const { req, res, collect } = await createShim(request, ctx, {
  *           params: routeContext.params
  *         });
@@ -51,6 +50,16 @@ import {
  * `apiRoute` owns CSRF, rate limiting, auth and error shaping; the shim owns
  * only the `req`/`res` adapter; the controller owns only business logic. The
  * controller body is unchanged from the Express original.
+ *
+ * THE HANDLER TAKES `(ctx, request, routeContext)`, NOT `(ctx)` AND NOT A
+ * CLOSURE. `request` and `routeContext` are `apiRoute`'s own invocation
+ * parameters and it forwards them verbatim. Taking them as arguments is what
+ * makes concurrent requests on a warm instance independent: there is no shared
+ * slot for a second in-flight request to overwrite. A route that reached for a
+ * module-level "current request" instead would hand a controller another
+ * request's body. Note also that `auth: true` is NOT part of this contract and
+ * must not be reintroduced — authentication is the default and `apiRoute`
+ * REJECTS the flag at module load (`http.js`).
  */
 
 /**

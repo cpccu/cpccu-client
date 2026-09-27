@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faAngleLeft } from "@fortawesome/free-solid-svg-icons";
 import UpComingEventCard from "@/components/Global/UpComingEventCard.jsx";
 import "./Event.css";
-import cn from "@/lib/cn.js";
+import { cn } from "@/lib/utils";
 import fallbackData from "@/data/upcomingEvent.json";
 import { useGetPublicContentQuery } from "@/features/content/contentApi";
 import { chooseLiveItems, toPublicEvent } from "@/lib/public-content";
@@ -14,6 +14,21 @@ import { chooseLiveItems, toPublicEvent } from "@/lib/public-content";
 const EventLayout = ({ clName }) => {
   const { data: eventsResponse, isLoading, isError } = useGetPublicContentQuery("events");
 
+  // PRE-EXISTING `rules-of-hooks` HAZARD — do not "tidy" this into one component.
+  // This early return sits BETWEEN two hook lists: the one above it (here) and the
+  // rest, which live in the `EventLayoutContent` child rendered below. `EventLayout`
+  // satisfies the rules of hooks only by ACCIDENT OF STRUCTURE — the conditional
+  // return is what keeps a hook from ever being skipped in *this* component, and
+  // the child's hooks are unmounted with it rather than conditionally invoked.
+  // Two edits each break it, and ESLint will only catch one of them:
+  //   - moving any hook from `EventLayoutContent` UP into `EventLayout` puts it on
+  //     the far side of this return, so it stops running on the loading/error
+  //     branch and the hook order changes between renders; and
+  //   - adding any hook to `EventLayoutContent` (or any component it renders) that
+  //     is not unconditional reintroduces a conditional hook call of its own.
+  // Fixing this properly means lifting the query to the parent and returning the
+  // skeleton from a wrapper that owns no hooks — a behavioural change, so it is
+  // deliberately left as a documented hazard rather than refactored in passing.
   if (isLoading || isError || !eventsResponse) {
     return (
       <div className={cn("text-white bg-header relative z-30 p-5 md:p-10 lg:p-12", clName)}>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import cn from "@/lib/cn.js";
+import { cn } from "@/lib/utils";
 
 const UpComingEventCard = ({ data, clName }) => {
   return (

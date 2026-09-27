@@ -10,7 +10,8 @@
     "bun-dev": "bun --bun next dev",
     "bun-build": "bun --bun next build",
     "bun-start": "bun --bun next start",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./test/loader.mjs \"test/*.test.js\""
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.3.1",

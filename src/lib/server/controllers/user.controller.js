@@ -14,7 +14,7 @@ import {
   assertEmailUnique,
   assertUniIDUnique,
 } from '@/lib/server/validation-helper';
-import { PUBLIC_ITEM, PUBLIC_MEMBER_ITEM } from '@/lib/server/constants';
+import { PUBLIC_ITEM, PUBLIC_MEMBER_ITEM, PUBLIC_PROFILE_ITEM } from '@/lib/server/constants';
 
 /**
  * Port of `cpccu-server/src/controllers/user.controller.js`.
@@ -225,14 +225,31 @@ const getUserInfoById = async (req, res) => {
   if (!id || id === 'undefined') {
     throw new ApiError(400, 'Invalid user ID');
   }
-  // PROJECTION. `PUBLIC_MEMBER_ITEM`, NOT `PUBLIC_ITEM`. This route is
-  // `public: true`, so whatever is projected here is served to an anonymous
-  // caller. `PUBLIC_ITEM` would hand the entire membership's email addresses,
-  // phone numbers, institutional Student IDs and `roles` (the field
-  // `adminAuth.js` authorises the whole admin panel on) to whoever asks — the
-  // exact H1 exposure. The allow-list and the reasoning for every exclusion live
-  // on `PUBLIC_MEMBER_ITEM` in `constants.js`. Every read that is NOT anonymous
-  // (own profile, profile update, avatar upload, admin) keeps `PUBLIC_ITEM`.
+  // PROJECTION. `PUBLIC_PROFILE_ITEM`, NOT `PUBLIC_ITEM` and NOT
+  // `PUBLIC_MEMBER_ITEM`. This route is `public: true`, so whatever is projected
+  // here is served to an anonymous caller. `PUBLIC_ITEM` would hand the entire
+  // membership's email addresses, phone numbers, institutional Student IDs and
+  // `roles` (the field `adminAuth.js` authorises the whole admin panel on) to
+  // whoever asks — the exact H1 exposure.
+  //
+  // `PUBLIC_PROFILE_ITEM` and not `PUBLIC_MEMBER_ITEM` because this is the
+  // PROFILE PAGE's data, not the directory's. The full public profile renders
+  // `coverImage` (`ProfileID.jsx:11-12`), the whole Skills section
+  // (`SkillsSection.jsx:10,26` via `Profile.jsx:782`) and the "Member since"
+  // row (`ProfileHero.jsx:93` via `Profile.jsx:763`, from `createdAt`), none of
+  // which a member card displays; projecting the narrower directory string here
+  // made those disappear without any error. `createdAt` is the account-creation
+  // timestamp, so it is not user-supplied and discloses no capability — the
+  // per-field reasoning is in that constant's docblock. It is still an
+  // allow-list, and it still excludes
+  // `email`/`phone`/`uniID`/`isValid`/the two Cloudinary `*PublicId` write
+  // primitives — and it excludes `roles.positionName` too, which LOOKS like a
+  // harmless display label but is written as a copy of the authorising `role`
+  // enum by every writer in this codebase (see `PUBLIC_PROFILE_ITEM`'s
+  // docblock). Every read that is NOT anonymous (own profile, profile update,
+  // avatar upload, admin) keeps `PUBLIC_ITEM`. The allow-list and the per-field
+  // reasoning live in `constants.js`; read `PUBLIC_PROFILE_ITEM`'s docblock
+  // before changing this line.
   //
   // A 24-hex-character value is treated as an ObjectId; anything else is looked
   // up as a Student ID. This is what lets the public profile page work with
@@ -240,16 +257,23 @@ const getUserInfoById = async (req, res) => {
   //
   // `uniID` IS STILL A VALID LOOKUP KEY even though it is no longer projected.
   // The branch is preserved here because the client links to
-  // `/profile/${Data?.uniID || Data?._id}` (`AboutCard.jsx:47`), so removing it
+  // `/profile/${Data?.uniID || Data?._id}` (`AboutCard.jsx:40`), so removing it
   // would 404 every Student-ID profile URL already in the wild — including
   // bookmarks and links shared outside this site. See the tradeoff note in the
   // report: the branch is now an IDENTIFIER ORACLE (a 404 vs a 200 confirms
   // whether a Student ID is registered) but no longer a DISCLOSURE (nothing
   // sensitive is returned, and the identifier had to be guessed). Fixing that
   // properly needs the client repointed at `_id` and an explicit decision.
+  //
+  // NOTE the deliberate ASYMMETRY with `memberHandler`: this route does NOT
+  // filter on `isValid`. A single-member profile lookup is a shareable link, and
+  // refusing to render a profile for a member who has not yet clicked their OTP
+  // link would break a link that was shared before they verified — whereas the
+  // directory is a bulk harvest surface where unverified rows are pure spam
+  // surface. Both decisions are recorded in `constants.js`.
   const user = isValidIdentity(id)
-    ? await User.findById(id).select(PUBLIC_MEMBER_ITEM)
-    : await User.findOne({ uniID: id }).select(PUBLIC_MEMBER_ITEM);
+    ? await User.findById(id).select(PUBLIC_PROFILE_ITEM)
+    : await User.findOne({ uniID: id }).select(PUBLIC_PROFILE_ITEM);
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
@@ -592,7 +616,51 @@ const memberHandler = async (req, res) => {
   // `PUBLIC_ITEM` without re-reading that block, because `roles` is the input
   // `adminAuth.js` authorises on and would turn this into a ranked list of
   // which accounts are worth attacking.
-  const member = await User.find({}, PUBLIC_MEMBER_ITEM);
+  //
+  // `{ isValid: true }` — PENDING ACCOUNTS ARE EXCLUDED AT THE QUERY, NOT AT THE
+  // PROJECTION. The client used to do this itself: `Member.jsx:59` filters
+  // `user?.isValid !== false`. That client filter is now REDUNDANT, because
+  // `isValid` is not projected — with the field absent, `undefined !== false` is
+  // `true` and the predicate passes EVERY document, so the filter silently
+  // became a no-op and every unverified account started rendering in the public
+  // directory. Filtering here instead is strictly better on three counts:
+  //   1. it moves the reasoning burden off every current and future consumer of
+  //      this endpoint onto the one place that owns the rule;
+  //   2. it needs no projection change, so the pending/published distinction
+  //      stays out of the anonymous payload entirely;
+  //   3. it does not rely on a client shipping the compensating filter, which is
+  //      the only thing that made the gap survivable.
+  //
+  // WHY IT MATTERS — SPAM AND THROWAWAY REGISTRATIONS. `POST /auth/register`
+  // accepts an attacker-chosen `fullName` with no verification step, so an
+  // UNVERIFIED account is the cheapest possible thing an attacker can create,
+  // and it is exactly the class of account most likely to be spam. Publishing
+  // those rows in the public directory is how an attacker gets an attacker-named
+  // entry rendered on the club's member page, to every visitor, indefinitely —
+  // which is why this is enforced on the harvest surface and not left to the
+  // card renderer.
+  //
+  // `isValid` IS NOT RE-ADDED TO THE PROJECTION to make this observable to the
+  // client. There is nothing for a caller to re-derive once the query excludes
+  // them, and re-adding it would restore an ID-oracle for pending accounts.
+  //
+  // EDGE CASE, DOCUMENTED RATHER THAN PAPERED OVER: `{ isValid: true }` matches
+  // on the STORED value, and a Mongo query does not apply Mongoose schema
+  // defaults — `user.model.js:223`'s `default: false` is applied when a document
+  // is HYDRATED for reading, not when a filter is matched. So a legacy document
+  // written before `isValid` ever existed (i.e. with the field ABSENT) does NOT
+  // match `{ isValid: true }` and is therefore EXCLUDED from the directory. That
+  // is the fail-closed direction, which is the right one for an anonymous
+  // surface — an account of unknown provenance is not published — and it is
+  // consistent with `forgottenPasswordHandler`, which likewise queries
+  // `{ email, isValid: true }` (`auth.controller.js:592-595`). In practice every
+  // account created by this codebase stores the field explicitly: registration
+  // writes `isValid: false` (`auth.controller.js:217`) and OTP verification
+  // flips it (`auth.controller.js:318`). If a member ever reports vanishing from
+  // the directory, THIS is the first thing to check — a one-off
+  // `updateMany({ isValid: { $exists: false } }, { $set: { isValid: true } })`
+  // backfills it, but that is a deliberate data decision, not a code change.
+  const member = await User.find({ isValid: true }, PUBLIC_MEMBER_ITEM);
 
   return res.status(200).json(new ApiResponse(200, member, 'Members data'));
 };

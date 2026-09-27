@@ -256,7 +256,7 @@ https://i.ibb.co.com/Nm3q6c0/Artboard-1.png
 ## 📌 Notes
 
 - The app uses a shared public layout (`src/app/(main)/layout.jsx`) for main site pages (Header, NavBar, Footer, GoToTop) and a separate admin area under `/admin` guarded by `src/components/admin-layout.jsx`.
-- API requests are driven through RTK Query with a shared `baseApi` and a separate unauthenticated `publicApi` for public certificate verification.
+- API requests are driven through RTK Query with a single shared `baseApi` instance (`src/services/baseApi.js`) — there is no longer a separate unauthenticated `publicApi`. Public certificate verification was the only thing that instance ever existed for; it is now served by the same instance at `GET /api/v1/certificates/verify/:certificateId`. (The `publicApi` created here was removed during the Express → Next.js migration: it existed only because the Express backend mounted verification at the root path `/verify/:certificateId`, outside the `/api/v1` base URL, and that root path is no longer served.)
 - Public content is split between static JSON data in `data/` and API-backed managed content. Admin-managed content falls back to JSON when the database is empty.
 - **Authentication**: the access token is stored in `localStorage` (`token`) and sent as a `Bearer` token via RTK Query headers (`credentials: 'include'` is also set for cookie-based flows). There is **no refresh-token or Google OAuth flow implemented on the frontend** — if the stored token becomes invalid, the session is cleared on the next `getCurrentUser` call.
 - The `certificateSlise.js` filename contains a typo (`Slise` vs `Slice`) but is currently wired and working.

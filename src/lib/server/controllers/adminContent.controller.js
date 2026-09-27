@@ -122,6 +122,39 @@ const githubContributorHeaders = () => ({
   'X-GitHub-Api-Version': '2022-11-28',
 });
 
+/**
+ * Per-attempt outbound budget for ONE GitHub Contents API call, in milliseconds.
+ *
+ * WHY A TIMEOUT IS NEEDED. `undici`'s defaults are `headersTimeout: 300e3` and
+ * `bodyTimeout: 300e3` — five minutes — and `next.config.mjs` sets no
+ * `maxDuration`, so a peer that completes the handshake and then stalls holds a
+ * serverless invocation for the whole platform budget. Both call sites here are
+ * OUTBOUND REQUESTS CARRYING A BEARER TOKEN (`githubContributorHeaders()` sets
+ * `Authorization`), so an unbounded read is also an invitation to keep a
+ * credentialed connection open for as long as the peer likes. This surface is
+ * admin-only, so the exposure is bounded rather than anonymous, but the
+ * hold-time costs nothing to bound and `AbortSignal.timeout` is a Node/undici
+ * global — no dependency added. It aborts the underlying request, not merely the
+ * awaiting promise, so the socket is actually released.
+ *
+ * WHY 10 SECONDS, AND WHY IT IS **PER ATTEMPT** RATHER THAN PER OPERATION. The
+ * budget is deliberately NOT a whole-operation deadline for
+ * `updateContributorMetadata`. That handler retries at most 3 times on a 409
+ * (see the optimistic-concurrency loop below), and a shared deadline would make
+ * the retry loop's behaviour depend on how much of the budget the earlier
+ * attempts happened to consume — attempt 3 could be left with a few hundred
+ * milliseconds, or none, turning a legitimate lost race into a spurious failure.
+ * Per-attempt keeps the bound simple to reason about: "no single GitHub call
+ * takes longer than this" holds regardless of how many times the loop iterates,
+ * and the operation's true worst case becomes 3 × this for the write leg rather
+ * than an unbounded 300s × 3.
+ *
+ * The 10s figure is comfortably above a healthy Contents-API round trip
+ * (tens to low hundreds of ms) and far below the 300s it replaces. The honest
+ * tradeoff is a rare 502 on a very slow link instead of a reliable stall.
+ */
+const GITHUB_REQUEST_TIMEOUT_MS = 10000;
+
 /** Lower-cases and strips trailing slashes so URL comparisons are exact. */
 const normalizeGithubUrl = (url) =>
   String(url || '')
@@ -176,6 +209,9 @@ const findContributorByUsername = (contributors, username) => {
  *
  * OUTBOUND NETWORK CALL, and every failure mode is mapped to a 502 rather than
  * allowed to surface as a generic 500:
+ *  - a network error, or a peer that stalls past `GITHUB_REQUEST_TIMEOUT_MS`
+ *    and trips the `AbortSignal` -> 502, folded into the SAME branch as a
+ *    non-2xx so the client error path is unchanged;
  *  - a non-2xx response (rate limit, bad token, 404 on the path) -> 502 with the
  *    upstream status in the field-error message, which is what makes a rate
  *    limit diagnosable from the client;
@@ -185,14 +221,46 @@ const findContributorByUsername = (contributors, username) => {
  *    upstream fault.
  * There is no retry and no caching: the file is small, the panel is the only
  * consumer, and a cached read would make the editor write back a stale `sha` and
- * collide with itself.
+ * collide with itself. (The retry that DOES exist is in the write leg, and it is
+ * a 409 re-read, not a transport retry — a transport failure is not retried here
+ * on purpose, so a timeout does not multiply into three stalls.)
  *
  * @returns `{ contributors, sha }` — the parsed array and the blob SHA the write
  *          leg below must present for the commit to be accepted.
  */
 const fetchContributorsFile = async () => {
   const url = `https://api.github.com/repos/${GITHUB_CONTRIBUTOR_OWNER}/${GITHUB_CONTRIBUTOR_REPO}/contents/${GITHUB_CONTRIBUTOR_PATH}?ref=${GITHUB_CONTRIBUTOR_BRANCH}`;
-  const response = await fetch(url, { headers: githubContributorHeaders() });
+  // THE `try` EXISTS FOR THE TIMEOUT, NOT FOR PARSING. Without it an abort (or
+  // any transport error) escapes as a raw `DOMException`/`TypeError` and the
+  // caller turns it into a generic 500 — "our server is broken" for a fault that
+  // is entirely upstream. Mapping it to the 502 the non-2xx branch already
+  // produces keeps the client's existing error path intact. The `field`/`message`
+  // detail is included here even though the status is unknowable, because the
+  // client renders that detail and "the request timed out" is more useful to an
+  // admin than a bare upstream-status line with no status in it.
+  let response;
+
+  try {
+    response = await fetch(url, {
+      headers: githubContributorHeaders(),
+      signal: AbortSignal.timeout(GITHUB_REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    // `AbortSignal.timeout` rejects with a `TimeoutError`-named DOMException; a
+    // reset peer raises a `TypeError`. The name is what distinguishes them in
+    // the logs — the error's own `message` is empty for the abort case, so
+    // logging the error object alone prints a blank line. The token is never
+    // logged; only the error name and the request path.
+    console.error(
+      `[adminContent] GitHub Contents read failed: ${error?.name || 'Error'}`,
+    );
+    throw new ApiError(502, 'Failed to fetch contributors.json from GitHub', [
+      {
+        field: 'github',
+        message: `GitHub API request failed before a response (${error?.name || 'Error'})`,
+      },
+    ]);
+  }
 
   if (!response.ok) {
     throw new ApiError(502, 'Failed to fetch contributors.json from GitHub', [
@@ -313,16 +381,50 @@ const updateContributorMetadata = async (req, res) => {
     ).toString('base64');
 
     const writeUrl = `https://api.github.com/repos/${GITHUB_CONTRIBUTOR_OWNER}/${GITHUB_CONTRIBUTOR_REPO}/contents/${GITHUB_CONTRIBUTOR_PATH}`;
-    const writeResponse = await fetch(writeUrl, {
-      method: 'PUT',
-      headers: githubContributorHeaders(),
-      body: JSON.stringify({
-        message: `chore: update contributor metadata for ${target.name || githubUsername}`,
-        content,
-        sha,
-        branch: GITHUB_CONTRIBUTOR_BRANCH,
-      }),
-    });
+    // The `try` is for the TIMEOUT, mirroring `fetchContributorsFile` above: an
+    // abort here must produce the SAME 502 shape as a non-2xx write, or the
+    // admin panel loses its existing error handling on a stalled network. This is
+    // the one call in the codebase where a timeout is genuinely ambiguous — a
+    // `PUT` that is aborted may or may not have been applied by GitHub before the
+    // connection dropped. That ambiguity is NOT resolved here and must not be:
+    // the operation is idempotent in practice (the loop re-reads the file and
+    // re-applies the same field edits on top of whatever it finds), so the
+    // next click of Save converges regardless. What must not happen is an
+    // automatic blind retry of the PUT from here — that is the one thing that
+    // could turn an ambiguity into a duplicate write to the same file.
+    //
+    // The timeout is PER ATTEMPT — see `GITHUB_REQUEST_TIMEOUT_MS`. It is NOT a
+    // whole-operation deadline, precisely so the 409 retry loop keeps a full
+    // budget on its third attempt instead of inheriting whatever the earlier
+    // attempts left behind.
+    let writeResponse;
+
+    try {
+      writeResponse = await fetch(writeUrl, {
+        method: 'PUT',
+        headers: githubContributorHeaders(),
+        body: JSON.stringify({
+          message: `chore: update contributor metadata for ${target.name || githubUsername}`,
+          content,
+          sha,
+          branch: GITHUB_CONTRIBUTOR_BRANCH,
+        }),
+        signal: AbortSignal.timeout(GITHUB_REQUEST_TIMEOUT_MS),
+      });
+    } catch (error) {
+      // Error NAME only. The request carries `Authorization: Bearer <token>`, so
+      // neither the error object nor any interpolated URL/header may reach the
+      // log line.
+      console.error(
+        `[adminContent] GitHub Contents write failed: ${error?.name || 'Error'}`,
+      );
+      throw new ApiError(502, 'Failed to write contributors.json to GitHub', [
+        {
+          field: 'github',
+          message: `GitHub API request failed before a response (${error?.name || 'Error'})`,
+        },
+      ]);
+    }
 
     if (writeResponse.status === 409 && attempt < 2) {
       attempt += 1;

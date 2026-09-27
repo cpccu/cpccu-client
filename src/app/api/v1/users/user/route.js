@@ -34,12 +34,10 @@ import { defineRoute } from '@/lib/server/handler';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export const GET = defineRoute({
-  method: 'GET',
+export const GET = defineRoute('GET', {
   controller: getUserInfo,
 });
 
-export const DELETE = defineRoute({
-  method: 'DELETE',
+export const DELETE = defineRoute('DELETE', {
   controller: deleteOwnAccount,
 });

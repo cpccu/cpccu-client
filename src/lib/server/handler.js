@@ -1,7 +1,6 @@
 import 'server-only';
 
-import { AsyncLocalStorage } from 'node:async_hooks';
-
+import { getDb } from '@/lib/server/db';
 import { ApiError } from '@/lib/server/errors';
 import { apiRoute } from '@/lib/server/http';
 import { createShim } from '@/lib/server/shim';
@@ -14,7 +13,7 @@ import { createShim } from '@/lib/server/shim';
  * have to repeat the same four steps in the same order:
  *
  *     apiRoute({
- *       handler: async (ctx) => {
+ *       handler: async (ctx, request, routeContext) => {
  *         const { req, res, collect } = await createShim(request, ctx, {
  *           params: routeContext.params,
  *         });
@@ -57,7 +56,7 @@ import { createShim } from '@/lib/server/shim';
  *    `verifyToken` RETURNS a `{ name, value, options }` instruction; `apiRoute`
  *    holds it in a `refreshCookie` variable declared BEFORE its `try` and hands
  *    it to `finalizeResponse` on the success path AND the throw path
- *    (`http.js:321,380,391,398`). The closure placement is load-bearing: it is
+ *    (`http.js:384,388,446,508,518`). The closure placement is load-bearing: it is
  *    what lets a refreshed access token survive a handler that throws AFTER
  *    authenticating. Because `finalizeResponse` runs after our handler returns,
  *    the AUTH-LAYER cookie wins over a controller-queued cookie of the same
@@ -105,39 +104,33 @@ const APP_ROUTER_METHODS = new Set([
 ]);
 
 /**
- * Per-request ambient facts that `apiRoute` does not forward.
+ * WHERE THE `Request` AND THE ROUTE CONTEXT COME FROM, AND WHY THEY ARE NOT
+ * LOOKED UP AMBIENTLY.
  *
- * WHY THIS EXISTS, AND WHY IT IS NOT A PARAMETER — `apiRoute` invokes its
- * handler as `handler(ctx)` (`http.js:391`) and nothing else. `ctx` is
+ * `ctx` alone is NOT enough to run a ported controller. `ctx` is
  * `buildRateLimitContext(request, body)` plus `ctx.user`, i.e.
- * `{ ip, body, headers, userAgent, method, path, user }`. It deliberately does
- * NOT carry the `Request` or the route context, and it cannot: `body` is only
- * populated when a limiter exists, and there is no field that can stand in for a
- * one-shot body stream or for `{ params }`.
+ * `{ ip, body, headers, userAgent, method, path, user }`; it deliberately does
+ * NOT carry the `Request` or `{ params }`, and it cannot: `body` is only
+ * populated when a limiter exists, and no field can stand in for a one-shot body
+ * stream or for the dynamic segments. `createShim` needs both — it calls
+ * `readMultipart(request)` / `readBody(request)`, which need the real stream, and
+ * it reads `options.params`.
  *
- * Those two values are nevertheless REQUIRED by the shim — `createShim` calls
- * `readMultipart(request)` / `readBody(request)`, which need the real stream,
- * and it reads `options.params` for the dynamic segments. (The worked example in
- * `shim.js`'s own module docblock shows a handler that closes over `request`
- * and `routeContext`; that example cannot work with the current `apiRoute`
- * signature, which is a stale docblock in a foundation file and is reported
- * rather than edited.)
+ * They are therefore ORDINARY PARAMETERS. `apiRoute` has both in scope — they
+ * ARE its own `routeHandler(request, routeContext)` parameters — and forwards
+ * them: `await handler(ctx, request, routeContext)`.
  *
- * A module-level "current request" variable would be the obvious fix and is
- * WRONG: a single warm function instance serves requests CONCURRENTLY, so two
- * in-flight requests would race on one slot and a controller could be handed
- * another request's body. `AsyncLocalStorage` is the concurrency-safe channel
- * for exactly this, and it is the only correct one available without editing
- * `http.js`. `als.run()` is entered once per invocation and its store is visible
- * to every `await` downstream, including the `await handler(ctx)` inside
- * `apiRoute`.
- *
- * THIS IS A STANDALONE ISLAND BY DESIGN. If a later phase widens `apiRoute` to
- * `handler({ ctx, request, routeContext })`, this module loses its only
- * non-obvious mechanism and becomes a thin, entirely obvious composition —
- * which is the shape it should have. Until then, the store is the bridge.
+ * THIS IS NOT COSMETIC. A single warm function instance serves requests
+ * CONCURRENTLY, so a module-level "current request" variable — the obvious
+ * cheaper-looking alternative — races: two in-flight requests share one slot and
+ * a controller can be handed ANOTHER request's body. This module previously
+ * bridged the values through an `AsyncLocalStorage` store for that reason. Plain
+ * parameters remove the hazard at the root rather than managing it: the only way
+ * `runController` can see a `Request` is the one its own invocation was given,
+ * because it is an argument to that call and nothing else can substitute for it.
+ * There is no store to initialise, no store to leak across an `await`, and no
+ * fail-loud guard needed for a store that a correct call site always populates.
  */
-const requestStore = new AsyncLocalStorage();
 
 /**
  * Declares one App Router route handler from a declarative description of it.
@@ -155,11 +148,26 @@ const requestStore = new AsyncLocalStorage();
  * `admin` (delegated wholesale to `adminAuth.js`, which derives its own routing
  * context from the pathname). `method` has no influence on either.
  *
+ * WHY `method` IS THE FIRST POSITIONAL ARGUMENT AND NOT A `config` PROPERTY.
+ * The App Router registers a route under its EXPORT NAME, not under anything the
+ * route file declares — `export const GET = defineRoute(…)` is a `GET` endpoint
+ * because the binding is called `GET`. A `method` property sat two lines below the
+ * export name, so a copy-paste that carried a `GET` handler into a file whose
+ * export is `POST` produced a route that registered as `POST`, ran a `GET`
+ * controller, and passed the per-request assertion below — because the assertion
+ * compared the DECLARED method against the arriving request, and a caller
+ * hitting the `POST` export arrives with `POST`. The declared `'GET'` and the
+ * observed `'POST'` were never compared. Putting the method in the argument
+ * position puts it on the SAME LINE as the export name, so a mismatch is visible
+ * in review rather than only at runtime.
+ *
+ * @param {string}   method            the HTTP method this route is registered
+ *                                      under, upper-case, matching the export
+ *                                      name it is assigned to. Used for the
+ *                                      assertion and for diagnostics ONLY;
+ *                                      never for access control
  * @param {object}   config
  * @param {Function} config.controller  the ported `(req, res)` Express handler
- * @param {string}   config.method      the HTTP method this route is registered
- *                                      under. Used for the assertion and for
- *                                      diagnostics ONLY; never for access control
  * @param {boolean}  [config.public]    `true` to make the route ANONYMOUS. Every
  *                                      use must be justified in the route file.
  *                                      Omit it (the default) and the route is
@@ -197,18 +205,52 @@ const requestStore = new AsyncLocalStorage();
  * @returns {Function} `(request, routeContext) => Promise<Response>`
  * @throws {TypeError} at MODULE LOAD, not per request, on a bad config
  */
-function defineRoute({
-  controller,
-  method,
-  auth,
-  public: isPublic = false,
-  admin = false,
-  limiter,
-  userLimiter,
-  fileField,
-  maxFiles,
-  rejectMultipart = false,
-}) {
+function defineRoute(method, config) {
+  // A MISSING CONFIG IS CHECKED EXPLICITLY rather than left to the destructuring
+  // pattern below. Destructuring `undefined` throws `TypeError: Cannot
+  // destructure property 'controller' of 'undefined'`, which points at this
+  // function's own internals and says nothing about the caller's mistake.
+  // `defineRoute('GET')` is a half-finished edit or a missing brace in a route
+  // file, and like every other configuration mistake here it is cheapest to catch
+  // while the module is being evaluated during `next build`.
+  if (typeof config !== 'object' || config === null) {
+    // THE OLD SHAPE IS NAMED EXPLICITLY, because a route file still written as
+    // `defineRoute({ method: 'GET', … })` passes its config object as the METHOD
+    // and arrives here with nothing in the second position. That is the exact
+    // failure a half-finished migration of the 53 route files produces, and
+    // without this branch the author would be told only that a config object was
+    // missing — with the offending object, and the correct call, printed nowhere
+    // near it. The object is NOT stringified here: a config may carry a
+    // controller function and a limiter, and a function is not JSON.
+    if (typeof method === 'object' && method !== null) {
+      throw new TypeError(
+        'defineRoute: `method` is now the FIRST POSITIONAL ARGUMENT. This call ' +
+          'passes a config object as the method, which is the OLD ' +
+          "`defineRoute({ method: '…', … })` signature. Rewrite it as " +
+          "`defineRoute('GET', { … })` — the method must match the export name " +
+          'it is assigned to.',
+      );
+    }
+
+    throw new TypeError(
+      'defineRoute: the second argument must be a config object, e.g. ' +
+        "`defineRoute('GET', { controller })`. Got " +
+        (config === undefined ? 'nothing.' : `${JSON.stringify(config)}.`),
+    );
+  }
+
+  const {
+    controller,
+    auth,
+    public: isPublic = false,
+    admin = false,
+    limiter,
+    userLimiter,
+    fileField,
+    maxFiles,
+    rejectMultipart = false,
+  } = config;
+
   // Every check below runs while the ROUTE MODULE is being evaluated, i.e.
   // during `next build`. A configuration mistake caught here costs nothing;
   // the same mistake caught on a live request costs an incident.
@@ -233,13 +275,13 @@ function defineRoute({
     );
   }
 
-  const composedLimiter = composeLimiters(limiter, method);
+  const composedLimiter = composeLimiters(limiter);
 
   // Composed through the SAME factory as `limiter`, so a list of per-user
   // limiters gets identical validation and identical first-denial-wins
   // semantics, and so a single one is passed through unwrapped (preserving the
   // limiter-function identity `http.js`'s parse-failure `WeakMap` keys on).
-  const composedUserLimiter = composeLimiters(userLimiter, method);
+  const composedUserLimiter = composeLimiters(userLimiter);
 
   /**
    * Bridges the shim to THIS route's controller.
@@ -253,30 +295,88 @@ function defineRoute({
    * `node --check` passes it. Every route would 500 on first contact, which is
    * exactly the class of bug this bridge exists to make impossible.
    *
-   * Called by `apiRoute` as step 6, i.e. AFTER the body-size gate, CSRF, rate
+   * Called by `apiRoute` as step 7, i.e. AFTER the body-size gate, CSRF, rate
    * limiting, authentication and admin authorisation. Nothing here may
    * re-implement any of those.
+   *
+   * `request` and `routeContext` are the invocation's OWN values, received as
+   * parameters from `apiRoute`'s forwarded call. They are not looked up from any
+   * ambient or module-level state, so two concurrent invocations of this route —
+   * or of two different routes — cannot see each other's request. See the module
+   * docblock above.
    *
    * There is deliberately NO try/catch: a controller's `throw` must reach
    * `apiRoute`'s catch so `toErrorResponse` shapes it into the envelope the
    * frontend parses. Catching here would turn a controller 400 into a 200 with a
    * `null` body.
    */
-  async function runController(ctx) {
-    const store = requestStore.getStore();
-
-    // Only reachable if the returned function is invoked without going through the
-    // `requestStore.run(...)` wrapper — i.e. a test that calls the inner handler
-    // directly. Failing loudly is better than handing a controller an empty store
-    // and letting it read `req.body` as `null`.
-    if (!store) {
-      throw new TypeError(
-        'defineRoute: no request context. The handler must be invoked as ' +
-          '`(request, routeContext)` by Next, not called directly.',
-      );
-    }
-
-    const { request, routeContext } = store;
+  async function runController(ctx, request, routeContext) {
+    // ==========================================================================
+    // OPEN THE DATABASE CONNECTION BEFORE ANY CONTROLLER RUNS
+    // ==========================================================================
+    // PLACEMENT, AND WHY IT IS HERE AND NOT IN `apiRoute`. `apiRoute` is the
+    // lower wrapper, and putting the connect in its step 7 would be the more
+    // obvious-looking place to fix this. It would be WRONG, because
+    // `src/app/api/v1/route.js` — the `GET /api/v1` health probe — calls
+    // `apiRoute` DIRECTLY (`route.js:47-54`) and deliberately bypasses
+    // `defineRoute`, because its body is a raw `text/html` string that
+    // `createShim`'s `collect.result()` cannot produce. A connect in `apiRoute`
+    // would therefore make the health probe depend on Mongo being reachable —
+    // i.e. it would go red exactly when the database is down, which is the one
+    // moment a health probe exists to stay green. The rule this encodes is
+    // narrow and worth stating as such: CONTROLLERS NEED THE DATABASE; THE
+    // HEALTH PROBE DOES NOT AND MUST NOT BE COUPLED TO IT.
+    //
+    // `runController` is reached ONLY through `defineRoute` (`handler.js:464`),
+    // which is by construction the set of routes that run a ported
+    // `(req, res)` controller. Every one of those controllers, or a service it
+    // calls, reads or writes Mongoose, so this is the correct blast radius: the
+    // whole database surface and nothing outside it.
+    //
+    // A SECOND, FREE CONSEQUENCE OF THE SAME PLACEMENT, worth knowing so nobody
+    // later "optimises" the connect up into `apiRoute`: `runController` is
+    // `apiRoute`'s step 7, so every earlier short-circuit — the oversized-body
+    // gate, CSRF, a rate-limit 429, an authentication 401, an admin 403 — is
+    // answered WITHOUT opening a connection. An unauthenticated flood is
+    // rejected by the auth step and never reaches Mongo at all.
+    //
+    // WHY THE CONNECT IS HERE AND NOT AT THE TOP OF `defineRoute`: it is
+    // per-INVOCATION state, not per-MODULE state, and route modules ARE
+    // evaluated during `next build` — that is exactly where the module-load
+    // configuration assertions above fire. A module-scope connect would
+    // therefore run at build time, with no production secrets in the build
+    // environment, and would fail the build of every route in the app.
+    //
+    // WHY IT MUST BE AN EXPLICIT AWAIT AND NOT `mongoose.connect().then(...)`:
+    // Mongoose does not fail fast when it has no connection — it BUFFERS the
+    // command and rejects only after the default 10 s `bufferTimeoutMS`. Every
+    // request would therefore hang for ten seconds and 500 with a misleading
+    // `MongooseError: Operation ... buffering timed out after 10000ms` before a
+    // single query ran. Awaiting the real connection converts that into an
+    // honest `serverSelectionTimeoutMS` connect failure (8 s, set in
+    // `db.js:47-50`) on the FIRST request instead of a phantom per-query hang.
+    // The response shape, status code and error envelope are unchanged: this
+    // throw lands in `apiRoute`'s catch exactly like the controller's own throw
+    // would, and `toErrorResponse` shapes it the same way.
+    //
+    // `bufferCommands: false` IS DELIBERATELY NOT SET as the fix. It would turn a
+    // slow failure into an immediate one and would forfeit the buffering window
+    // that lets a cold start succeed while the connect is still in flight.
+    //
+    // COST: effectively zero. `getDb()` is memoised on `globalThis.__mongoose`
+    // (`db.js:18,60-90`), so after the first successful call this is an await on
+    // an already-resolved promise — a microtask — and it does NOT open a second
+    // connection pool. A rejected connect clears the memo (`db.js:94-100`) so the
+    // next invocation retries from a clean slate rather than replaying a
+    // poisoned promise, and a `disconnected` event clears it too
+    // (`db.js:120-125`).
+    //
+    // THERE IS NO try/catch, and that is deliberate for the same reason the
+    // controller call below has none: a connect failure must reach `apiRoute`'s
+    // catch so `toErrorResponse` shapes it into the `{ status, message, errors? }`
+    // envelope the frontend already parses. Catching here would produce a bare
+    // 500 with no envelope.
+    await getDb();
 
     // `upload.none()` REPRODUCTION. In the Express router, `POST /login` ran
     // `upload.none()` BEFORE the rate limiter, and `upload.none()` rejects any
@@ -362,7 +462,7 @@ function defineRoute({
   // becoming the strictest possible route. `public: true` + `admin: true` is
   // likewise left to `apiRoute`, for the same single-source-of-truth reason.
   const inner = apiRoute({
-    handler: (ctx) => runController(ctx),
+    handler: (ctx, request, routeContext) => runController(ctx, request, routeContext),
     limiter: composedLimiter,
     userLimiter: composedUserLimiter,
     public: isPublic,
@@ -373,29 +473,33 @@ function defineRoute({
   /**
    * The exported route handler.
    *
-   * THE METHOD ASSERTION, AND WHY IT IS HERE RATHER THAN AT MODULE LOAD.
-   * `method` is the method the author DECLARED; the method the route is
-   * REGISTERED under is the export name (`export const POST = …`), and an ES
-   * module cannot enumerate its own exports — so the two cannot be compared
-   * while the module is being evaluated. What CAN be compared is the declared
-   * method against the method of the request that actually arrives, and that is
-   * the check below.
+   * THE METHOD ASSERTION, AND WHY IT IS STILL HERE NOW THAT `method` IS
+   * POSITIONAL. Making the method an argument put it on the same line as the
+   * export name, which is what makes a copy-paste between two `route.js` files
+   * VISIBLE IN REVIEW: `export const POST = defineRoute('GET', { … })` is a
+   * contradiction on one line. This assertion remains as the runtime half of the
+   * same guard, because a mismatch can also arrive from something review cannot
+   * see — a route re-exported through a barrel, a `route.js` that binds the same
+   * `defineRoute(...)` result to a second export name, a hand-written request to
+   * the wrong verb. Nothing in an ES module can compare a declared method to its
+   * own export name at load time (a module cannot enumerate its own exports), so
+   * the only remaining comparison is the declared method against the method of
+   * the request that actually arrives.
    *
-   * IT EXISTS BECAUSE OF A SPECIFIC, SILENT FAILURE MODE. Copy-pasting a `GET`
-   * handler into a `route.js` whose export is `POST` produces a route that
-   * compiles, builds, and returns a clean **405** for the only request anyone
-   * makes — a method mismatch with no clue anywhere as to why, and one that
-   * looks exactly like a client bug. Worse in the other direction: a handler
-   * copied into the WRONG FILE still executes happily over the wrong method. The
-   * assertion converts both into a thrown `TypeError` on the very first request,
-   * shaped into a 500 by `toErrorResponse` with a message that names both the
-   * declared method and the request's own.
+   * IT CONVERTS A SILENT FAILURE MODE INTO A LOUD ONE. A `GET` controller
+   * registered as `POST` compiles, builds, and answers `POST` requests by running
+   * a read as a write. The assertion makes that a thrown `TypeError` on the very
+   * first request, shaped into a 500 by `toErrorResponse`, with a message that
+   * names both the declared method and the request's own.
    *
-   * `HEAD` IS ACCEPTED ON A `GET` ROUTE. Next auto-derives a `HEAD` handler from
-   * every `GET` route and invokes it with `method: 'HEAD'`, so a strict equality
-   * test would 500 every single GET endpoint in the app. `HEAD` is a safe method
-   * with no body and the same authorisation as `GET` (see `SAFE_METHODS` in
-   * `request.js`), so treating it as `GET` is faithful rather than a loosening.
+   * `HEAD` IS ACCEPTED ON A `GET` ROUTE, AND THAT EXCEPTION IS REQUIRED. Next
+   * auto-derives a `HEAD` handler from every `GET` route and invokes it with
+   * `method: 'HEAD'` (`auto-implement-methods.js` in
+   * `next/dist/server/route-modules/app-route/`), so a strict equality test
+   * would 500 every single GET endpoint in the app on a HEAD probe. `HEAD` is a
+   * safe method with no body and the same authorisation as `GET` (see
+   * `SAFE_METHODS` in `request.js`), so treating it as `GET` is faithful rather
+   * than a loosening.
    */
   return function routeHandler(request, routeContext) {
     if (
@@ -410,9 +514,7 @@ function defineRoute({
       );
     }
 
-    return requestStore.run({ request, routeContext }, () =>
-      inner(request, routeContext),
-    );
+    return inner(request, routeContext);
   };
 }
 
@@ -465,8 +567,15 @@ function defineRoute({
  * control: a client hammering one address would exhaust its own 5/hour budget
  * faster than the limit describes, and the message would be right while the
  * arithmetic was not.
+ *
+ * The `method` parameter this used to take was DEAD and has been removed. It was
+ * read by nothing in the body, and a dead parameter on a function whose whole
+ * purpose is to take ONE meaningful input is worse than a missing one: the next
+ * reader reasonably assumes the composed limiter keys or branches on the method.
+ * It does not, and must not — see the "IT MUST NOT BE USED TO AUTHORISE
+ * ANYTHING" note on `defineRoute`.
  */
-function composeLimiters(limiter, method) {
+function composeLimiters(limiter) {
   if (limiter === undefined) return undefined;
 
   const limiters = Array.isArray(limiter) ? limiter : [limiter];
