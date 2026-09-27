@@ -90,16 +90,7 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, jobPipeli
                 <div className="flex items-center gap-2">
                   <BadgeCheck className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <dt className="sr-only">Member since</dt>
-                  {/* `member.memberSince` is derived from `user.createdAt`
-                      (Profile.jsx:763) and formats to `""` when that is absent,
-                      which left this row reading "Member since " with an empty
-                      date. It now falls back to the same em-dash placeholder the
-                      `batch` row above uses, so an anonymous profile with no
-                      `createdAt` degrades consistently instead of showing a
-                      half-rendered label. `createdAt` IS projected on this
-                      surface (`PUBLIC_PROFILE_ITEM`) precisely so this row has a
-                      value; see the note in `constants.js`. */}
-                  <dd className="text-muted-foreground">Member since {member.memberSince || "—"}</dd>
+                  <dd className="text-muted-foreground">Member since {member.memberSince}</dd>
                 </div>
               </dl>
 

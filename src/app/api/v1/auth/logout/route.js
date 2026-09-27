@@ -27,6 +27,7 @@ import { defineRoute } from '@/lib/server/handler';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export const GET = defineRoute('GET', {
+export const GET = defineRoute({
+  method: 'GET',
   controller: logoutHandler,
 });

@@ -142,12 +142,14 @@ import { defineRoute } from '@/lib/server/handler';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export const GET = defineRoute('GET', {
+export const GET = defineRoute({
+  method: 'GET',
   admin: true,
   controller: getAdminRoles,
 });
 
-export const POST = defineRoute('POST', {
+export const POST = defineRoute({
+  method: 'POST',
   admin: true,
   controller: createAdminRole,
 });

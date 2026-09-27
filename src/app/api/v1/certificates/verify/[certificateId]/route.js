@@ -18,38 +18,21 @@ import { defineRoute } from '@/lib/server/handler';
  * This route is the canonical replacement, and it runs the SAME controller
  * (`verifyCertificatePublic`) the root route ran, so the response is identical.
  *
- * ================= ONE API INSTANCE IS ALL THIS ENDPOINT EVER NEEDED =================
- * Certificate verification is served by the SINGLE RTK Query API instance
- * (`src/services/baseApi.js` -> `src/features/certificate/certificateApi.js`)
- * at `/certificates/verify/:certificateId` — an ordinary endpoint on the
- * existing `/api/v1` base URL. A second `createApi` instance is never needed
- * again, and reintroducing one here would be a regression, not a fix.
+ * ================= ACTION REQUIRED BY THE FRONTEND TASK =================
+ * `src/features/certificate/certificateApi.js` builds a SEPARATE, STANDALONE RTK
+ * Query API instance called `publicApi` whose `verifyById` hits
+ * `/verify/${certificateId}` — i.e. the ROOT path. `publicApi` exists ONLY
+ * because the backend exposed verification outside the `/api/v1` base URL, which
+ * is the entire reason a second `createApi` instance was needed. Now that
+ * verification lives under `/api/v1`, that second instance should be DELETED and
+ * its `verifyById` folded into the main `certificateApi`, or its URL repointed at
+ * `certificates/verify/${certificateId}`.
  *
- * WHY ONE USED TO EXIST (history, so nobody "restores" it). A standalone
- * instance named `publicApi` was created because the Express backend mounted
- * verification at the ROOT path, outside the `/api/v1` base URL:
- *
- *     app.get('/verify/:certificateId', asyncHandler(verifyCertificatePublic))
- *     -- cpccu-server/src/app.js:76
- *
- * With verification unreachable under the base URL, a second instance with a
- * `baseUrl` that stripped `/api/v1` was the only way to hit that one endpoint.
- * That rewrite is now obsolete, and `publicApi` has been deleted along with its
- * store registration. Nothing about THIS route requires it.
- *
- * ================= THE ROOT PATH IS NOT MIGRATED, AND CANNOT BE =================
- * `/verify/:certificateId` is not merely un-migrated, it is not a legal file to
- * add: `src/app/verify/[certificateId]/page.jsx` already occupies that segment
- * and App Router forbids a `page.jsx` and a `route.js` at the same segment (the
- * build fails on the conflict). See the block above for that in full.
- *
- * CONSEQUENCE FOR ANY CLIENT STILL CALLING THE ROOT PATH: it does not 404, and
- * that is the danger. `/verify/${certificateId}` resolves to the client-side
- * verification PAGE, so the caller silently receives rendered HTML where it
- * expected JSON — no exception, no failed build, no network error to grep for.
- * This route is therefore THE canonical replacement; point any remaining caller
- * at `/api/v1/certificates/verify/:certificateId` and treat a JSON parse failure
- * on the root path as this exact cause.
+ * THIS IS A DOCUMENTED BREAKING PATH CHANGE FOR THE CLIENT, DEFERRED TO THAT
+ * TASK. It is called out here rather than left implicit because the breakage is
+ * not a 404 the developer will notice at build time — `publicApi` hitting a
+ * client-side route would silently render the verification PAGE as if it were
+ * JSON, which is the kind of failure that survives review.
  *
  * `public: true` — same justification as the search variant, including the fact
  * that every attempt writes a `CertificateVerificationLog` whether it succeeds or
@@ -70,7 +53,8 @@ import { defineRoute } from '@/lib/server/handler';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export const GET = defineRoute('GET', {
+export const GET = defineRoute({
+  method: 'GET',
   public: true,
   controller: verifyCertificatePublic,
 });

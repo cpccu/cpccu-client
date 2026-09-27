@@ -61,33 +61,7 @@ async function connectDB() {
 
   // Another concurrent call in this same process already won the race and is
   // holding the in-flight promise. Await theirs rather than opening a second pool.
-  //
-  // THE SHORT-CIRCUIT ALSO LOGS, AND IT LOGS IDENTICALLY TO A FRESH CONNECT.
-  // That is not cosmetic. The line used to live only on the fresh-connect path
-  // below, so the early return bypassed it: "MONGODB is connected!" was emitted
-  // at most ONCE per live connection and could not distinguish "we are
-  // connected" from "we are replaying a memo that was never cleared" — which is
-  // precisely the question an operator asks when a warm instance misbehaves, and
-  // which the old shape answered wrongly by silence. Duplicating ONE log line on
-  // both branches is cheap; the alternative is a log that lies about its own
-  // frequency. A REJECTED memoised promise is a separate case and is left alone:
-  // the `.catch` below nulls the memo on failure, so a rejection here can only be
-  // the concurrent caller's in-flight connect, and the fresh-connect caller's own
-  // `catch` is the one that reports it — exactly as before this change.
-  //
-  // WHAT IS SAFE TO PRINT HERE, AND WHY: `connectionInstance.connection.host` is
-  // the RESOLVED HOSTNAME ONLY — a bare `db0.production.mongodb.net` — with no
-  // username, no password, no database name and no port. The raw driver ERROR is
-  // the dangerous one (it embeds the whole connection string); see the catch
-  // below for the rule that governs it.
-  if (cached.promise) {
-    const connectionInstance = await cached.promise;
-
-    console.log(
-      `MONGODB is connected! DB host: ${connectionInstance.connection.host}`,
-    );
-    return connectionInstance;
-  }
+  if (cached.promise) return cached.promise;
 
   cached.promise = mongoose
     .connect(`${process.env.MONGODB_URI}/${DB_NAME}`, CONNECT_OPTIONS)

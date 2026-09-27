@@ -65,90 +65,6 @@ const normalizeRows = (rows) => {
 };
 
 /**
- * Per-request outbound budget for ONE Google Sheets call, in milliseconds.
- *
- * WHY A TIMEOUT IS NEEDED AT ALL. `src/app/api/v1/bootcamp-leaderboard/route.js`
- * is `public: true` and has NO rate limiter, and this handler makes TWO SEQUENTIAL
- * Sheets calls. `undici`'s defaults are `headersTimeout: 300e3` and
- * `bodyTimeout: 300e3` (5 MINUTES), and `next.config.mjs` configures no
- * `maxDuration`, so the effective ceiling is whatever the hosting platform
- * allows. A peer that completes the TCP/TLS handshake and then simply STOPS
- * writing therefore holds a function invocation open for that entire budget —
- * and holds TWO of them, because the second call only starts once the first
- * returns. Unauthenticated, repeatable, that is a cheap primitive for pinning
- * invocations; the fix is to refuse to be stalled, not to hope the platform
- * notices.
- *
- * WHY 8 SECONDS. It is far more than a Sheets `values` read of a sub-100-row
- * range needs on a healthy path — that is single-digit hundreds of milliseconds —
- * and it is 37x below the 300s it replaces. The number is deliberately NOT
- * derived from an observed p99: what is being bounded is not "how long Sheets
- * usually takes" but "how long one UNAUTHENTICATED caller can occupy a function
- * invocation", and the honest tradeoff is an occasional 502 on a slow mobile
- * link in exchange for never being stallable. `AbortSignal.timeout` is a
- * Node/undici GLOBAL (no dependency added) and it aborts the underlying request,
- * not just the awaiting promise, so the socket is actually released rather than
- * left for undici to reap later.
- *
- * PER-CALL, NOT PER-REQUEST: the two calls are bounded independently, so the
- * worst case for one request is 2 × this value. That is the intended shape — a
- * single shared budget would let the first (cheap metadata) call starve the
- * second (the actual data) call, and the two have very different latencies.
- */
-const SHEETS_REQUEST_TIMEOUT_MS = 8000;
-
-/**
- * Runs one Google Sheets request under `SHEETS_REQUEST_TIMEOUT_MS` and maps a
- * FAILURE — network error OR timeout/abort — to the caller's `ApiError(502, …)`.
- *
- * WHY THE ABORT IS FOLDED INTO THE 502 BRANCH RATHER THAN GIVEN ITS OWN. The
- * client already has an error path for "Google did not answer us" and it keys
- * off the status code, so a stall is exactly the same class of event as a
- * non-2xx response: WE are up, upstream is not answering. 502 = bad gateway,
- * which is what this is; 500 would claim the leaderboard itself is broken.
- * Introducing a new status or a new error shape for the timeout would change the
- * API contract the frontend is already written against, for a condition the
- * frontend cannot act on differently anyway — it retries, or it shows the
- * existing error state.
- *
- * WHAT IS DELIBERATELY NOT DONE. This does not retry: the 502 is terminal, and a
- * retry here would multiply the very hold-time this function exists to bound.
- * This also does not distinguish the timeout in the message, because the message
- * is what the client displays and "the sheet service did not respond in time" is
- * not a more actionable thing to show a user than "failed to read the
- * leaderboard". The `console.error` below is where the distinction lives, for the
- * operator reading the logs.
- *
- * @param {string} url         absolute Sheets URL to fetch
- * @param {string} message     the 502 message to use for a non-2xx response
- * @returns {Promise<Response>} the ok `Response`; the caller does the parsing
- */
-const fetchSheets = async (url, message) => {
-  let response;
-
-  try {
-    response = await fetch(url, { signal: AbortSignal.timeout(SHEETS_REQUEST_TIMEOUT_MS) });
-  } catch (error) {
-    // `AbortSignal.timeout` rejects with a `TimeoutError`-named DOMException, and
-    // a peer reset raises a `TypeError`; both land here. Both mean the same thing
-    // to the caller, so they are not distinguished. `error.name` is logged rather
-    // than the error object alone because a raw `DOMException` stringifies to
-    // an empty message and would log as a bare blank.
-    console.error(
-      `[bootcamp-leaderboard] outbound Sheets request failed: ${error?.name || 'Error'}`,
-    );
-    throw new ApiError(502, message);
-  }
-
-  // The existing 502 branch, unchanged: a non-2xx is still "upstream said no".
-  if (!response.ok) {
-    throw new ApiError(502, message);
-  }
-
-  return response;
-};
-
-/**
  * Fetches and reshapes the bootcamp leaderboard.
  *
  * `res.set('Cache-Control', 'no-store')` — the shim QUEUES this header rather
@@ -180,11 +96,13 @@ export const getBootcampLeaderboard = async (req, res) => {
   // than an index, so the tab name genuinely cannot be guessed. `fields=` keeps
   // the first response tiny.
   const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?key=${apiKey}&fields=sheets.properties`;
-  // Through `fetchSheets`, not a bare `fetch`: this is the first of the two
-  // SEQUENTIAL calls, so an unbounded one here is what lets an unauthenticated
-  // caller pin an invocation. The 502 message here is the metadata-specific one
-  // so the operator can tell which of the two calls failed.
-  const metaRes = await fetchSheets(metaUrl, 'Failed to read bootcamp sheet metadata');
+  const metaRes = await fetch(metaUrl);
+
+  // 502 = bad gateway, which is what this is: WE are up, Google is not
+  // answering us. 500 would claim the leaderboard itself is broken.
+  if (!metaRes.ok) {
+    throw new ApiError(502, 'Failed to read bootcamp sheet metadata');
+  }
 
   const meta = await metaRes.json();
   const firstSheet = meta.sheets?.[0]?.properties?.title;
@@ -201,10 +119,11 @@ export const getBootcampLeaderboard = async (req, res) => {
   // outbound request; the competition is far smaller than that.
   const range = encodeURIComponent(`${firstSheet}!A1:G100`);
   const valuesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
-  // Second and last of the SEQUENTIAL calls. Budgeted independently of the
-  // metadata call above — see `SHEETS_REQUEST_TIMEOUT_MS` for why per-call
-  // rather than per-request.
-  const valuesRes = await fetchSheets(valuesUrl, 'Failed to read bootcamp leaderboard data');
+  const valuesRes = await fetch(valuesUrl);
+
+  if (!valuesRes.ok) {
+    throw new ApiError(502, 'Failed to read bootcamp leaderboard data');
+  }
 
   const json = await valuesRes.json();
   // `?? []` rather than `|| []`: `normalizeRows` reads `.length`, and a

@@ -61,12 +61,13 @@ export const userApi = baseApi.injectEndpoints({
         { type: "PublicContent", id: "profiles" },
       ],
     }),
-    // NOTE: there is deliberately no `deleteUser` (`DELETE /users/:id`) here.
-    // That route exists in NEITHER backend — the migrated API serves the only
-    // self-delete at `DELETE /api/v1/users/user` (see `deleteOwnAccount` below),
-    // and the Express original had no per-id delete either. `deleteOwnAccount` is
-    // the live one; it is what `account-settings-content.jsx` calls. Do not
-    // reintroduce a per-id variant without a route to point it at.
+    deleteUser: builder.mutation({
+      query: (id) => ({
+        url: `/users/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, id) => [{ type: "Users", id }],
+    }),
     changePassword: builder.mutation({
       query: (body) => ({
         url: "/users/password",
@@ -125,6 +126,7 @@ export const {
   useUserImageUploadMutation,
   useRequestJobPipelineProfileMutation,
   useRemoveJobPipelineProfileMutation,
+  useDeleteUserMutation,
   useChangePasswordMutation,
   useDeleteOwnAccountMutation,
   useGetProjectsQuery,

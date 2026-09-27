@@ -28,7 +28,8 @@ import { defineRoute } from '@/lib/server/handler';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export const PATCH = defineRoute('PATCH', {
+export const PATCH = defineRoute({
+  method: 'PATCH',
   public: true,
   limiter: passwordResetRateLimiter,
   controller: resetPasswordHandler,

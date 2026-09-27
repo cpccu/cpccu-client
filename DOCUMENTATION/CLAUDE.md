@@ -95,11 +95,11 @@ scripts/                # update_contributors.py
   ```
   Feature API files (e.g., `features/auth/authApi.js`) extend it via `baseApi.injectEndpoints()`.
 - **Redux slices** live alongside their APIs in `features/<name>/`.
-- **Active store** (`src/app/redux/store.js`) registers: `api` (baseApi), `auth`, `certificate`. `serializableCheck` is disabled. There is no longer a `publicApi` entry — the second instance was removed during the Express → Next.js migration.
+- **Active store** (`src/app/redux/store.js`) registers: `api` (baseApi), `publicApi` (public certificate API), `auth`, `certificate`. `serializableCheck` is disabled.
 - `userSlice.js`, `memberSlice.js`, `postSlice.js` exist in `features/` but are **not registered** in the store.
 - **Auth hydration**: `ProviderWrapper` reads `token` from localStorage on mount, calls `useGetCurrentUserQuery` if a token exists, then dispatches `setCredentials` or `clearCredentials`, and finally `setHydrated`.
 - API base URL: `NEXT_PUBLIC_API_BASE_URL` env var, defaults to `http://localhost:5000/api/v1`.
-- **Public certificate verification** needs no separate instance: it is served by the single `baseApi` at `GET /api/v1/certificates/verify/:certificateId` (`public: true`, no auth required). The `publicApi` instance this file used to describe — a second `createApi` at a base URL with the `/api/v1` suffix stripped, built solely to reach the Express backend's root-level `/verify/:certificateId` (`cpccu-server/src/app.js:76`) — has been **deleted** along with its store registration. `grep -rn "createApi(" src/` now returns exactly one hit, `src/services/baseApi.js`.
+- **Public certificate API** (`publicApi`): separate `createApi` instance at the base URL without the `/api/v1` suffix, for unauthenticated `/verify/:certificateId`.
 
 ### Key Patterns
 

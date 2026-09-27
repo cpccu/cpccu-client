@@ -33,7 +33,7 @@ This document is the handover for the backend migration that moved the CPCCU Exp
 
 - `cpccu-server/` itself. It is untouched (`git status` clean, HEAD `ea9810a`) and still runs. It was the read-only source of truth for this port.
 - The client. `NEXT_PUBLIC_API_BASE_URL` is still `http://localhost:5000/api/v1` — i.e. the client still calls the Express server. Nothing in `src/` outside `src/lib/server` and `src/app/api` was modified as part of the migration.
-- The root-level `GET /verify/:certificateId` endpoint. It is **not legal to create** in App Router: `src/app/verify/[certificateId]/page.jsx` already owns that segment and Next fails the build on a `page.jsx` + `route.js` collision. The canonical replacement is `GET /api/v1/certificates/verify/:certificateId`, which runs the same controller. See [§9](#9-frontend-work-still-outstanding) — the client-side `publicApi` that pointed at the old path has since been **deleted** ([§9.2](#92-delete-the-standalone-publicapi-instance--this-one-fails-silently)), so no client code requests the root path any more; note that it **fails silently** rather than 404ing, so anything else still calling it gets the verification *page* as HTML.
+- The root-level `GET /verify/:certificateId` endpoint. It is **not legal to create** in App Router: `src/app/verify/[certificateId]/page.jsx` already owns that segment and Next fails the build on a `page.jsx` + `route.js` collision. The canonical replacement is `GET /api/v1/certificates/verify/:certificateId`, which runs the same controller. See [§9](#9-frontend-work-still-outstanding) — the client still points at the old path and **fails silently** if you cut over without fixing it.
 - The root-level `GET /` health probe. Same reason: `src/app/(main)/page.jsx` owns `/`. `GET /api/v1` is the health endpoint and the only one that can exist.
 
 **What this means operationally.** You have two API implementations of the same contract running in two repositories. The new one is additive: it adds routes to this app, it does not take any away. Cutover is a frontend change (repointing one build-time variable, plus the items in §9), not a backend change.
@@ -738,13 +738,9 @@ Note also that the header trust and the shared store are **independent** problem
 
 ## 9. Frontend work still outstanding
 
-**The migration itself deliberately did not touch the client.** Every item below is a client change.
-
-> **Update (cleanup pass).** This section is now **partly done**. A later cleanup pass on this repository changed client code, which was not part of the migration: **§9.2 is complete** (the `publicApi` instance and its store registration are deleted), and the open *decisions* in **§9.3** and **§9.4** have been made and recorded. **§9.1 has NOT been done** — the client still calls the Express server, `NEXT_PUBLIC_API_BASE_URL` still defaults to `http://localhost:5000/api/v1`, and no cutover has occurred. Sections below are kept in full as the record of what was found; each one now carries a status line saying which state it is actually in.
+**This migration deliberately did not touch the client.** Every item below is a client change and none of it has been done. The client still calls the Express server.
 
 ### 9.1 Repoint `NEXT_PUBLIC_API_BASE_URL` — five sites, one commit
-
-> **Status: NOT DONE.** Verified after the cleanup pass: `src/services/baseApi.js:4`, `src/lib/certificate-metadata.js:15` and `src/components/BOOTCAMPLEADERBOARD/BootcampLeaderboard.jsx:17` all still fall back to `http://localhost:5000/api/v1`. This is the one item that is genuinely still outstanding, and the client is still talking to the Express server.
 
 Five files read it:
 
@@ -761,12 +757,6 @@ Five files read it:
 The target should be a **relative** path (`/api/v1`), which is what makes the same-origin cookie and CSRF design in `request.js` work. `baseApi.js` already sends `credentials: 'include'`, which becomes sufficient rather than necessary.
 
 ### 9.2 Delete the standalone `publicApi` instance — **this one fails silently**
-
-> **Status: DONE (2026-09, cleanup pass).** The instance and its store registration are **deleted**. The block of code below is kept as the record of what was there.
->
-> **Verified in the current tree:** `grep -rn "createApi(" src/` returns **exactly one hit**, `src/services/baseApi.js:5`. `src/features/certificate/certificateApi.js` no longer calls `createApi` at all — it only does `baseApi.injectEndpoints` (`certificateApi.js:15`). `src/app/redux/store.js` registers just `[baseApi.reducerPath]`, `auth` and `certificate`, and concats only `baseApi.middleware`. The only remaining mentions of `publicApi` in `src/` are **comments**: a history note in `src/app/api/v1/certificates/verify/[certificateId]/route.js:29` and a note in `src/app/redux/store.js:8`.
->
-> `verifyCertificatePublic` is still served — by `certificateApi` at `GET /api/v1/certificates/verify/:certificateId` (`src/app/api/v1/certificates/verify/[certificateId]/route.js`), which runs the same controller. The dead `useVerifyCertificatePublicQuery` hook went with the instance; it had no call sites. **The silent-failure risk described below is therefore closed for the client code**, because no client code requests the root path any more. The root path still resolves to the verification *page* (HTML, HTTP 200) for anything else that tries it, so the warning is retained below as a live hazard for third-party or un-migrated callers.
 
 `src/features/certificate/certificateApi.js:3-13` creates a second RTK Query instance:
 
@@ -788,8 +778,6 @@ const publicApi = createApi({
 
 ### 9.3 `userApi.js:64-70` calls a route that has never existed
 
-> **Status: DECIDED (2026-09, cleanup pass) — option 2, delete.** The `deleteUser` mutation has been **removed** rather than repointed, and the reason is recorded in place at `src/features/users/userApi.js:64-69`: the route exists in neither backend, `deleteOwnAccount` (`DELETE /api/v1/users/user`) is the live self-delete, and the file now carries a note not to reintroduce a per-id variant without a route to point it at.
-
 ```js
 deleteUser: builder.mutation({
   query: (id) => ({ url: `/users/${id}`, method: "DELETE" }),
@@ -800,8 +788,6 @@ deleteUser: builder.mutation({
 `DELETE /users/:id` does not exist in the **Express** backend and does not exist in the new one. The account self-service endpoint is `DELETE /users/user` (no id — it takes the id from `req.user`, which is why it is safe). This client definition is **already broken**; `CLAUDE.md:164` and `ARCHITECTURE.md:506` both already record it as dead. **Do not "fix" it silently** — either repoint it to `/users/user` (dropping the id argument) or delete it, and record which.
 
 ### 9.4 The member page loses four fields — including a new visibility change
-
-> **Status: DECIDED (2026-09, cleanup pass) — the server-side filter was taken, as this section recommends.** `src/lib/server/controllers/user.controller.js:663` now reads `User.find({ isValid: true }, PUBLIC_MEMBER_ITEM)`, so pending and unverified accounts are excluded at the query and the public member listing no longer shows them. The rationale, the now-redundant client-side `user?.isValid !== false` filter, and the pre-`isValid` edge case (accounts written before the field existed are excluded too) are all recorded at `user.controller.js:609-661` and at `src/lib/server/constants.js:251-255`. The field-removal effects in the table below (member ordering, the `mailto`/`uniID` fallbacks) are unchanged and remain.
 
 `PUBLIC_MEMBER_ITEM` (§5.12) removes fields the member page currently renders:
 
@@ -818,8 +804,6 @@ deleteUser: builder.mutation({
 The fix belongs **server-side**: filter on `isValid: true` in `memberHandler` (`User.find({}, PUBLIC_MEMBER_ITEM)` → `User.find({ isValid: true }, PUBLIC_MEMBER_ITEM)`). A client-side filter cannot distinguish "absent because the account is unverified" from "absent because we stopped projecting it", so it is not a viable fix.
 
 ### 9.5 Drop `token` and `accessToken` from the two auth responses
-
-> **Status: NOT DONE.** Verified after the cleanup pass: `auth.controller.js:458` still returns `{ user: loggedInUser, token: accessToken }` and `auth.controller.js:544` still returns `{ accessToken: renewToken }`. The tokens remain duplicated in the body and in the `httpOnly` cookies, and `localStorage` still holds the access token.
 
 - `POST /auth/login` returns `{ user, token: accessToken }` (`auth.controller.js:458`).
 - `GET /auth/refresh-token` returns `{ accessToken }` (`auth.controller.js:544`).
@@ -856,32 +840,16 @@ Work top to bottom. Items 1–3 are the ones that fail *silently*.
 
 ### 10.3 Repository state you will inherit
 
-- [ ] **`render.yaml` / `_render.yaml` show as deleted in `git status`, and that deletion is unexplained and pre-existing.** It is not part of the migration (the migration did not delete them) and the reason is not recorded anywhere in the repo. `CLAUDE.md:168` and `ARCHITECTURE.md:511` both say these are leftovers from an earlier Render-based frontend deployment and are harmless. **Resolve it deliberately** — restore them if the deletion was accidental, or commit the deletion with a message saying why. Do not let an unexplained deletion ride into a deploy commit. → **Superseded — see §10.3.1, which records the decision and corrects this bullet.**
+- [ ] **`render.yaml` / `_render.yaml` show as deleted in `git status`, and that deletion is unexplained and pre-existing.** It is not part of the migration (the migration did not delete them) and the reason is not recorded anywhere in the repo. `CLAUDE.md:168` and `ARCHITECTURE.md:511` both say these are leftovers from an earlier Render-based frontend deployment and are harmless. **Resolve it deliberately** — restore them if the deletion was accidental, or commit the deletion with a message saying why. Do not let an unexplained deletion ride into a deploy commit.
 - [ ] **`src/lib/server/` and `src/app/api/` are entirely untracked.** `next build` works from the working tree, so nothing in CI has ever seen these files. If you want an auditable trail — and for a change this size you should — **commit per phase** (foundation → shim → controllers → routes) rather than as one 65-endpoint commit. At minimum, commit them before deploying.
 - [ ] Confirm `cpccu-server` is still at `ea9810a` with a clean `git status` in *that* repository. It is the reference you will diff against when the first bug report arrives.
 
-### 10.3.1 `render.yaml` and `_render.yaml` — deleted on purpose, do not restore
-
-**This supersedes the first bullet of §10.3 above.** That bullet was written when the deletion looked unexplained. It is now explained, and the explanation is: the deletion was a deliberate decision, and **Vercel is the deployment target**.
-
-`render.yaml` and `_render.yaml` were the **Render** deploy blueprints — the leftovers of an earlier Render-based frontend deployment. They were deleted because the frontend now deploys on **Vercel**, and a Render blueprint in the tree is a deploy config for a platform this project no longer uses. Keeping them would be misleading rather than merely untidy: it would describe an ingress that does not exist.
-
-Three facts to be explicit about, because the first bullet above got two of them wrong:
-
-- **The deletion is already committed, inside the migration commit.** It is not an uncommitted `git status` artefact waiting to be resolved, and it did not "ride into a deploy commit" by accident. It is part of the recorded history.
-- **The Express backend was never deployed to Render.** These blueprints described the *frontend* only. There is no Render deployment of `cpccu-server` to unwind, and no Render deployment that depended on these files.
-- **This was a conscious decision, not an oversight.**
-
-> **For the next reader, specifically:** do **not** "restore" `render.yaml` / `_render.yaml` as a fix for a missing deploy config, and do not read their absence as a broken checkout or a lost file. They are gone on purpose. If the project ever moves off Vercel and genuinely returns to Render hosting, that is a **new decision to make deliberately at that time** — write fresh blueprints, do not dig these ones out of history and assume they are still accurate. They describe a `bun install; bun run build` / `bun run start` web service from a toolchain and dependency set that has since changed, and they predate the `next@^16` config in `next.config.mjs`. Treat them as historical, not as a template.
-
-> **Stale cross-references that this note does not fix.** `CLAUDE.md:168`, `ARCHITECTURE.md:520` and `DEPLOYMENT.md:51` still describe these files as being present in the repo ("remain in the repo", "are leftover"). That is no longer true. Those lines are part of a wider deferred documentation pass and were deliberately left unchanged here; this note is the authoritative statement.
-
 ### 10.4 Cutover
 
-- [ ] §9.1 (five `NEXT_PUBLIC_API_BASE_URL` sites, **one commit**) — done before the first request hits the new API. **Still outstanding**: all three sites that read it still default to `http://localhost:5000/api/v1`.
-- [x] §9.2 (`publicApi` deleted or repointed) — **non-optional; it fails silently.** **Done 2026-09:** the instance is deleted, `createApi` is called in exactly one place, and the store registers only `baseApi`. Verification is reached at `/api/v1/certificates/verify/:certificateId` instead.
-- [x] Decide §9.4's `isValid` question: server-side filter, or accept pending accounts in the public listing. **Done 2026-09:** server-side filter taken — `user.controller.js:663` is `User.find({ isValid: true }, PUBLIC_MEMBER_ITEM)`.
-- [x] Decide §9.3: repoint or delete `deleteUser`. **Done 2026-09:** deleted, with the reason recorded at `userApi.js:64-69`.
+- [ ] §9.1 (five `NEXT_PUBLIC_API_BASE_URL` sites, **one commit**) — done before the first request hits the new API.
+- [ ] §9.2 (`publicApi` deleted or repointed) — **non-optional; it fails silently.**
+- [ ] Decide §9.4's `isValid` question: server-side filter, or accept pending accounts in the public listing.
+- [ ] Decide §9.3: repoint or delete `deleteUser`.
 - [ ] Leave the Express server running until the new API has been exercised in production. Both can serve simultaneously — the mounts do not collide.
 - [ ] Watch `serverExternalPackages: ["mongoose"]` and remember `firebase-admin` must be re-added if Google sign-in ever returns.
 

@@ -4,19 +4,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      // `@/lib/*` resolves to `src/lib/*` and to NOTHING else. It used to carry a
-      // second entry ("./lib/*") pointing at a duplicate root-level `lib/`. That
-      // directory held a second, competing `cn` (default export, backed by
-      // `@gpfunk/tailwindcss-clsx`) which four components imported instead of the
-      // canonical named `cn` in `src/lib/utils.js`. Two live implementations of the
-      // same helper resolved apart only by filename, and re-adding a
-      // `src/lib/cn.js` would have silently re-pointed those four imports at a
-      // different library. The duplicate is deleted; this mapping is now
-      // single-valued so there is exactly one `cn` in the project.
-      "@/lib/*": ["./src/lib/*"],
+      // allow importing from both src/lib (primary) and root lib (fallback)
+      "@/lib/*": ["./src/lib/*", "./lib/*"],
       "@/data/*": ["./data/*"]
     }
   },
-  "include": ["src/**/*", "data/**/*"],
+  "include": ["src/**/*", "lib/**/*", "data/**/*"],
   "exclude": ["node_modules"]
 }

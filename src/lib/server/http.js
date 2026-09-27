@@ -262,12 +262,7 @@ function withApiHeaders(response) {
  *      shared by the success and the throw path.
  *
  * @param {object}   config
- * @param {Function} config.handler   `(ctx, request, routeContext) => …`. The
- *                                    `Request` and Next's `{ params }` are
- *                                    FORWARDED verbatim from the arguments
- *                                    below — `createShim` needs the real one-shot
- *                                    body stream and the dynamic segments, and
- *                                    neither can be reconstructed from `ctx`.
+ * @param {Function} config.handler   `(ctx) => Response | ApiResponse | {status, body}`
  * @param {Function} [config.limiter] rate limiter, invoked with the built context
  *                                    BEFORE authentication, keyed on client
  *                                    identity (`ip`, `body`, `headers`)
@@ -375,12 +370,12 @@ function apiRoute({
 
   return async function routeHandler(
     request,
-    // The second argument is Next's per-route context (`{ params }`). It is
-    // forwarded to `handler` UNCHANGED and nothing else: the foundation derives
-    // every routing fact it needs from `request` alone (see `pathnameOf`), so it
-    // must not branch on the route context. `defineRoute`'s handler closes over
-    // nothing — it receives this by parameter — which is what makes a warm
-    // instance's concurrent requests independent (see `handler.js`).
+    // The second argument is Next's per-route context (`{ params }`). The
+    // signature requires it, but the foundation reads its routing facts from
+    // `request` alone (see `pathnameOf`), so a route that needs a dynamic
+    // segment reads `routeContext.params` inside its own `handler(ctx)` — the
+    // wrapper does not need it and must not branch on it.
+    // eslint-disable-next-line no-unused-vars
     routeContext,
   ) {
     // Captured outside the try so the cookie survives an error raised later —
@@ -494,21 +489,7 @@ function apiRoute({
       }
 
       // Step 7 — the route author's business logic.
-      //
-      // `request` AND `routeContext` ARE FORWARDED VERBATIM, as parameters, and
-      // that is the whole reason this is a plain call rather than an ambient
-      // lookup. Both are per-invocation values that only exist here, inside
-      // `routeHandler`'s own parameters; a warm instance runs many invocations
-      // CONCURRENTLY, so any module-level "current request" slot would race and
-      // hand one route another route's body. Passing them as arguments makes
-      // that failure structurally impossible rather than merely unlikely: the
-      // only way `handler` can see a `Request` is the one this invocation was
-      // given. (`handler.js` therefore takes them as ordinary parameters and
-      // needs no async-context bridge at all.)
-      return await finalizeResponse(
-        await handler(ctx, request, routeContext),
-        refreshCookie,
-      );
+      return await finalizeResponse(await handler(ctx), refreshCookie);
     } catch (error) {
       // Step 8 — anything thrown in 1–6 becomes the `{ status, message, errors? }`
       // envelope the frontend already parses. Without this, a controller's

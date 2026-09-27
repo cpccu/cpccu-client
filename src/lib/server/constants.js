@@ -186,29 +186,20 @@ export const PUBLIC_ITEM =
   '_id fullName email phone bio department section github linkedin portfolio skills avatar avatarPublicId coverImage coverImagePublicId batch uniID socialLinks roles isValid jobPipelineStatus jobPipelineTitle jobPipelineRejectionReason createdAt updatedAt';
 
 /**
- * Mongo projection for the ANONYMOUS, unauthenticated DIRECTORY LISTING —
- * `GET /api/v1/users/member` (`memberHandler`). Owner-approved (H1).
- *
- * SCOPE: this constant serves the MEMBER PAGE only. It does NOT serve
- * `getUserInfoById`; that handler has its own, deliberately different
- * projection — `PUBLIC_PROFILE_ITEM`, immediately below. The two differ on
- * purpose, and the reason is in that constant's docblock. Do not "simplify" by
- * pointing both handlers at one string: the directory is a HARVEST surface (one
- * call returns every member at once, so it is the one that must be minimal),
- * whereas the profile page is a per-member DISPLAY surface (one call returns one
- * person, and the caller already had to guess an id to get it).
+ * Mongo projection for the ANONYMOUS, unauthenticated member reads —
+ * `GET /api/v1/users/member` (`memberHandler`) and
+ * `GET /api/v1/users/user/:id` (`getUserInfoById`). Owner-approved (H1).
  *
  * This is an ALLOW-LIST: a field is public because it is named here, not
  * because someone remembered to remove it. That is the whole point — the
  * previous state was a DENY-list, where the safe outcome required the schema to
  * stop growing.
  *
- * WHAT IS IN IT, and why each is needed to render a public member card:
- *  - `_id`  — the profile link. `AboutCard.jsx:40` builds
- *             `href={`/profile/${Data?.uniID || Data?._id}`}`, and `uniID` is
- *             deliberately not projected, so the `_id` arm is the one that
- *             actually fires for every card the directory renders. A shared
- *             profile URL has to keep working from the id the list hands out.
+ * WHAT IS IN IT, and why each is needed to render a public member card/profile:
+ *  - `_id`  — the profile link. `AboutCard.jsx` falls back to `_id` when `uniID`
+ *             is absent, and the `uniID` lookup branch of `getUserInfoById`
+ *             still resolves by Student ID, so a shared profile URL must keep
+ *             working from the id the list hands out.
  *  - `fullName`, `avatar` — the card and the hero.
  *  - `batch`, `section`, `department` — the academic metadata a directory
  *     listing exists to show. Note `section` and `department` are NOT contact
@@ -221,15 +212,12 @@ export const PUBLIC_ITEM =
  * WHAT IS EXCLUDED, and why each exclusion is load-bearing:
  *
  *  - `email` and `phone` — direct personal contact details. One unauthenticated
- *     call to `/users/member` returned the entire membership's contact list, and
- *     these are the two fields most likely to end up in a scraped dataset. The
- *     consumers degrade rather than error, and they now all degrade the same
- *     way: `ProfileHero.jsx:16` and `ContactSection.jsx:34` both
- *     `.filter(... Boolean(href))` and drop the row, and `AboutCard.jsx` now
- *     guards its `mailto:` link with the same `&&` idiom its `batch` row uses,
- *     so a card with no address omits the email row rather than showing a dead
- *     `mailto:undefined`. Reporting rather than assuming the consumer behaviour
- *     was the point; the guards are what make the exclusion invisible.
+ *     call to `/users/member` returned the entire membership's contact list; the
+ *     `ContactSection`/`ProfileHero` "Email" row and the `AboutCard` `mailto:`
+ *     are the only consumers, and they degrade to a hidden row rather than
+ *     erroring (see the field-usage report). Nothing in a public directory
+ *     needs them, and they are the two fields most likely to end up in a
+ *     scraped dataset.
  *
  *  - `uniID` — the institutional Student ID. It is a real-world identifier, it is
  *     enumerable, and combined with the `uniID` branch of `getUserInfoById` it
@@ -241,22 +229,17 @@ export const PUBLIC_ITEM =
  *     publishing `roles` on an anonymous endpoint hands an attacker a ranked
  *     target list: exactly which accounts are worth credential-stuffing,
  *     phishing, or a targeted password-reset spam. It must never appear on a
- *     read that does not require a session — on EITHER anonymous projection.
- *     (The consumer-side fallout is now fully absorbed: `Member.jsx`'s
- *     `roleOrder` sort — which could never fire without `roles`, and degraded to
- *     an alphabetical sort — has been deleted, and `AboutCard`'s displayed
- *     position is fed from the `displayPosition: "member"` literal `Member.jsx`
- *     writes, so the visible cost is zero.)
+ *     read that does not require a session. (The member page's
+ *     `roleOrder` sort in `Member.jsx` degrades to an alphabetical sort, and
+ *     `AboutCard`'s displayed position is hard-coded to `"member"` anyway, so
+ *     the visible cost is zero.)
  *
- *  - `isValid` — the OTP-verification flag. It is not projected because the
- *     directory now EXCLUDES pending accounts at the QUERY, not at the
- *     projection: `memberHandler` filters `User.find({ isValid: true }, …)`. So
- *     there is nothing left for a client to re-derive, and the client-side
- *     `user?.isValid !== false` filter that used to sit in `Member.jsx` has been
- *     removed — it was a provable no-op against this filter. Projecting the flag
- *     as well would only give a caller a way to enumerate pending accounts by ID
- *     once the list no longer shows them. This filter is the SINGLE owner of the
- *     rule; do not add a client-side copy.
+ *  - `isValid` — the OTP-verification flag. The member page filters on
+ *     `user?.isValid !== false`; with the field absent that predicate is true for
+ *     every document, so unverified accounts would newly appear in the public
+ *     listing. This is a real behaviour change and is reported, not hidden; the
+ *     fix belongs server-side (`memberHandler` filtering on `isValid: true`) if
+ *     the club wants pending accounts excluded again.
  *
  *  - `avatarPublicId` and `coverImagePublicId` — these are CLOUDINARY WRITE
  *     PRIMITIVES, not display URLs. The delivery URL is `avatar` /
@@ -267,8 +250,6 @@ export const PUBLIC_ITEM =
  *     to keep off a public read. (`M2` records that the URL-parse fallback for
  *     pre-`avatarPublicId` documents still exists server-side; that is
  *     independent of this projection and does not require exposing the id.)
- *     `PUBLIC_PROFILE_ITEM` admits the delivery URL `coverImage` and still must
- *     not admit `coverImagePublicId`, for the same reason.
  *
  *  - `socialLinks` — a second, unstructured copy of the same three URLs the
  *     caller-supplied `github`/`linkedin`/`portfolio` fields already carry.
@@ -276,17 +257,9 @@ export const PUBLIC_ITEM =
  *
  *  - `skills`, `coverImage`, `jobPipelineTitle`, `jobPipelineRejectionReason`,
  *     `createdAt`, `updatedAt` — dropped as outside the minimum a directory
- *     listing needs: the CARD (`AboutCard.jsx:19-44`) renders none of them, so
- *     including them would grow the largest anonymous response in the app for
- *     zero display value. `skills`, `coverImage` AND `createdAt` ARE needed on
- *     the profile page and are re-admitted in `PUBLIC_PROFILE_ITEM` (the
- *     `createdAt` reasoning is spelled out in that constant's own docblock);
- *     `jobPipelineTitle` and `jobPipelineRejectionReason` are not admitted
- *     anywhere, and `jobPipelineRejectionReason` in particular is INTERNAL
- *     moderator feedback ("your title was rejected because…") that must not be
- *     published — that is an accidental-disclosure risk, not a privacy one.
- *     `updatedAt` is not admitted anywhere either: no public surface renders
- *     "last updated".
+ *     listing needs. `jobPipelineRejectionReason` in particular is INTERNAL
+ *     moderator feedback ("your title was rejected because…") and must not be
+ *     published; that is an accidental-disclosure risk, not a privacy one.
  *
  * NOT CHANGED BY THIS CONSTANT: the admin panel, the self reads and the
  * `login` response all still use `PUBLIC_ITEM`. `adminAuth.js` authorises on
@@ -294,117 +267,6 @@ export const PUBLIC_ITEM =
  */
 export const PUBLIC_MEMBER_ITEM =
   '_id fullName avatar bio department section batch github linkedin portfolio jobPipelineStatus';
-
-/**
- * Mongo projection for the ANONYMOUS, unauthenticated PUBLIC PROFILE —
- * `GET /api/v1/users/user/:id` (`getUserInfoById`). Feeds
- * `src/app/(main)/profile/[id]/page.jsx` and
- * `src/app/(main)/users/profile/[id]/page.jsx`, which both render `Profile.jsx`.
- *
- * WHY THIS EXISTS RATHER THAN REUSING `PUBLIC_MEMBER_ITEM`. The two anonymous
- * reads are NOT the same surface and the earlier single-projection version was
- * assessed against only one of them:
- *
- *   - `/users/member` is the HARVEST surface. One anonymous call returns EVERY
- *     member's row at once, so it is a bulk export and must be minimal.
- *   - `/users/user/:id` is a DISPLAY surface. One anonymous call returns ONE
- *     member, to a caller who already had to supply an id, and its job is to
- *     render that member's public profile page.
- *
- * Reusing the directory projection here silently broke the profile page: the
- * components read fields it does not provide, and the affected UI disappears
- * rather than erroring, so the regression would only have been visible after
- * cutover. The re-admitted fields are exactly the display-only ones the
- * profile page renders and the CARD does not:
- *
- *   - `coverImage` — `ProfileID.jsx:11-12` renders it as the profile's cover
- *     banner. Without it the banner falls back to the gradient and the member's
- *     chosen header image vanishes.
- *   - `skills`     — `SkillsSection.jsx:10,26` renders the whole Skills
- *     SECTION from it (`Profile.jsx:782` maps it into `skillGroups`). Without
- *     it the entire section collapses to its "No skills listed yet" empty state,
- *     which is indistinguishable from a member who genuinely has no skills.
- *   - `createdAt`  — the "Member since" row, `ProfileHero.jsx:93`, fed from
- *     `Profile.jsx:763`. Without it the row rendered as a broken
- *     "Member since " with an empty date. See the dedicated `createdAt` note
- *     below for why this one is safe to publish.
- *   - (`roles.positionName` is a fourth candidate, and it is DELIBERATELY NOT
- *     admitted — see the long note immediately below.)
- *
- * `email` and `phone` are NOT re-admitted even though `ProfileHero.jsx:16`,
- * `ContactSection.jsx:12-13` and `MemberInfoSection.jsx:13` do read them. Both
- * degrade to a hidden/`—` row rather than breaking, and the field-usage
- * assessment is explicit that a `mailto:` is not worth the contact disclosure
- * the directory finding was about.
- *
- * ================= WHY `roles.positionName` IS NOT ADMITTED =================
- * `ProfileID.jsx:29` and `Profile.jsx:758,765` do read
- * `user?.roles?.positionName`, so re-admitting it looks free. IT IS NOT, and
- * this was verified rather than assumed:
- *
- *   - `positionName` is NOT an independent human label. `admin.controller.js:225`
- *     writes `positionName: positionName?.trim() || role` — when an admin grants a
- *     role without supplying a display name, the label IS the role string.
- *   - `admin.controller.js:409` constructs new admin-created members as
- *     `roles: { role, position: 0, positionName: role }` — identical again.
- *   - `user.model.js:196` defaults the whole sub-document to
- *     `{ role: 'member', position: 0, positionName: 'member' }` — identical
- *     again, by default, for every account that never had a role assigned.
- *
- * So `positionName` is a COPY of the authorising enum in every construction path
- * this codebase has, and `adminAuth.js:38` authorises the entire admin surface on
- * `user.roles.role` against `adminRoles = ['admin', 'moderator', 'mentor']`.
- * Projecting `roles.positionName` on an anonymous read would therefore publish
- * the literal strings `admin`, `moderator` and `mentor` for exactly the accounts
- * that hold panel access — the identical ranked target list that excluding
- * `roles` was the whole point of this file. A field cannot be re-admitted on the
- * strength of it being "only a display label" when the code that writes it
- * defaults it to the secret.
- *
- * THE VISIBLE COST, accepted knowingly: a public profile's position line falls
- * back to its own literal ("CPCCU Member" / "Member") instead of the member's
- * club office. That is the same trade the directory listing already makes, and
- * it is the correct one — a club office is not worth publishing a
- * credential-stuffing target list for.
- *
- * WHAT ELSE IS STILL EXCLUDED, unchanged from `PUBLIC_MEMBER_ITEM` and for the
- * same reasons stated there: `email`, `phone`, `uniID`, `isValid`, `roles` (whole
- * sub-document), `avatarPublicId`, `coverImagePublicId`, `socialLinks`,
- * `jobPipelineTitle`, `jobPipelineRejectionReason`, `updatedAt`.
- *
- * --------------------- `createdAt` — ADDED TO THIS PROJECTION --------------
- * `createdAt` is the one field this projection has in common with
- * `PUBLIC_MEMBER_ITEM` that it DELIBERATELY now admits where the directory does
- * not, so the difference is called out rather than left to be discovered.
- *
- * It is the ACCOUNT-CREATION timestamp. Mongoose sets it on insert, so it is
- * not user-supplied, not editable through any route in this app, and not a
- * credential, a contact detail or an identifier.
- *
- * WHY IT IS SAFE TO PUBLISH. It is the input to exactly one rendered row — the
- * "Member since" line, `ProfileHero.jsx:93`, fed from
- * `user.createdAt` via `Profile.jsx:763` (and `joinDate` at `:764`, which
- * `MemberInfoSection.jsx:11` also displays). Exposing it reveals nothing beyond
- * what the profile already shows: a profile page is a per-member DISPLAY
- * surface, the caller already had to supply a specific id to get it (see the
- * harvest-vs-display argument above), and the field discloses no capability.
- * Without it the row rendered as a broken "Member since " with an empty date.
- *
- * WHY IT IS NOT ADDED TO `PUBLIC_MEMBER_ITEM`. The directory CARD renders no
- * date at all (`AboutCard.jsx:19-44`), so on the HARVEST surface this field
- * would grow the largest anonymous response in the app for zero display value.
- * The two projections are maintained separately on purpose — see the note on
- * intentional duplication below.
- *
- * THE DUPLICATION IS INTENTIONAL. The two strings are listed separately rather
- * than composed (`PUBLIC_MEMBER_ITEM + ' coverImage skills'`) because a
- * concatenation would make each constant's contents unreadable at the point of
- * use, and — more importantly — because the invariants above are per-surface. If
- * a field is ever added to one, it must be re-assessed against the OTHER
- * consumer's reason for excluding it, which a shared string would hide.
- */
-export const PUBLIC_PROFILE_ITEM =
-  '_id fullName avatar coverImage bio department section batch github linkedin portfolio jobPipelineStatus skills createdAt';
 
 /**
  * Name of the single Mongo document that holds the cumulative visitor counter.

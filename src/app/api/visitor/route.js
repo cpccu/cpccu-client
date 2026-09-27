@@ -20,33 +20,13 @@ import { defineRoute } from '@/lib/server/handler';
  * `/api/v1/visitor` and not to a second top-level `/v1` mount. Both trees are
  * reproduced here and in the three sibling files.
  *
- * THE DUPLICATION IS INTENTIONAL AND MUST NOT BE COLLAPSED, but the stated
- * justification was WRONG and is corrected here. The previous version of this
- * comment claimed "this tree is the one the client actually calls". It is not.
- * `src/components/HOME/VisitorCounter.jsx:9-12` builds its URL as:
- *
- *     API_BASE_URL ? `${API_BASE_URL}/visitor` : "/api/visitor"
- *
- * so the non-versioned `/api/visitor` path is used ONLY in the fallback branch,
- * i.e. only when `NEXT_PUBLIC_API_BASE_URL` is EMPTY or unset. It is set — in
- * `.env`, in `.env.sample` and in every deployed environment — so the client
- * actually calls the VERSIONED `/api/v1/visitor` (this tree's sibling), and
- * `/api/visitor` is a fallback the current configuration never takes.
- *
- * That does NOT make this mount safe to delete, which is why both stay:
- *
- *   - `/api/visitor` is a PUBLIC, unauthenticated, GET-only path. It is a
- *     bookmarkable/curl-able endpoint, it predates the versioned mount, and
- *     removing it is a breaking change to anything already pointing at it —
- *     including any deployment still running with the env var unset, which is
- *     exactly the configuration in which this path is the one that gets hit.
- *   - Collapsing the two mounts is a separate, deliberate change with its own
- *     review. It is not something a route file may do opportunistically.
- *
- * If the two mounts are ever consolidated, this comment is the place to record
- * the decision — and the `NEXT_PUBLIC_API_BASE_URL`-is-empty branch in
- * `VisitorCounter.jsx` is the consumer that has to be dealt with at the same
- * time, or the fallback 404s.
+ * THE DUPLICATION IS INTENTIONAL AND MUST NOT BE COLLAPSED. This tree is the one
+ * the client actually calls: `src/components/HOME/VisitorCounter.jsx:12` builds
+ * its URL as `/api/visitor` (it appends `/v1` only when
+ * `NEXT_PUBLIC_API_BASE_URL` is external). Deleting this mount and leaving only
+ * `/api/v1/visitor` would be a BREAKING change to a shipped client for zero
+ * benefit, so consolidating the two mounts is a separate, deliberate change and
+ * not something a route file may do opportunistically.
  *
  * `public: true` because a visitor counter is public site decoration: it is on
  * the unauthenticated landing page, and the envelope is `{ count }` with no user
@@ -61,7 +41,8 @@ import { defineRoute } from '@/lib/server/handler';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export const GET = defineRoute('GET', {
+export const GET = defineRoute({
+  method: 'GET',
   public: true,
   controller: getVisitorCount,
 });

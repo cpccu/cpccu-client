@@ -31,10 +31,12 @@ import { defineRoute } from '@/lib/server/handler';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export const POST = defineRoute('POST', {
+export const POST = defineRoute({
+  method: 'POST',
   controller: requestJobPipelineProfile,
 });
 
-export const DELETE = defineRoute('DELETE', {
+export const DELETE = defineRoute({
+  method: 'DELETE',
   controller: removeJobPipelineProfile,
 });

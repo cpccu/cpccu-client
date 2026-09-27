@@ -1,11 +1,6 @@
 "use client";
 
-// `next/image` was imported as `Link` here and never referenced. The real
-// link component is `LinkNext` (imported from `next/link` on the next line and
-// used throughout this file), so the `next/image` import was dead — it also
-// aliased a component name onto the wrong package, which reads as though the
-// logo were an optimised image when it is not. Removed by the ESLint gate
-// (`no-unused-vars`).
+import Link from "next/image";
 import LinkNext from "next/link";
 import { useSelector } from "react-redux";
 import { IoMailOpenOutline } from "react-icons/io5";

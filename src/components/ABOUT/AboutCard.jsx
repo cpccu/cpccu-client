@@ -26,23 +26,13 @@ export default function AboutCard({ Data }) {
           <p className="text-sm font-medium text-primary">Batch {Data.batch}</p>
         )}
 
-        {/* `email` is deliberately NOT in `PUBLIC_MEMBER_ITEM` (see
-            `constants.js`): one anonymous call to `/users/member` must not return
-            the whole membership's contact list. It therefore arrives
-            `undefined` on every card, and this link used to render
-            unconditionally — a dead `mailto:undefined` row on every single card.
-            Guarded with the same `&&` idiom as the `batch` row above, which
-            omits its row when the field is absent. The exclusion is the
-            security decision and stays; only the rendering is fixed. */}
-        {Data?.email && (
-          <Link
-            href={`mailto:${Data.email}`}
-            className="italic flex items-center justify-center gap-1 flex-wrap"
-          >
-            <MdOutlineEmail size={20} />
-            <span>{Data.email}</span>
-          </Link>
-        )}
+        <Link
+          href={`mailto:${Data?.email}`}
+          className="italic flex items-center justify-center gap-1 flex-wrap"
+        >
+          <MdOutlineEmail size={20} />
+          <span>{Data?.email}</span>
+        </Link>
       </section>
 
       <section>

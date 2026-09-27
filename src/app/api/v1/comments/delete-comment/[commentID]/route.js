@@ -22,6 +22,7 @@ import { defineRoute } from '@/lib/server/handler';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export const DELETE = defineRoute('DELETE', {
+export const DELETE = defineRoute({
+  method: 'DELETE',
   controller: deleteCommentHandler,
 });

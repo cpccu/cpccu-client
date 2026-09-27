@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import cn from "@/lib/cn";
 
 export default function Button({ title, img, clName }) {
   return (

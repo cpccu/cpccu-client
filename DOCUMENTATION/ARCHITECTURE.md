@@ -132,12 +132,11 @@ Registered reducers:
 | Key | Source |
 | --- | --- |
 | `api` | `baseApi` RTK Query reducer |
+| `publicApi` | public certificate API reducer |
 | `auth` | auth slice |
 | `certificate` | certificate slice |
 
-Middleware: `baseApi.middleware`. The serializable check is disabled.
-
-> **Correction (migration cleanup):** the store previously also registered a `publicApi` reducer and a second `publicApi.middleware` entry. That instance has been **deleted**. It existed only to reach the Express backend's root-level `GET /verify/:certificateId` (`cpccu-server/src/app.js:76`), which sat outside the `/api/v1` base URL; verification is now served at `/api/v1/certificates/verify/:certificateId` on the ordinary base URL, so a second instance is unnecessary. See §8.2 and `src/features/certificate/certificateApi.js`.
+Middleware: `baseApi.middleware`, `publicApi.middleware`. The serializable check is disabled.
 
 > `src/app/redux/rootReducer.js` is **stale** (it imports `usersSlice`/`postsSlice` files that do not exist) and is **not** used by the active store.
 
@@ -175,7 +174,7 @@ flowchart TD
 ### 4.4 RTK Query API Layer
 
 - `src/services/baseApi.js` — the single `createApi` instance (reducer path `api`). Feature modules inject endpoints via `baseApi.injectEndpoints()`.
-- `src/features/certificate/certificateApi.js` injects the certificate endpoints (`verifyCertificate`, `getCertificateStats`, `getRecentCertificates`) into `baseApi`. It no longer creates a second `createApi` instance — `grep -rn "createApi(" src/` returns exactly one hit, `src/services/baseApi.js`.
+- `src/features/certificate/certificateApi.js` also defines `publicApi` — a separate `createApi` instance (reducer path `publicApi`) without auth headers for public certificate verification.
 
 **Tag types** (cache invalidation):
 
@@ -306,15 +305,7 @@ Visitors can view all sections; owner-only controls (edit, image upload, project
 | `GET /certificates/verify?certificateId=&recipientName=&recipientId=` | `certificateApi.verifyCertificate` | No (public — backend attaches no auth requirement; a token is sent only if one exists) |
 | `GET /certificates/stats` | `certificateApi.getCertificateStats` | No (public) |
 | `GET /certificates/recent` | `certificateApi.getRecentCertificates` | No (public) |
-| `GET /certificates/verify/:certificateId` | `certificateApi.verifyCertificate` (by-id path) | No (public — `public: true` in the route handler) |
-
-> **Correction (migration cleanup).** This row previously read `GET /verify/:certificateId` | `publicApi.verifyCertificatePublic`. Both halves were wrong for the migrated backend.
->
-> The **path** moved: the canonical by-id verification endpoint is now **`GET /api/v1/certificates/verify/:certificateId`**, served by `src/app/api/v1/certificates/verify/[certificateId]/route.js`. It runs the same `verifyCertificatePublic` controller the root route ran, so the response is identical. It is reached by the same `baseApi` instance as every other certificate endpoint — there is no longer a separate instance for it.
->
-> The **root path is not migrated and cannot be.** The Express backend mounted `app.get('/verify/:certificateId', …)` at the very top of `app.js` (`cpccu-server/src/app.js:76`), which in App Router would be `src/app/verify/[certificateId]/route.js`. But `src/app/verify/[certificateId]/page.jsx` — the human-facing verification page — **already occupies that segment**, and App Router forbids a `page.jsx` and a `route.js` at the same segment (the build fails on the conflict). So this is not deferred work waiting for a later phase; the file is not legal to create. `publicApi` existed solely to reach that root path from a base URL that stripped `/api/v1`; both are now gone.
->
-> ⚠️ Because `src/app/verify/[certificateId]/page.jsx` is a real client-side route, a request to the root path does **not** 404 — it returns rendered **HTML with HTTP 200**, and a client will render the verification page as if it were JSON. Point any remaining caller at `/api/v1/certificates/verify/:certificateId`, and treat a JSON parse failure on the root path as exactly this cause.
+| `GET /verify/:certificateId` | `publicApi.verifyCertificatePublic` | No |
 
 Search behavior: `certificateId` exact match; `recipientName` partial case-insensitive; `recipientId` case-insensitive. Name/ID searches can return multiple certificates.
 
