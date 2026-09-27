@@ -33,13 +33,6 @@ export const certificateApi = baseApi.injectEndpoints({
         return `/certificates/verify?${params.toString()}`;
       },
     }),
-    // NOTE: `useVerifyCertificateQuery` — the EAGER, non-lazy hook over the
-    // same `verifyCertificate` endpoint — was DELETED in the 2026-09 cutover. It
-    // had ZERO call sites; every consumer uses `useLazyVerifyCertificateQuery`
-    // (`Profile.jsx:127`, the verification page), so the eager query was never
-    // actually issued by anything. An unreachable export, not a broken one. The
-    // endpoint is untouched and still served at
-    // `src/app/api/v1/certificates/verify/route.js`.
     getCertificateStats: build.query({
       query: () => "/certificates/stats",
     }),
@@ -51,6 +44,7 @@ export const certificateApi = baseApi.injectEndpoints({
 
 export const {
   useLazyVerifyCertificateQuery,
+  useVerifyCertificateQuery,
   useGetCertificateStatsQuery,
   useGetRecentCertificatesQuery,
 } = certificateApi;

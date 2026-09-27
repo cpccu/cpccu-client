@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { COOKIE_OPTIONS } from '@/lib/server/constants';
 import { validateEnv } from '@/lib/server/env';
-import { ApiError, resolveVerboseErrors } from '@/lib/server/errors';
+import { ApiError } from '@/lib/server/errors';
 import { parseCookies } from '@/lib/server/request';
 import { User } from '@/lib/server/models/user.model';
 
@@ -222,62 +222,19 @@ async function verifyToken(request) {
     // was structurally well-formed. The 401 and the response SHAPE are
     // unchanged; only the message is generalised.
     //
-    // THE GATE IS `resolveVerboseErrors()`, NOT `NODE_ENV` — CHANGED 2026-09.
-    // This branch used to test `process.env.NODE_ENV === 'production'` on its
-    // own, and that is not a safe gate: `NODE_ENV` is set by the build and by
-    // the platform, neither of which is under the application's control, so a
-    // real host configured to build with it unset — or to `development`, or to a
-    // staging value — serves a PRODUCTION database while taking the
-    // non-redacting branch here and returning "jwt malformed" / "invalid
-    // signature" verbatim. That is precisely the forgery oracle the paragraph
-    // above exists to prevent, re-enabled through a mis-set build variable, and
-    // it is invisible: the only symptom is that some 401 bodies get more
-    // interesting.
-    //
-    // `errors.js` introduced `VERBOSE_ERRORS` for exactly this reason, and its
-    // own comment states that `NODE_ENV` "is not under the application's
-    // control" — but the fix was never applied here, so the two redactions in
-    // this codebase disagreed about when they applied and this one was the
-    // unsafe half. Both now call the same shared resolution, so the rule cannot
-    // drift apart again.
-    //
-    // THE BEHAVIOURAL DELTA, stated exactly so it can be reviewed as one: with
-    // `VERBOSE_ERRORS` UNSET — the case for every existing deployment — this is
-    // unchanged, because `resolveVerboseErrors()` reduces to
-    // `NODE_ENV !== 'production'`, which is the complement of the test that was
-    // here. The change is in the two overridden directions: `VERBOSE_ERRORS=false`
-    // now REDACTS on a non-production host (closing the finding), and
-    // `VERBOSE_ERRORS=true` now RETURNS the raw text on a production host, which
-    // is the documented escape hatch for debugging a live deployment.
-    //
-    // THE GATE IS NEGATED, AND THAT IS THE WHOLE POINT OF THE CHANGE. The
-    // original condition was `NODE_ENV === 'production'` — i.e. "redact when
-    // production" — and `resolveVerboseErrors()` answers the OPPOSITE question
-    // ("may I be verbose?"). Negating it is the only correct translation: the
-    // redacting branch is the one taken when the answer is NO.
-    //
-    // Getting this backwards is a silent, total opening of the oracle in the
-    // exact configuration the change was made to protect — a production host
-    // that has never set `VERBOSE_ERRORS` would return raw `jsonwebtoken` text.
-    // It shipped inverted in the first draft of this change and was caught by
-    // `test/error-redaction.test.js`, which asserts the four
-    // (NODE_ENV × VERBOSE_ERRORS) combinations against what a client would
-    // actually receive. `NODE_ENV=production` with the override ABSENT is
-    // asserted to be the REDACTED case precisely because that is the default
-    // every real deployment runs, and it is the one a sign-inverted gate gets
-    // wrong.
-    if (!resolveVerboseErrors()) {
+    // The redaction is gated on `NODE_ENV` so it behaves CONSISTENTLY with the
+    // 500 branch in `errors.js`: in production the client gets a generic message
+    // and the real reason goes to the log; in development the raw `jsonwebtoken`
+    // text is returned, because a developer debugging an expired or malformed
+    // token has no other way to see which. The previous version redacted
+    // unconditionally, which meant local development and preview deploys
+    // discarded the single most useful diagnostic and the two redactions in this
+    // codebase disagreed about when they applied.
+    if (process.env.NODE_ENV === 'production') {
       console.error('Non-expiry JWT error:', error.name, error.message);
       throw new ApiError(401, 'Invalid access token');
     }
 
-    // The developer-facing branch. It is reachable ONLY when
-    // `resolveVerboseErrors()` is true, which now means an explicit
-    // `VERBOSE_ERRORS=true` OR a genuinely non-production host — never a
-    // production one, which the test above handles. A developer debugging an
-    // expired or malformed token still gets the actual `jsonwebtoken` message,
-    // because the single most useful diagnostic is otherwise discarded with no
-    // trace: the raw text is logged on the redacted path above and nowhere else.
     throw new ApiError(401, error.message || 'Unauthorized request');
   }
 }

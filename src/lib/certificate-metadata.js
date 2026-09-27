@@ -11,11 +11,11 @@
  * TWO REMOVALS WORTH RECORDING, BOTH OF WHICH WERE SILENT FAILURES:
  *
  * 1. THE `API_BASE_URL` DEFAULT IS GONE, AND WITH IT AN ENTIRE CLASS OF BUG.
- *    This file used to build a URL from an environment read with a `||` against
- *    a hardcoded absolute URL for the retired Express origin. `.env.sample`
- *    documented that variable as STALE — it still pointed at the retired
- *    Express app. A wrong or unset value did not throw: the fetch failed, the
- *    `catch` ran, and `getFallbackMetadata` returned
+ *    This file used to build a URL from
+ *    `process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1'`.
+ *    `.env.sample:31-39` documents that variable as STALE — it still points at
+ *    the retired Express origin. A wrong or unset value did not throw: the fetch
+ *    failed, the `catch` ran, and `getFallbackMetadata` returned
  *    `robots: { index: false, follow: false }`. The site built, deployed, served
  *    200s, and logged nothing alarming — while every certificate page silently
  *    became `noindex` and dropped out of search results. Reading the database

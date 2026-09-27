@@ -6,7 +6,7 @@ This document describes the current architecture of the `cpccu-client` repositor
 
 > **Looking for the reasoning behind key decisions?** See [ADR.md](./ADR.md) — Architecture Decision Records covering deployment, certificates, roles, the profile system, the job pipeline, RTK Query, security headers, and auth.
 
-> **Cross-repository note:** this document describes the frontend half of CPCCU. **The API half is now in this repository** — 53 App Router route handlers under `src/app/api/**` exposing 65 endpoints, reached same-origin at `/api/v1`, with the server foundation in `src/lib/server/`. See [BACKEND_MIGRATION.md](./BACKEND_MIGRATION.md) for the API half, and [DEPLOYMENT.md](./DEPLOYMENT.md) for how it is hosted. `cpccu-server` (the retired Express backend, a separate repository) is a read-only historical reference and is not part of this application's build or runtime.
+> **Cross-repository note:** this document describes the frontend half of CPCCU. The system is completed by `cpccu-server` (Express + MongoDB API on Render) — see [`cpccu-server/docs/ARCHITECTURE.md`](https://github.com/cpccu/cpccu-server/blob/dev/docs/ARCHITECTURE.md) for the backend half, and [DEPLOYMENT.md](./DEPLOYMENT.md) for how the two connect.
 
 ## 1. Technology Stack
 
@@ -143,31 +143,30 @@ Middleware: `baseApi.middleware`. The serializable check is disabled.
 
 ### 4.2 Auth Hydration Flow
 
-`src/app/redux/ProviderWrapper.js` performs hydration on app load. The session is an `httpOnly` cookie the browser sends automatically, so there is nothing client-side to check first — the query runs **unconditionally**:
+`src/app/redux/ProviderWrapper.js` performs hydration on app load:
 
 ```mermaid
 flowchart TD
-    A[App mounts] --> D[GET /users/user - no skip gate]
-    D --> E{Server returned a user?}
-    E -- Yes --> F[dispatch setCredentials user]
-    E -- No --> G[dispatch clearCredentials]
-    G --> C[hydrated: true]
-    F --> C
+    A[App mounts] --> B{Token in localStorage?}
+    B -- No --> C[dispatch setHydrated]
+    B -- Yes --> D[call useGetCurrentUserQuery]
+    D --> E{Valid session?}
+    E -- Yes --> F[dispatch setCredentials user + token]
+    E -- No --> G[dispatch clearCredentials + remove localStorage]
+    G --> C
 ```
 
-1. `AuthHydrator` calls `useGetCurrentUserQuery` (`GET /users/user`) with `pollingInterval: 0` and **no `skip` option**.
-2. On success it dispatches `setCredentials` with the user the **server** returned. There is no `token` in that payload.
-3. On failure — 401, 403, or any 5xx — it dispatches `clearCredentials`, which also removes the `user` and the stale `token` keys from `localStorage`.
-4. `hydrated: true` is set in both reducers, so auth-aware UI unblocks in all cases.
-5. The `httpOnly` cookies cannot be cleared from here; they are cleared by `POST /auth/logout` or they expire.
-
-> ⚠️ **A `skip` gate is a correctness bug here, not an optimisation.** This flow used to read `localStorage.token` and skip the query when it was absent. The cutover removed the body token (the credential is a cookie no script can read), so `localStorage.token` became permanently null, `skip` became permanently true, `GET /users/user` never fired, and **every page rendered logged out**. The cost of asking unconditionally is one small 401-shaped request per anonymous page load; the cost of the gate is a site where nobody is ever signed in. `GET /users/user` is the sole authority on session identity.
+1. `AuthHydrator` reads the token from `localStorage`.
+2. If a token exists, it calls `useGetCurrentUserQuery` to validate the session.
+3. On success it dispatches `setCredentials` with the user and token.
+4. On failure it dispatches `clearCredentials` and removes the `user`/`token` localStorage items.
+5. `setHydrated` is dispatched in all cases to unblock auth-aware UI.
 
 ### 4.3 Slice Responsibilities
 
 | Slice | File | Registered | Purpose |
 | --- | --- | --- | --- |
-| `auth` | `src/features/auth/authSlice.js` | ✅ | `user`, `loading`, `error`, `hydrated`; `setCredentials` / `clearCredentials` / `setHydrated`. **No `token`** — the JWTs live only in `httpOnly` cookies this slice cannot read. `user` is mirrored to `localStorage` as a first-paint cache and is never proof of a session. |
+| `auth` | `src/features/auth/authSlice.js` | ✅ | `user`, `token`, `loading`, `error`, `hydrated`; `setCredentials` / `clearCredentials` / `setHydrated`; localStorage persistence |
 | `certificate` | `src/features/certificate/certificateSlise.js` | ✅ | Certificate search form state (`searchData`) and verification result (`result`); `setSearchData` / `setCertificateResult` / `clearCertificateResult` |
 | `users` | `src/features/users/userSlice.js` | ❌ | Exists but **not registered** in the active store |
 | `members` | `src/features/members/memberSlice.js` | ❌ | Exists but **not registered** in the active store |
@@ -175,7 +174,7 @@ flowchart TD
 
 ### 4.4 RTK Query API Layer
 
-- `src/services/baseApi.js` — the single `createApi` instance (reducer path `api`), with the hard-coded **relative** base path `/api/v1`, `credentials: 'include'`, and **no `Authorization` header**. Feature modules inject endpoints via `baseApi.injectEndpoints()`.
+- `src/services/baseApi.js` — the single `createApi` instance (reducer path `api`). Feature modules inject endpoints via `baseApi.injectEndpoints()`.
 - `src/features/certificate/certificateApi.js` injects the certificate endpoints (`verifyCertificate`, `getCertificateStats`, `getRecentCertificates`) into `baseApi`. It no longer creates a second `createApi` instance — `grep -rn "createApi(" src/` returns exactly one hit, `src/services/baseApi.js`.
 
 **Tag types** (cache invalidation):
@@ -204,11 +203,9 @@ AdminStatistics, AdminCertificates, AdminSystemSettings, AdminRoles
 
 | Location | Purpose |
 | --- | --- |
-| `src/components/HOME/VisitorCounter.jsx` | Visitor count fetch + increment, against `/api/v1/visitor` |
-| `src/components/BOOTCAMPLEADERBOARD/BootcampLeaderboard.jsx` | Bootcamp leaderboard data, against `/api/v1/bootcamp-leaderboard` |
-| `src/lib/certificate-metadata.js` | Certificate detail page metadata — **no longer an HTTP fetch**; it reads MongoDB directly through `src/lib/server/services/certificate.service.js` |
-
-All of them use the same hard-coded relative `/api/v1` literal. There is no environment variable and no fallback branch; a stale absolute origin cannot be reintroduced without failing `test/client-endpoint-parity.test.js`.
+| `src/components/HOME/VisitorCounter.jsx` | Visitor count fetch + increment |
+| `src/components/BOOTCAMPLEADERBOARD/BootcampLeaderboard.jsx` | Bootcamp leaderboard data |
+| `src/lib/certificate-metadata.js` | Server-side fetch for certificate detail page metadata |
 
 ## 5. Security Middleware (`src/proxy.ts`)
 
@@ -226,25 +223,23 @@ All of them use the same hard-coded relative `/api/v1` literal. There is no envi
 
 ## 6. Authentication
 
-The session is an **`httpOnly` cookie**. The client holds no token (there is no client-side refresh flow and no Google OAuth flow):
+The frontend uses a **single access-token** JWT flow (there is no refresh-token or Google OAuth flow on the frontend):
 
-1. **Login** (`POST /auth/login`) sets the `accessToken` / `refreshToken` cookies and returns `{ user }` — **no token in the body**. An **unverified** account gets `403 EMAIL_NOT_VERIFIED`, no cookies and no session, and the OTP popup reopens.
-2. **Requests** — `baseApi` sets `credentials: 'include'` so the browser attaches the cookie, and attaches **no `Authorization` header`. The server still accepts a `Bearer` header as a fallback after the cookie, and uses its presence as the CSRF exemption for non-browser callers; the first-party web client does not use that exemption.
-3. **Session validation** — `GET /users/user` on every page load is the **sole authority** on session identity. See §4.2; the `localStorage` `user` copy is a cache, not proof.
-4. **Refresh** — transparent and server-side. `GET /auth/refresh-token` exists but the client never calls it; `src/lib/server/auth.js` re-issues the access-token cookie when it sees an expired one. `ACCESS_TOKEN_EXPIRE` being short is what makes this work.
-5. **Logout** — `POST /auth/logout` (revokes this device's refresh token and clears the cookies) + `clearCredentials`. It was `GET` until the cutover; `GET` is exempt from the CSRF check, which made a cross-site force-logout — and seven-day refresh-token revocation — reachable. Do not add a `GET` fallback.
-6. **Protected routes** — the admin layout is guarded client-side for roles `admin`, `moderator`, `mentor`. Non-admin users see "Admin access required". That guard is UX; the server enforces the same roles on every `/admin/*` route, auth-by-default.
-7. **CSRF** — unsafe methods are checked in-process by `assertSameOrigin` (`src/lib/server/request.js`) against an allow-list seeded from `WEB_DOMAIN` and `NEXT_PUBLIC_SITE_URL`. A browser sends `Sec-Fetch-Site: same-origin` on a same-origin `fetch`, so the first-party client passes; a cross-site request is 403. A wrong allow-list value 403s every write while reads keep working.
+1. **Login** (`POST /auth/login`) returns `{ user, token }`; the token is stored in `localStorage` (`token`) and the user in `localStorage` (`user`). An **unverified** account gets `403 EMAIL_NOT_VERIFIED` — no token is stored and the OTP popup reopens.
+2. **Requests** — `baseApi` attaches `Authorization: Bearer <token>` when a token exists and sets `credentials: 'include'` for cookie-based backend flows.
+3. **Session validation** — `ProviderWrapper` re-validates the token on app load via `GET /users/user`.
+4. **Logout** — `GET /auth/logout` + `clearCredentials` (removes localStorage).
+5. **Protected routes** — the admin layout is guarded client-side for roles `admin`, `moderator`, `mentor`. Non-admin users see "Admin access required".
 
 Registration uses **email OTP verification**: `POST /auth/send-otp` → `POST /auth/verify-registration`, handled by `OtpVerifyPopup` after `POST /auth/register`.
 
-**Email verification is enforced server-side** — the frontend cannot obtain a session for an unverified account:
+**Email verification is enforced by the backend** — the frontend cannot obtain a session for an unverified account:
 
 ```mermaid
 flowchart TD
-    A[POST /auth/login] --> B{Server: isValid?}
-    B -- No --> C[403 EMAIL_NOT_VERIFIED - no cookies, no session]
-    B -- Yes --> D[200 - cookies set, body is user only]
+    A[POST /auth/login] --> B{Backend: isValid?}
+    B -- No --> C[403 EMAIL_NOT_VERIFIED - no JWT, no session]
+    B -- Yes --> D[200 - tokens + user]
     C --> E[Login.jsx catches the code and reopens OtpVerifyPopup]
     E --> F[verify OTP - isValid=true]
     F --> G[User returns to login]
@@ -253,7 +248,7 @@ flowchart TD
 - `Login.jsx` (`src/components/LOGINSIGNUP/Login.jsx`) inspects the error payload for the `EMAIL_NOT_VERIFIED` code, opens the existing OTP verification popup, and stores **no** credentials.
 - `OtpVerifyPopup` (6-char input, 60s resend countdown) calls `sendOtp` (resend) and `otpVerify` (`POST /auth/verify-registration`). On success it asks the user to log in again.
 
-Password reset: `POST /auth/reset-link` (with `{ email }` in the body) sends the reset email; `PATCH /auth/reset-password` (with `code` + `token` from the URL) completes it. Passwords are validated with `src/lib/password-validation.js`. `reset-link` was `GET /auth/reset-link/:email` until the cutover: `GET` is exempt from the CSRF check and the address was in the path, so a bare cross-site `<img src>` could make the server mail a real reset link to an attacker-chosen address. Do not add a `GET` fallback.
+Password reset: `GET /auth/reset-link/:email` sends the reset email; `PATCH /auth/reset-password` (with `code` + `token` from the URL) completes it. Passwords are validated with `src/lib/password-validation.js`.
 
 ## 7. Profile System
 
@@ -301,14 +296,14 @@ Visitors can view all sections; owner-only controls (edit, image upload, project
 ### 8.1 Verification Portal
 
 - `/certificate` — search form (`VerifyForm`), stats (`CertificateStats`), recent certificates (`RecentCertificates`).
-- `/certificate/[certificateId]` — same page pre-filled with the ID; `generateMetadata` calls `getCertificateMetadata`, which reads MongoDB through the certificate service rather than fetching its own origin.
+- `/certificate/[certificateId]` — same page pre-filled with the ID; `generateMetadata` calls `getCertificateMetadata` (server-side fetch of `GET /certificates/verify?certificateId=...`).
 - `/verify/[certificateId]` — legacy route that redirects to `/certificate/[certificateId]`.
 
 ### 8.2 APIs
 
 | Endpoint | API | Auth |
 | --- | --- | --- |
-| `GET /certificates/verify?certificateId=&recipientName=&recipientId=` | `certificateApi.verifyCertificate` | No (public — declared `public: true` server-side) |
+| `GET /certificates/verify?certificateId=&recipientName=&recipientId=` | `certificateApi.verifyCertificate` | No (public — backend attaches no auth requirement; a token is sent only if one exists) |
 | `GET /certificates/stats` | `certificateApi.getCertificateStats` | No (public) |
 | `GET /certificates/recent` | `certificateApi.getRecentCertificates` | No (public) |
 | `GET /certificates/verify/:certificateId` | `certificateApi.verifyCertificate` (by-id path) | No (public — `public: true` in the route handler) |
@@ -501,25 +496,11 @@ See [CPCCU_Admin_Panel_Implementation_Documentation.md](./CPCCU_Admin_Panel_Impl
 
 ## 17. Environment Variables
 
-[`.env.sample`](../.env.sample) is the authoritative list and documents each variable inline. Summary:
-
 | Variable | Required | Used in |
 | --- | --- | --- |
-| `MONGODB_URI` | ✅ | `src/lib/server/db.js` |
-| `ACCESS_TOKEN_SECRET` | ✅ | `src/lib/server/auth.js` |
-| `REFRESH_TOKEN_SECRET` | ✅ | `src/lib/server/auth.js` |
-| `PASSWORD_TOKEN_SECRET` | ✅ | `src/lib/server/controllers/auth.controller.js` |
-| `WEB_DOMAIN` | ✅ in practice | `sentOtp.js` (reset-link host) **and** `request.js` (CSRF allow-list seed) |
-| `NEXT_PUBLIC_SITE_URL` | ✅ in practice | `request.js` (CSRF allow-list seed). **Inlined at build time** |
-| `EXTRA_ALLOWED_ORIGINS` | No | `request.js` — additive extra CSRF origins |
-| `ACCESS_TOKEN_EXPIRE` / `REFRESH_TOKEN_EXPIRE` / `PASSWORD_TOKEN_EXPIRE` | Per feature | Token lifetimes. `ACCESS_TOKEN_EXPIRE` is load-bearing for transparent refresh |
-| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` / `CLOUDINARY_UPLOAD_PRESET` | For uploads | `src/lib/server/cloudinary.js` |
-| `RESEND_API_KEY` | For email | `src/lib/server/sendEmail.js` |
-| `VERBOSE_ERRORS` | No | `errors.js` — force raw or redacted error text regardless of `NODE_ENV` |
-| `CONTRIBUTOR_GITHUB_TOKEN` | For contributor sync | `adminContent.controller.js` |
-| `GOOGLE_SHEETS_API_KEY` / `BOOTCAMP_SHEET_ID` | For the leaderboard | `bootcampLeaderboard.controller.js` |
+| `NEXT_PUBLIC_API_BASE_URL` | Yes (prod) | `baseApi.js`, `certificateApi.js`, `certificate-metadata.js`, `VisitorCounter.jsx`, `BootcampLeaderboard.jsx` |
 
-> The four ✅ entries are what `src/lib/server/env.js` hard-requires. Validation is **lazy, on first use**, so a deployment missing them builds green and fails at runtime with 500s rather than 401s. `WEB_DOMAIN` / `NEXT_PUBLIC_SITE_URL` are not in that list, but a wrong value 403s every unsafe method — treat them as required in practice. `NODE_ENV` is set by the build and the platform; do not set it by hand. **There is no API base URL variable** — the path is the hard-coded relative `/api/v1`.
+> `GOOGLE_SHEETS_API_KEY` and `BOOTCAMP_SHEET_ID` are **backend** variables referenced only in the leaderboard's error hint. `NODE_ENV` is used by `proxy.ts` to enable production-only headers.
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for production configuration.
 
@@ -529,12 +510,11 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for production configuration.
 - `src/features/posts/postApi.js` is empty; posts use the generic admin content API.
 - `src/app/redux/rootReducer.js` is stale and not used (imports non-existent files).
 - `userSlice.js`, `memberSlice.js`, `postSlice.js` are not registered in the store.
+- `memberApi.js` provides a `Members` tag that is not declared in `baseApi.tagTypes`.
 - Several endpoint URLs in `userApi.js` omit the leading `/` (functional due to `fetchBaseQuery` resolution).
-- `createUser` (`POST /users/user`), `deleteUser` (`DELETE /users/:id`) and `fetchMemberById` (`GET /users/member/:id`) had no route in either backend and have been **deleted**, with the reason recorded in place. The `Members` tag type went with them and is no longer declared anywhere.
-- `GET /auth/refresh-token` exists on the server but the client never calls it — renewal is transparent and server-side.
+- `userApi.js` defines `createUser` (`POST /users/user`) and `deleteUser` (`DELETE /users/:id`) and `memberApi.js` defines `fetchMemberById` (`GET /users/member/:id`) — **none of these have a matching backend route**; they are unused/dead client definitions.
+- `GET /auth/refresh-token` exists on the backend but the frontend never calls it — the frontend has no refresh-token flow (sessions rely on the access token + backend cookie renewal).
 - `src/components/ADMIN/AdminPanel.jsx`, `src/components/Layout/Profile1.jsx`, and the legacy `PROFILE` components (`ProfileCard`, `ProfileDetails`, `ProfileID`, `ProfileBlog`, `Profile_Blog_Modal`, `ProfileNotFound`) are unused code kept in the tree.
 - There are two `ui/` folders (`src/components/ui/` and `src/components/CERTIFICATE/ui/`) with duplicated shadcn-style components.
 - `generateCertificateId` is a **local function** inside `src/components/certificates-content.jsx` (there is no `generateCertificateId.js` file).
-- `render.yaml` / `_render.yaml` were the old Render deploy blueprints and are **deleted on purpose** — production hosting is **Vercel**. Do not restore them.
-- **No seed script exists in this repository.** The JSON→Mongo seeder lives only in the archived `cpccu-server` repo and has not been ported, so a fresh database stays empty and public pages fall back to `data/*.json`.
-- `scripts/update_contributors.py` still fetches commit counts from `cpccu/cpccu-server`, so the contributor pipeline still depends on that archived repository being readable.
+- `render.yaml` / `_render.yaml` remain in the repo from the earlier Render-based frontend deployment; production frontend hosting is now **Vercel**.

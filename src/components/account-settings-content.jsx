@@ -15,9 +15,7 @@ import { clearCredentials, setCredentials } from '@/features/auth/authSlice';
 import { useChangePasswordMutation, useDeleteOwnAccountMutation, useUpdateUserMutation, useUserImageUploadMutation } from '@/features/users/userApi';
 export function AccountSettingsContent() {
     const user = useSelector((state) => state.auth.user);
-    // No `token` selector any more. The session credential is the `httpOnly`
-    // cookie the browser attaches on its own; there is nothing in the Redux
-    // store for this screen to read, and there is no reason for it to want to.
+    const token = useSelector((state) => state.auth.token);
     const dispatch = useDispatch();
     const router = useRouter();
     const imageInputRef = useRef(null);
@@ -59,10 +57,7 @@ export function AccountSettingsContent() {
             bio: profile.bio,
             section: profile.department,
         }).unwrap();
-        // `response.data` is the updated user as the server re-serialised it, so
-        // re-seeding the cache here keeps the rest of the UI (header, profile)
-        // in step with what was just saved. No `token`: there is none to store.
-        dispatch(setCredentials({ user: response.data }));
+        dispatch(setCredentials({ user: response.data, token }));
         showSuccessAlert('Profile Updated', 'Your account details have been saved.');
     };
     const handlePasswordChange = async () => {
@@ -84,7 +79,7 @@ export function AccountSettingsContent() {
         const imageData = new FormData();
         imageData.append('image', image);
         const response = await userImageUpload({ key: 'avatar', imageData }).unwrap();
-        dispatch(setCredentials({ user: response.data }));
+        dispatch(setCredentials({ user: response.data, token }));
         setProfile((current) => ({
           ...current,
           avatar: response.data.avatar || current.avatar,

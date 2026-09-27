@@ -56,12 +56,12 @@ export default function Login() {
       const userData = { email, password };
       const response = await login(userData).unwrap();
 
-      // No `token` in this payload: the server stopped returning the access
-      // token in the login body once the `httpOnly` cookie became the only
-      // credential (`auth.controller.js`, `{ user: loggedInUser }`). That cookie
-      // was set by this very response, so the session exists without the client
-      // ever holding a readable copy of it.
-      dispatch(setCredentials({ user: response.data.user }));
+      dispatch(
+        setCredentials({
+          user: response.data.user,
+          token: response.data.token,
+        }),
+      );
 
       router.push(`/profile/${response.data.user?.uniID || response.data.user._id}`);
     } catch (err) {

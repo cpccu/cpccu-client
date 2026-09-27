@@ -1,16 +1,8 @@
 # Backend Migration — Express (`cpccu-server`) → Next.js App Router Route Handlers
 
-This document is the handover for the backend migration that moved the CPCCU Express API into route handlers inside this repository, and for the frontend cutover that followed. It is written for the next person who has to **operate it or extend it**. It does not assume you were present for the migration, the review cycles, or the cutover.
+This document is the handover for the backend migration that moved the CPCCU Express API into route handlers inside this repository. It is written for the next person who has to **cut this over, operate it, or extend it**. It does not assume you were present for the migration or for the review cycles that followed it.
 
-> **Status: the migration is DONE and the cutover is COMPLETE (2026-09).** This document was originally written when the migration was additive and un-cut, and it is kept in that form deliberately: the §9 checklist and the reasoning behind each divergence are the record of *how* the decision was reached, which is the part that is expensive to reconstruct. Sections that describe a state which has since changed carry a **status line saying which state is actually in**, so you can tell the record from the current truth.
->
-> What is true now, in one place:
->
-> - **The client calls this app.** The base path is the hard-coded relative literal `/api/v1`; `NEXT_PUBLIC_API_BASE_URL` is **deleted**, not repointed. There is no cross-origin hop, no CORS, and no API base URL to configure.
-> - **`cpccu-server` is a read-only archived baseline.** It is a separate repository, nothing here depends on it at build time or runtime, and no instruction in this folder tells you to run, clone or deploy it. It remains the best available answer to "why does this code look like that".
-> - **The session is the `httpOnly` cookie.** The client holds no token, sends no `Authorization` header, and `GET /api/v1/users/user` is the sole authority on session identity.
-> - **Two things changed shape in the cutover** that you should know about before reading §3 as gospel: `GET /api/v1/auth/logout` is now **`POST`** (§9.5), and `POST /auth/login` / `GET /auth/refresh-token` no longer return a token in the body (§9.5).
-> - **Still open, and the reason to read §8:** rate limiting is not effectively enforced across instances, and the IP-derived controls are only sound behind the Vercel edge.
+> **Read this first.** The migration is **additive and not cut over**. `cpccu-server` still exists, is byte-identical to its committed state, still runs, and is still what the client talks to. Nothing in `cpccu-client` calls the new `/api/**` surface yet.
 
 **Contents**
 
@@ -22,7 +14,7 @@ This document is the handover for the backend migration that moved the CPCCU Exp
 6. [Preserved defects — NOT migration regressions](#6-preserved-defects--not-migration-regressions)
 7. [The security review outcome](#7-the-security-review-outcome)
 8. [The single largest open risk: rate limiting](#8-the-single-largest-open-risk-rate-limiting)
-9. [Frontend cutover checklist](#9-frontend-cutover-checklist)
+9. [Frontend work still outstanding](#9-frontend-work-still-outstanding)
 10. [Pre-deploy checklist](#10-pre-deploy-checklist)
 11. [Known tooling gaps](#11-known-tooling-gaps)
 
@@ -39,12 +31,12 @@ This document is the handover for the backend migration that moved the CPCCU Exp
 
 **Not moved — deliberately:**
 
-- `cpccu-server/` itself. It was untouched through the migration (`git status` clean, HEAD `ea9810a`) and was the read-only source of truth for this port. **Since the cutover it is a read-only archived baseline**: no build step, no dev loop and no runtime request in this repository touches it.
-- The client — **as of the migration itself.** The original port deliberately did not touch the client; the cutover that followed did. Nothing in `src/` outside `src/lib/server` and `src/app/api` was modified *as part of the migration*; §9 records what the cutover changed, and every item there is now done except the ones explicitly left open.
-- The root-level `GET /verify/:certificateId` endpoint. It is **not legal to create** in App Router: `src/app/verify/[certificateId]/page.jsx` already owns that segment and Next fails the build on a `page.jsx` + `route.js` collision. The canonical replacement is `GET /api/v1/certificates/verify/:certificateId`, which runs the same controller. See [§9](#9-frontend-cutover-checklist) — the client-side `publicApi` that pointed at the old path has been **deleted** ([§9.2](#92-delete-the-standalone-publicapi-instance--this-one-fails-silently)), so no client code requests the root path any more; note that it **fails silently** rather than 404ing, so anything else still calling it gets the verification *page* as HTML.
+- `cpccu-server/` itself. It is untouched (`git status` clean, HEAD `ea9810a`) and still runs. It was the read-only source of truth for this port.
+- The client. `NEXT_PUBLIC_API_BASE_URL` is still `http://localhost:5000/api/v1` — i.e. the client still calls the Express server. Nothing in `src/` outside `src/lib/server` and `src/app/api` was modified as part of the migration.
+- The root-level `GET /verify/:certificateId` endpoint. It is **not legal to create** in App Router: `src/app/verify/[certificateId]/page.jsx` already owns that segment and Next fails the build on a `page.jsx` + `route.js` collision. The canonical replacement is `GET /api/v1/certificates/verify/:certificateId`, which runs the same controller. See [§9](#9-frontend-work-still-outstanding) — the client-side `publicApi` that pointed at the old path has since been **deleted** ([§9.2](#92-delete-the-standalone-publicapi-instance--this-one-fails-silently)), so no client code requests the root path any more; note that it **fails silently** rather than 404ing, so anything else still calling it gets the verification *page* as HTML.
 - The root-level `GET /` health probe. Same reason: `src/app/(main)/page.jsx` owns `/`. `GET /api/v1` is the health endpoint and the only one that can exist.
 
-**What this means operationally — as of the cutover.** There is **one** API implementation, in this repository, on one origin. `cpccu-server` is not a second live copy of the contract; it is a historical reference you consult when a ported decision needs explaining. The consequence worth carrying forward: a bug report can no longer be diffed against "the backend" in another repository, because there is no other backend. The reference for "what this replaced" is the git history of the port, and for "what this is now" is the endpoint table in §3.
+**What this means operationally.** You have two API implementations of the same contract running in two repositories. The new one is additive: it adds routes to this app, it does not take any away. Cutover is a frontend change (repointing one build-time variable, plus the items in §9), not a backend change.
 
 ---
 
@@ -243,8 +235,6 @@ The alternative — "rewrite the controllers for App Router" — has a failure m
 
 ### Auth (8)
 
-> **Response shapes changed in the 2026-09 cutover.** `POST /auth/login` returns `{ user }` and `GET /auth/refresh-token` returns `{ success: true }` — **neither returns a token in the body**. Both still set the `httpOnly` cookies, and those cookies are the only credential the client uses. See [§9.5](#95-drop-token-and-accesstoken-from-the-two-auth-responses).
-
 | Method | Path | Auth | Limiter | Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | POST | `/api/v1/auth/register` | public | `registration` (100/h/IP) + `registration-email` (5/h/email) | order is load-bearing; see `handler.js:419-467` |
@@ -252,8 +242,8 @@ The alternative — "rewrite the controllers for App Router" — has a failure m
 | POST | `/api/v1/auth/send-otp` | public | `auth-email` (5/15min/IP) | |
 | POST | `/api/v1/auth/verify-registration` | public | `otp-verification` (5/10min/IP) | |
 | GET | `/api/v1/auth/refresh-token` | public | **none** | deliberately: it is not a guessing surface, and throttling it would log every user out once per access-token lifetime |
-| POST | `/api/v1/auth/logout` | authenticated | — | **was `GET` until the 2026-09 cutover** — see [§9.5](#95-drop-token-and-accesstoken-from-the-two-auth-responses) |
-| POST | `/api/v1/auth/reset-link` | public | `auth-email` | **was `GET /api/v1/auth/reset-link/:email` until the 2026-09 cutover** — the address moved from the path into the body. A `GET` is exempt from `assertSameOrigin`, and with the address in the path a bare cross-site `<img src>` was enough to make the server mail a real branded reset link to an attacker-chosen address (mail-bomb / sender-quota burn / phishing lure). `POST` re-arms the CSRF check. No `GET` fallback |
+| GET | `/api/v1/auth/logout` | authenticated | — | |
+| GET | `/api/v1/auth/reset-link/:email` | public | `auth-email` | |
 | PATCH | `/api/v1/auth/reset-password` | public | `password-reset` (10/15min/IP) | |
 
 ### Users (9)
@@ -322,14 +312,12 @@ The alternative — "rewrite the controllers for App Router" — has a failure m
 
 | Method | Path | Auth | Notes |
 | :--- | :--- | :--- | :--- |
-| GET | `/api/visitor` | public | backwards-compatibility mount; **no in-app consumer since the cutover** |
-| POST | `/api/visitor/increment` | public | same |
-| GET | `/api/v1/visitor` | public | reproduces the Express router's `/v1/...` entries inside the `/api` mount. **This is the mount the client calls** |
+| GET | `/api/visitor` | public | **this is the mount the client calls** |
+| POST | `/api/visitor/increment` | public | |
+| GET | `/api/v1/visitor` | public | reproduces the Express router's `/v1/...` entries inside the `/api` mount |
 | POST | `/api/v1/visitor/increment` | public | |
 
-The Express router registered four handlers across two prefixes (`app.use('/api', visitorRoutes)` serving both `/visitor…` and `/v1/visitor…`). Both trees are reproduced. `api/visitor/route.js` argues at length that the duplication **must not be collapsed** — it is a deliberate backwards-compatibility mount.
-
-> **Updated by the cutover, and this is the one place the two tables above are now wrong about *which* mount the client uses.** `VisitorCounter.jsx` used to build `/api/visitor` and only fall back to the versioned path when the base URL was external. It now has a single hard-coded constant, `/api/v1/visitor`, with no fallback branch. So the **versioned** pair is what the app calls, and the unversioned `/api/visitor*` pair has no in-app consumer at all. It is still served, because "no in-app consumer" is not "safe to delete" and an external caller may exist. Both files carry the history.
+The Express router registered four handlers across two prefixes (`app.use('/api', visitorRoutes)` serving both `/visitor…` and `/v1/visitor…`). Both trees are reproduced. `api/visitor/route.js:23-29` says the duplication **must not be collapsed**: this is the tree the client actually uses (`VisitorCounter.jsx:12` builds `/api/visitor`, appending `/v1` only when the base URL is external). Deleting it would be a breaking change to a shipped client for zero benefit.
 
 ### Bootcamp leaderboard (1)
 
@@ -381,23 +369,15 @@ Two things about this router you must not "fix":
 
 **Authoritative source: [`.env.sample`](../.env.sample).** It is a real, loadable dotenv file: every variable is written as `KEY=` with an **empty** value.
 
-> **`.env.sample` ships zero values deliberately.** A value a developer can copy out of a committed file becomes a value that ships — a plausible default signing key means every deployment that forgot to override it shares a secret with the whole internet. The file's own header says so. Values belong in the platform's environment-variable store (Vercel: Project → Settings → Environment Variables) and, locally, in a gitignored `.env`. Note that `.gitignore` covers exactly `.env` and **not** `.env.local` or any other `.env*` variant — a developer's habit of reaching for `.env.local` here would produce a committable file full of secrets.
+> **`.env.sample` ships zero values deliberately.** A value a developer can copy out of a committed file becomes a value that ships — a plausible default signing key means every deployment that forgot to override it shares a secret with the whole internet. The file's own header says so. Values belong in the platform's environment-variable store (Vercel: Project → Settings → Environment Variables) and, locally, in a gitignored `.env.local`.
 
 ### 4.1 Client
 
 | Variable | Purpose |
 | :--- | :--- |
-| *(none)* | **There is no API base URL variable.** The client reaches the API at the hard-coded relative literal `/api/v1` (`src/services/baseApi.js`), and the three direct-`fetch` sites use the same literal. |
+| `NEXT_PUBLIC_API_BASE_URL` | The API base URL the client calls. **Still points at the retired Express origin** (`http://localhost:5000/api/v1`) — see below. |
 
-> **`NEXT_PUBLIC_API_BASE_URL` was DELETED, not repointed.** `.env.sample` no longer contains the name, so a copy of the template cannot reintroduce it. Three reasons, all of which had to be true before deletion was the right answer rather than a repoint:
->
-> 1. **There is no second origin to configure.** An absolute value that disagrees with the deployment host turns every request into a cross-origin one, which is exactly what the same-origin cookie and CSRF design in `request.js` assumes cannot happen.
-> 2. **`NEXT_PUBLIC_*` is inlined at build time.** Editing such a variable requires a rebuild, so it could never have been a live fix.
-> 3. **The `||` trap made a blank value worse than no value.** The old code read it with `||`, so a present-but-empty `NEXT_PUBLIC_API_BASE_URL=` — which is exactly what copying `.env.sample` produced — fell through to a hard-coded cross-origin `localhost:5000` **in production**, from a variable that was visibly set and visibly correct. No build error, no dev warning, every request rejected at a host that no longer exists. `??` would not have fixed it: `''` is neither `null` nor `undefined`, so `??` would have kept the empty string as the base URL instead.
->
-> `test/client-endpoint-parity.test.js` enforces both halves of this and cannot be satisfied by a comment: it asserts the base path in `baseApi.js` is exactly `/api/v1`, asserts `baseApi.js` contains **no `process.env` read at all**, and asserts no file under `src/` contains either retired origin (`localhost:5000`, `cpccu-server.onrender.com`). The code comments spell the origins out in prose rather than as literals precisely so that last assertion can pass.
->
-> **Do not add it back to point the client at another host.** That is a design change requiring its own review, not a configuration change.
+> **This value is STALE and is left exactly as it was on purpose.** It must be repointed at `/api/v1` (relative) or `https://<host>/api/v1`. Repointing is a **separate, coordinated frontend task** (§9), because the client also assumes a cross-origin API today, which the same-origin cookie and CSRF design in `request.js` now expects to be unnecessary. Half-changing it here would break the still-running Express path.
 
 ### 4.2 Database
 
@@ -436,17 +416,12 @@ Each secret must be a long random string (`openssl rand -base64 48`) and each mu
 
 ### 4.6 CSRF origin allow-list
 
-**These are required in practice, and they are not on the §4.9 list only because `env.js` does not validate them.** A wrong or missing value does not throw — it produces a **shorter allow-list**, and the observable failure is that every unsafe method (`POST`/`PUT`/`PATCH`/`DELETE`) is 403 `Cross-origin request rejected` while reads keep working. The site looks healthy and nothing saves. `allowedOrigins()` is read lazily and degrades rather than failing, so there is no loud signal anywhere; this is the single most common deploy misconfiguration in this application, and it is the first thing to check on any "the site loads but I can't log in / save / upload" report.
+| Variable | Purpose |
+| :--- | :--- |
+| `NEXT_PUBLIC_SITE_URL` | A single origin, used as a seed. Its apex and `www.` siblings are added automatically, so listing only one half of a pair is not a mistake. |
+| `EXTRA_ALLOWED_ORIGINS` | Comma-separated, for hosts that are genuinely neither (staging, preview). **Additive only** — it cannot remove a configured domain, and it cannot make a bare `Sec-Fetch-Site: same-site` request acceptable unless the caller actually sends one of these origins. It exists so adding a host is an env change, not a PR against a security-critical allow-list. |
 
-| Variable | Required | Purpose |
-| :--- | :--- | :--- |
-| `WEB_DOMAIN` | ✅ in practice | The other seed. Also read by `sentOtp.js` to build the host of a password-reset link. **Bare origin, scheme included, no trailing slash** (e.g. `https://cpccu.club`). |
-| `NEXT_PUBLIC_SITE_URL` | ✅ in practice | A single origin, used as a seed. Its apex and `www.` siblings are added automatically, so listing only one half of a pair is not a mistake. It is **not** an API URL, and it is the only remaining `NEXT_PUBLIC_*` variable — which means it is **inlined at build time**, so correcting it requires a rebuild, not just a redeploy. |
-| `EXTRA_ALLOWED_ORIGINS` | No | Comma-separated, for hosts that are genuinely neither (staging, preview). **Additive only** — it cannot remove a configured domain, and it cannot make a bare `Sec-Fetch-Site: same-site` request acceptable unless the caller actually sends one of these origins. It exists so adding a host is an env change, not a PR against a security-critical allow-list. |
-
-`localhost:3000`–`3002` and `127.0.0.1:3000` are compiled in, so local development needs none of this.
-
-~~`NEXT_PUBLIC_API_BASE_URL` is deliberately **not** consulted for the allow-list~~ — that sentence is now moot rather than wrong: the variable no longer exists. The reasoning behind it survives as a note for anyone tempted to reintroduce one: an API's own address is not a browser origin, and a request *from* the API's address tells you nothing about who initiated it.
+`NEXT_PUBLIC_API_BASE_URL` is deliberately **not** consulted for the allow-list: it is the API's own address, and a request *from* the API's address is not a browser origin.
 
 ### 4.7 Error reporting
 
@@ -507,7 +482,7 @@ Every item here is a reviewed decision, not a bug. Each is stated in the code at
 | `Sec-Fetch-Site: same-site` | allowed **only** with an allow-listed `Origin`. A sibling subdomain (`staging.cpccu.club`), a compromised subdomain, or `cpccu.club.attacker.net`'s cookie scope all satisfy `same-site`, and that is a far more realistic threat than a bare cross-origin form POST — which `SameSite=Lax` already blocks. |
 | `Sec-Fetch-Site: cross-site` (or anything else) | 403 `Cross-origin request rejected` |
 | No `Sec-Fetch-Site`, allow-listed `Origin` | allowed |
-| No `Sec-Fetch-Site`, no `Origin`, **but `Authorization: Bearer …`** | allowed. `Authorization` is a CORS non-simple header, so a cross-site page must preflight to set it and this API never answers a preflight, and the token is not in a jar an attacker's page can read. Such a request is structurally not CSRF-able. **Since the cutover this is a non-browser-client exemption only** — the first-party web client authenticates purely with the `httpOnly` cookie and attaches no `Authorization` header, so it always takes the `same-origin` branch above. It exists for `curl`, CLI clients and integration tests. Do not read it as a requirement for the web client. |
+| No `Sec-Fetch-Site`, no `Origin`, **but `Authorization: Bearer …`** | allowed. `Authorization` is a CORS non-simple header, so a cross-site page must preflight to set it and this API never answers a preflight, and the token is not in a jar an attacker's page can read. Such a request is structurally not CSRF-able. |
 | No `Sec-Fetch-Site`, no `Origin`, no bearer | 403. Rejecting outright (which this function originally did) 403'd `curl`, mobile/CLI clients and integration tests on every unsafe method. |
 | `GET` / `HEAD` / `OPTIONS` | exempt (`SAFE_METHODS`) |
 
@@ -702,7 +677,7 @@ These were **faithfully carried over on purpose**. Every one is documented in th
 
 **Deferred by owner decision: real distributed rate limiting.** See §8.
 
-**Two things the review explicitly did *not* certify**, because they were outside the codebase at the time: whether the `cpccu-server` Express app it was ported from was currently exposed, and whether the client was correctly pointed at either backend. **Both are now moot** — the client points at this application's own `/api/v1`, and `cpccu-server` is a read-only archived baseline that nothing in this repository calls. What replaced the second question is `test/client-endpoint-parity.test.js`, which does assert it.
+**Two things the review explicitly did *not* certify**, because they are outside the codebase: whether the `cpccu-server` Express app it was ported from is currently exposed, and whether the client is correctly pointed at either backend.
 
 ---
 
@@ -736,7 +711,7 @@ The owner **deferred** adding a Redis/KV dependency: it needs credentials plus a
 Because the store cannot work across instances, the cheapest correct answer is to move the enforcement **out of the application and into the edge**, which costs zero new dependencies and is per-deployment rather than per-instance:
 
 - **Vercel Firewall / WAF rate-limit rules** on the deployment (Vercel → Project → Settings → Firewall, or `vercel.json` `firewall` config). A rule scoped to `POST /api/v1/auth/login` with a per-IP limit and a challenge/ban action is enforced at the edge, **before** the function is invoked, and is shared across every instance because it lives in front of all of them.
-- Cover `POST /api/v1/auth/verify-registration`, `POST /api/v1/auth/send-otp`, `POST /api/v1/auth/reset-link` and `POST /api/v1/contact/messages` the same way — these are the endpoints with a per-account or per-target cost (OTP mail, Resend quota, inbox flooding). `reset-link` is the sharpest of the four: since the cutover it is a `POST` under `assertSameOrigin`, so an edge rule is defence in depth rather than the only thing between the endpoint and a mail bomb.
+- Cover `POST /api/v1/auth/verify-registration`, `POST /api/v1/auth/send-otp`, `GET /api/v1/auth/reset-link/*` and `POST /api/v1/contact/messages` the same way — these are the endpoints with a per-account or per-target cost (OTP mail, Resend quota, inbox flooding).
 - Set a `vercel.json` firewall rule for the `X-Forwarded-For` / `x-real-ip` client dimension. See the deployment constraint below before choosing the key.
 - Vercel's WAF also caps request body size and rate, which is a second line of defence for the 4.5 MB edge limit and for the upload endpoints.
 
@@ -748,7 +723,7 @@ Because the store cannot work across instances, the cheapest correct answer is t
 | :--- | :--- | :--- |
 | `loginRateLimiter` (10 / 15 min) | `POST /api/v1/auth/login` | **Effectively unenforced.** The only brute-force control on the route. |
 | `contactRateLimiter` (3 / min) | `POST /api/v1/contact/messages` | **Effectively unenforced.** Contact-form spam. |
-| `authEmailRateLimiter` (5 / 15 min) | `send-otp`, `reset-link` | **Effectively unenforced.** Outbound mail abuse and Resend quota burn. `reset-link` no longer needs this alone: since the cutover it is a `POST` under `assertSameOrigin`, so a cross-site trigger is refused before the handler runs. The limiter still does not bound a caller who *is* same-origin (or a bot driving a real browser), which is the case an edge rule would cover. |
+| `authEmailRateLimiter` (5 / 15 min) | `send-otp`, `reset-link/:email` | **Effectively unenforced.** Outbound mail abuse and Resend quota burn. |
 | `passwordResetRateLimiter`, `otpVerificationRateLimiter` | `reset-password`, `verify-registration` | **Effectively unenforced.** |
 | `memberListRateLimiter` (60/min) | `GET /users/member` | **Effectively unenforced.** The two new limiters below are in the same position. |
 | `uploadRateLimiter` (20/h/IP) | `POST /admin/uploads/image` | **Effectively unenforced.** |
@@ -761,30 +736,17 @@ Note also that the header trust and the shared store are **independent** problem
 
 ---
 
-## 9. Frontend cutover checklist
+## 9. Frontend work still outstanding
 
-**The migration itself deliberately did not touch the client.** Every item in this section is a client change, and every one of them is part of the cutover that followed.
+**The migration itself deliberately did not touch the client.** Every item below is a client change.
 
-> **Status: the cutover is COMPLETE (2026-09).** All of §9.1, §9.2, §9.3, §9.4 and §9.5 are done, including the two items that were open questions rather than mechanical edits: the `isValid` decision in §9.4 and the token removal in §9.5. Each subsection carries its own status line with the code evidence. The original text of each is kept below as the record of what was found and why it mattered — that reasoning is the part that is expensive to reconstruct, and several of these were described as silent-failure or total-outage risks at the time.
->
-> **One thing the cutover did *not* do:** port the JSON→Mongo seed script out of the archived repository. A fresh database therefore stays empty, and public pages fall back to `data/*.json`. That is a known gap, recorded in [ARCHITECTURE.md](./ARCHITECTURE.md) §18 and in `DEVELOPER_ONBOARDING.md` §9 — not a step you can perform today.
+> **Update (cleanup pass).** This section is now **partly done**. A later cleanup pass on this repository changed client code, which was not part of the migration: **§9.2 is complete** (the `publicApi` instance and its store registration are deleted), and the open *decisions* in **§9.3** and **§9.4** have been made and recorded. **§9.1 has NOT been done** — the client still calls the Express server, `NEXT_PUBLIC_API_BASE_URL` still defaults to `http://localhost:5000/api/v1`, and no cutover has occurred. Sections below are kept in full as the record of what was found; each one now carries a status line saying which state it is actually in.
 
 ### 9.1 Repoint `NEXT_PUBLIC_API_BASE_URL` — five sites, one commit
 
-> **Status: DONE (2026-09, cutover).** Not merely repointed — the variable was **deleted from all five sites and from `.env.sample`**, and the base path is now the hard-coded relative literal `/api/v1`.
->
-> **Verified in the current tree:**
-> - `src/services/baseApi.js:42` — `const baseUrl = '/api/v1';`, and the file contains **no `process.env` read at all**.
-> - `src/components/BOOTCAMPLEADERBOARD/BootcampLeaderboard.jsx:34` — `const API_BASE_URL = "/api/v1";`, a raw `fetch` with no fallback branch.
-> - `src/components/HOME/VisitorCounter.jsx:30` — `const VISITOR_API_URL = "/api/v1/visitor";`, one constant with `/increment` derived from it.
-> - `src/lib/certificate-metadata.js` — **no longer makes an HTTP request at all.** It reads MongoDB through `src/lib/server/services/certificate.service.js`. This is a better outcome than repointing: the old code path failed *silently* (a wrong base URL threw nothing, the `catch` ran, and every certificate page quietly became `noindex` while the site served 200s). Its docblock records the removal.
-> - `src/features/certificate/certificateApi.js` — gone with the `publicApi` instance (§9.2); it now only calls `baseApi.injectEndpoints`.
-> - `.env.sample` carries a block explaining why the name must not be added back, so a copy-paste of the template cannot reintroduce it.
-> - `test/client-endpoint-parity.test.js` asserts the base path is exactly `/api/v1`, that `baseApi.js` reads no `process.env`, and that neither retired origin appears anywhere under `src/`. The cutover cannot silently regress.
->
-> `baseApi.js`'s `credentials: 'include'` is retained deliberately: it is a no-op for same-origin requests, and deleting it would trade a harmless no-op for a hard-to-diagnose "credentials missing" failure on the day the base path is ever pointed elsewhere.
+> **Status: NOT DONE.** Verified after the cleanup pass: `src/services/baseApi.js:4`, `src/lib/certificate-metadata.js:15` and `src/components/BOOTCAMPLEADERBOARD/BootcampLeaderboard.jsx:17` all still fall back to `http://localhost:5000/api/v1`. This is the one item that is genuinely still outstanding, and the client is still talking to the Express server.
 
-Five files used to read it:
+Five files read it:
 
 | File | Line | Current default |
 | :--- | :--- | :--- |
@@ -794,9 +756,9 @@ Five files used to read it:
 | `src/features/certificate/certificateApi.js` | 6 | `http://localhost:5000` (then `.replace('/api/v1', '')`) |
 | `src/components/HOME/VisitorCounter.jsx` | 9 | `""` — and it builds `/api/visitor` when empty, appending `/v1` only when the base URL is external |
 
-> **`NEXT_PUBLIC_*` is inlined at build time.** All five had to change in one commit. Change four and leave one, and the stale `http://localhost:5000` origin is **baked into the bundle** — it will not be a runtime error you can see in dev; it will be a production build pointing at a server you may have shut down. The endpoint-parity test now covers this class of mistake structurally, which is the durable fix.
+> **`NEXT_PUBLIC_*` is inlined at build time.** All five must change in one commit. Change four and leave one, and the stale `http://localhost:5000` origin is **baked into the bundle** — it will not be a runtime error you can see in dev; it will be a production build pointing at a server you may have shut down.
 
-The target was a **relative** path (`/api/v1`), which is what makes the same-origin cookie and CSRF design in `request.js` work. `baseApi.js` already sent `credentials: 'include'`, which became sufficient rather than necessary.
+The target should be a **relative** path (`/api/v1`), which is what makes the same-origin cookie and CSRF design in `request.js` work. `baseApi.js` already sends `credentials: 'include'`, which becomes sufficient rather than necessary.
 
 ### 9.2 Delete the standalone `publicApi` instance — **this one fails silently**
 
@@ -826,7 +788,7 @@ const publicApi = createApi({
 
 ### 9.3 `userApi.js:64-70` calls a route that has never existed
 
-> **Status: DECIDED (2026-09, cleanup pass) — option 2, delete.** The `deleteUser` mutation has been **removed** rather than repointed, and the reason is recorded in place at `src/features/users/userApi.js:71`: the route exists in neither backend, `deleteOwnAccount` (`DELETE /api/v1/users/user`) is the live self-delete, and the file now carries a note not to reintroduce a per-id variant without a route to point it at.
+> **Status: DECIDED (2026-09, cleanup pass) — option 2, delete.** The `deleteUser` mutation has been **removed** rather than repointed, and the reason is recorded in place at `src/features/users/userApi.js:64-69`: the route exists in neither backend, `deleteOwnAccount` (`DELETE /api/v1/users/user`) is the live self-delete, and the file now carries a note not to reintroduce a per-id variant without a route to point it at.
 
 ```js
 deleteUser: builder.mutation({
@@ -857,23 +819,12 @@ The fix belongs **server-side**: filter on `isValid: true` in `memberHandler` (`
 
 ### 9.5 Drop `token` and `accessToken` from the two auth responses
 
-> **Status: DONE (2026-09, cutover).** The tokens no longer appear in either response body, the client no longer holds one, and no `Authorization` header is attached. This was the session-model half of the cutover and it was **not** a one-line edit — the warning below was accurate.
->
-> **Verified in the current tree:**
-> - `auth.controller.js:471` — the login response body is `{ user: loggedInUser }`. The `token: accessToken` key is gone; `:458` carries the comment recording it used to be `{ user, token: accessToken }`.
-> - `auth.controller.js:553-563` — the refresh response body is `{ success: true }`, not `{ accessToken }`. The comment states plainly that the `accessToken` key's absence is the more subtle signal to code against, so the change is deliberate rather than an omission.
-> - Both responses still set the `httpOnly` cookies (`:453`, `:553`).
-> - `src/services/baseApi.js` — `prepareHeaders` sets `Content-Type` and returns; there is **no `Authorization` header**, and the comment block explains that the cookie is read first server-side so the header was always redundant on a same-origin request and actively harmful when paired with a `localStorage` token.
-> - `src/features/auth/authSlice.js` — state is `{ user, loading, error, hydrated }`. **There is no `token`.** `setCredentials` destructures only `{ user }`; `clearCredentials` additionally removes the stale `localStorage` `token` key once, because any browser that ran the pre-cutover build still has a live seven-day access token sitting there.
-> - `src/app/redux/ProviderWrapper.js` — no `localStorage` read and **no `skip` gate**. This was the most dangerous single edit in the cutover: leaving the old gate in place makes `GET /users/user` never fire and renders every page logged out. The docblock says so at length, and the file's own comment names it "a site where nobody is ever logged in".
-> - `ADR-011` has been rewritten to this model, with a supersession note recording the `localStorage` + bearer design and why it was withdrawn.
->
-> **Consequence for anyone reading the old code shape:** `GET /api/v1/users/user` is now the only authority on session identity. Any code that used to read `auth.token`, or that gated `getCurrentUser` on a token being present, is now either dead or a correctness bug.
+> **Status: NOT DONE.** Verified after the cleanup pass: `auth.controller.js:458` still returns `{ user: loggedInUser, token: accessToken }` and `auth.controller.js:544` still returns `{ accessToken: renewToken }`. The tokens remain duplicated in the body and in the `httpOnly` cookies, and `localStorage` still holds the access token.
 
-- `POST /auth/login` returned `{ user, token: accessToken }` (`auth.controller.js:458`) — **now `{ user }`**.
-- `GET /auth/refresh-token` returned `{ accessToken }` (`auth.controller.js:544`) — **now `{ success: true }`**.
+- `POST /auth/login` returns `{ user, token: accessToken }` (`auth.controller.js:458`).
+- `GET /auth/refresh-token` returns `{ accessToken }` (`auth.controller.js:544`).
 
-Both duplicated the `httpOnly` cookies the same responses already set (`COOKIE_OPTIONS`, `httpOnly: true, sameSite: 'lax', path: '/', maxAge: 7d`). `baseApi.js:16-18` then read `auth.token` from `localStorage` and attached it as `Authorization: Bearer …`. The refresh cookie was **never** read by JavaScript, so the value in the body bought nothing that the cookie did not already do — and it was a session credential sitting in `localStorage`, which is exactly the XSS trade-off `SECURITY.md` documented as accepted. Removing it required updating the login mutation, the auth slice, the hydrator and the `SECURITY.md`/`ADR-011`/`ARCHITECTURE.md` claims together. **It was a real change to the client's session model, and it is done.**
+Both duplicate the `httpOnly` cookies the same responses already set (`COOKIE_OPTIONS`, `httpOnly: true, sameSite: 'lax', path: '/', maxAge: 7d`). `baseApi.js:16-18` then reads `auth.token` from `localStorage` and attaches it as `Authorization: Bearer …`. The refresh cookie is **never** read by JavaScript, so the value in the body buys nothing that the cookie does not already do — and it is a session credential sitting in `localStorage`, which is exactly the XSS trade-off `SECURITY.md:37` documents. Removing it requires updating the login mutation and the Redux auth slice together. **This is a real change to the client's session model; it is not a one-line edit.**
 
 ### 9.6 `getClientIp` trusts Vercel edge headers — a hard deployment constraint
 
@@ -889,12 +840,12 @@ Work top to bottom. Items 1–3 are the ones that fail *silently*.
 
 `env.js` validates lazily. **A deployment with no secrets set builds green and fails at runtime** — authenticated routes return **500, not 401**, because `validateEnv()` throws an ordinary `Error` from inside `signingSecrets()` and the wrapper's catch shapes it as a 500. The 500 message names the variables (which is the point), but the failure mode is "every login 500s" rather than "the deploy is misconfigured".
 
-- [ ] `MONGODB_URI`, `ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET`, `PASSWORD_TOKEN_SECRET` — the four in §4.9 — are set in the platform's environment store. (The fourth entry of the old wording read `PASSWORD_TOKEN_EXPIRE`-adjacent; the required variable is `PASSWORD_TOKEN_SECRET`.)
+- [ ] `MONGODB_URI`, `ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET`, `PASSWORD_TOKEN_EXPIRE`-adjacent secrets — i.e. the four in §4.9 — are set in the platform's environment store.
 - [ ] The remaining variables in §4 are set for the features you are enabling: Cloudinary (uploads), `RESEND_API_KEY` + `WEB_DOMAIN` (OTP/reset mail **and** the CSRF allow-list), `NEXT_PUBLIC_SITE_URL` (+ `EXTRA_ALLOWED_ORIGINS` for preview/staging), `GOOGLE_SHEETS_API_KEY` + `BOOTCAMP_SHEET_ID` (leaderboard), `CONTRIBUTOR_GITHUB_TOKEN` (contributor sync).
 - [ ] All three secrets are **different** from each other.
-- [ ] `WEB_DOMAIN` is the **bare origin with scheme and no trailing slash**, and matches the deployment host. A wrong value here 403s every unsafe method from the real site *and* sends password-reset links to the wrong host. **`NEXT_PUBLIC_SITE_URL` is the other CSRF seed — check it too, and remember it is inlined at build time, so a fix needs a rebuild.**
+- [ ] `WEB_DOMAIN` is the **bare origin with scheme and no trailing slash**, and matches the deployment host. A wrong value here 403s every unsafe method from the real site *and* sends password-reset links to the wrong host.
 - [ ] Smoke-test one of each class before declaring the deploy good: one public GET, one authenticated GET with a real session, one `POST` (to prove CSRF is not 403-ing your own client), and one multipart upload.
-- [x] No bundle contains the string `localhost:5000` (or `cpccu-server.onrender.com`). **Done:** `test/client-endpoint-parity.test.js` asserts neither appears anywhere under `src/`, and the origin names appear in `baseApi.js`'s comments only in prose so the assertion can pass. `npm test` is now the check; there is nothing left to eyeball in a built bundle.
+- [ ] After §9.1 lands, confirm no bundle still contains the string `localhost:5000`.
 
 ### 10.2 `CONTRIBUTOR_GITHUB_TOKEN` scope
 
@@ -907,7 +858,7 @@ Work top to bottom. Items 1–3 are the ones that fail *silently*.
 
 - [ ] **`render.yaml` / `_render.yaml` show as deleted in `git status`, and that deletion is unexplained and pre-existing.** It is not part of the migration (the migration did not delete them) and the reason is not recorded anywhere in the repo. `CLAUDE.md:168` and `ARCHITECTURE.md:511` both say these are leftovers from an earlier Render-based frontend deployment and are harmless. **Resolve it deliberately** — restore them if the deletion was accidental, or commit the deletion with a message saying why. Do not let an unexplained deletion ride into a deploy commit. → **Superseded — see §10.3.1, which records the decision and corrects this bullet.**
 - [ ] **`src/lib/server/` and `src/app/api/` are entirely untracked.** `next build` works from the working tree, so nothing in CI has ever seen these files. If you want an auditable trail — and for a change this size you should — **commit per phase** (foundation → shim → controllers → routes) rather than as one 65-endpoint commit. At minimum, commit them before deploying.
-- [ ] *(Unchanged from the original checklist, and not verifiable from this repository.)* The original asked you to confirm `cpccu-server` was still at `ea9810a` with a clean `git status`, as the reference to diff against when the first bug report arrived. That is now an **archived-repo provenance check, not a runtime dependency** — nothing in this repository builds against, calls, or deploys it. It stays on the list because the "why does this code look like that" question is still answered there, and because an unrecorded change to that baseline would quietly invalidate the port citations throughout this document. Doing it means looking at the other repository, not running anything in this one.
+- [ ] Confirm `cpccu-server` is still at `ea9810a` with a clean `git status` in *that* repository. It is the reference you will diff against when the first bug report arrives.
 
 ### 10.3.1 `render.yaml` and `_render.yaml` — deleted on purpose, do not restore
 
@@ -923,36 +874,29 @@ Three facts to be explicit about, because the first bullet above got two of them
 
 > **For the next reader, specifically:** do **not** "restore" `render.yaml` / `_render.yaml` as a fix for a missing deploy config, and do not read their absence as a broken checkout or a lost file. They are gone on purpose. If the project ever moves off Vercel and genuinely returns to Render hosting, that is a **new decision to make deliberately at that time** — write fresh blueprints, do not dig these ones out of history and assume they are still accurate. They describe a `bun install; bun run build` / `bun run start` web service from a toolchain and dependency set that has since changed, and they predate the `next@^16` config in `next.config.mjs`. Treat them as historical, not as a template.
 
-> **Stale cross-references that this note does not fix.** ~~`CLAUDE.md:168`, `ARCHITECTURE.md:520` and `DEPLOYMENT.md:51` still describe these files as being present in the repo.~~ **Resolved (documentation pass, 2026-09):** all three now state that the files are deleted on purpose, and `DEPLOYMENT.md` §1.5 points here for the reasoning.
+> **Stale cross-references that this note does not fix.** `CLAUDE.md:168`, `ARCHITECTURE.md:520` and `DEPLOYMENT.md:51` still describe these files as being present in the repo ("remain in the repo", "are leftover"). That is no longer true. Those lines are part of a wider deferred documentation pass and were deliberately left unchanged here; this note is the authoritative statement.
 
 ### 10.4 Cutover
 
-**Status: COMPLETE (2026-09).** Every item below is done except the two that are not actions at all.
-
-- [x] §9.1 (five `NEXT_PUBLIC_API_BASE_URL` sites, **one commit**) — done before the first request hit the new API. **Done 2026-09:** the variable is deleted from all five sites and from `.env.sample`; the base path is the hard-coded relative `/api/v1`; `certificate-metadata.js` no longer makes an HTTP request at all. Enforced by `test/client-endpoint-parity.test.js`.
+- [ ] §9.1 (five `NEXT_PUBLIC_API_BASE_URL` sites, **one commit**) — done before the first request hits the new API. **Still outstanding**: all three sites that read it still default to `http://localhost:5000/api/v1`.
 - [x] §9.2 (`publicApi` deleted or repointed) — **non-optional; it fails silently.** **Done 2026-09:** the instance is deleted, `createApi` is called in exactly one place, and the store registers only `baseApi`. Verification is reached at `/api/v1/certificates/verify/:certificateId` instead.
 - [x] Decide §9.4's `isValid` question: server-side filter, or accept pending accounts in the public listing. **Done 2026-09:** server-side filter taken — `user.controller.js:663` is `User.find({ isValid: true }, PUBLIC_MEMBER_ITEM)`.
-- [x] Decide §9.3: repoint or delete `deleteUser`. **Done 2026-09:** deleted, with the reason recorded at `userApi.js:71`.
-- [x] §9.5 — drop `token`/`accessToken` from the login and refresh responses, and remove the client-side token entirely. **Done 2026-09:** `auth.controller.js:471` returns `{ user }`, `:553` returns `{ success: true }`, `baseApi` attaches no `Authorization` header, `authSlice` has no `token`, and `ProviderWrapper` has no `localStorage` read and no `skip` gate.
-- [x] `GET /api/v1/auth/logout` → `POST /api/v1/auth/logout`, on both sides. **Done 2026-09:** `src/app/api/v1/auth/logout/route.js:45` exports `POST`, and `method: 'POST'` is declared in the one place the client calls it (`src/features/auth/authApi.js:54`). `test/route-method-declaration.test.js` asserts the route file's `defineRoute` method agrees with its export name, so the halves cannot drift.
-- [x] `GET /api/v1/auth/reset-link/:email` → `POST /api/v1/auth/reset-link`, on both sides, address in the body. **Done 2026-09:** the route file moved from `reset-link/[email]/route.js` to `reset-link/route.js` and exports `POST`; `forgottenPasswordHandler` reads `req.body?.email` instead of `req.params.email`; the client sends `method: 'POST'` with `body: { email }` from the one call site in `src/features/auth/authApi.js`. The login page's `sendPasswordResetLink({ email })` call is unchanged. `test/auth-reset-link.test.js` asserts the response is byte-identical for a known and an unknown address, that the route exports `POST` and no `GET`, and that a cross-site `POST` is refused with 403 before the controller runs.
-- [x] Exercise the new API in production before retiring the old path. **Done:** the cutover is live and `cpccu-server` is a read-only archived baseline.
-- [ ] Watch `serverExternalPackages: ["mongoose"]` and remember `firebase-admin` must be re-added if Google sign-in ever returns. *(Standing item, not a cutover step. The dependency was removed because the two Google endpoints it backed were never called; reintroducing Google auth means re-adding it or the build fails on dynamic requires.)*
+- [x] Decide §9.3: repoint or delete `deleteUser`. **Done 2026-09:** deleted, with the reason recorded at `userApi.js:64-69`.
+- [ ] Leave the Express server running until the new API has been exercised in production. Both can serve simultaneously — the mounts do not collide.
+- [ ] Watch `serverExternalPackages: ["mongoose"]` and remember `firebase-admin` must be re-added if Google sign-in ever returns.
 
 ---
 
 ## 11. Known tooling gaps
 
-> **Status: mostly closed (2026-09).** When this section was written the repository had no working linter and no test runner, and every verification during the migration used throwaway scripts under `/tmp`. Both gaps are now fixed, and the *original* text of each subsection is kept below as the record of what was missing and why the fixes are shaped the way they are. The subsections that are still open are marked.
+**None of the migrated code has been linted, and there is no test runner in the repository.** Every verification performed during the migration used throwaway scripts under `/tmp`, which means nothing about this code is enforced by a durable check.
 
-**What exists now:** `npm run lint` is `eslint .` against a working flat config in `eslint.config.mjs`, and `npm test` runs a `node --test` suite over `test/*.test.js` with **zero new dependencies** — which was the recommendation this section itself made. The suite covers the three things §11.3 asked for (the role matrix, the four `toErrorResponse` branches, `getClientIp`) plus `assertSameOrigin`, the route-method declaration, anonymous projections, and **client/server endpoint parity**, which is the guard the migration was most exposed to and did not have.
+### 11.1 `npm run lint` is unrunnable — for two independent reasons
 
-### 11.1 `npm run lint` — CLOSED, but the shape of the fix is not obvious
+- **`next lint` was removed in Next 16** (this repo is on `next@^16.3.6`). The script is `"lint": "next lint"`, and Next 16 parses `lint` as a **directory** argument, so the command fails before ESLint is ever invoked.
+- **ESLint 10 requires flat config**, and the repo has only `.eslintrc.cjs`. Even with the script fixed, the config format is wrong for the installed major version.
 
-- **`next lint` was removed in Next 16** (this repo is on `next@^16.3.6`). The old script was `"lint": "next lint"`, and Next 16 parses `lint` as a **directory** argument, so the command failed before ESLint was ever invoked. The script is now `eslint .`. Note that Next 16 no longer runs ESLint during `next build` either, so `npm run lint` and `npm test` are the only automated gates — not the build.
-- **ESLint 10 requires flat config.** The old `.eslintrc.cjs` was not merely the wrong format: with ESLint 10 it was **inert** — present, plausible, and read by nothing. It has been replaced by `eslint.config.mjs` (`.mjs` specifically, because the repo has no `"type": "module"`, so a bare `eslint.config.js` would be parsed as CommonJS and its `import` syntax would be a syntax error).
-- **Two forced deviations** are documented in that file's own header and are not obvious from the rule list: the parser is replaced with `espree` for `.js`/`.jsx`/`.mjs` because the bundled Babel parser predates ESLint 10's scope-manager API and crashes every file, and `settings.react.version` is pinned to `19.3` instead of `'detect'` because `react-plugin`'s detection path uses an API ESLint 10 removed. The rule *set* is exactly what `eslint-config-next/core-web-vitals` installs.
-- **The config is warn-first on purpose.** The rule set landed as errors only for things that describe defects; advisory findings are `warn`, and the pre-existing violations of three defect rules are named in an explicit, greppable exemption list so the debt is recorded rather than hidden. A large warning count is the backlog, not a regression; `error` still fails the command.
+Both must be fixed — the first is a script change, the second a config migration to `eslint.config.js`. Until then: **the migrated code has never been linted.** (The pre-existing frontend code is in the same position, so this is a repo-wide gap, not one the migration created — but the migration added ~5,000 lines to a codebase that cannot lint any of it.)
 
 ### 11.2 Prettier is not configured and not installed
 
@@ -960,33 +904,25 @@ Three facts to be explicit about, because the first bullet above got two of them
 
 ### 11.3 No test runner — and one function with zero durable assertions
 
-At the time of writing there was **no test runner in the repo** (no `test` script, no vitest/jest dependency). `SECURITY.md` and `TROUBLESHOOTING.md` both recorded this for the frontend.
+There is **no test runner in the repo** (no `test` script, no vitest/jest dependency). `SECURITY.md:45` and `TROUBLESHOOTING.md` both already record this for the frontend.
 
-The consequence that mattered: **`adminAuth.js`'s role matrix was enforced by a function with zero durable assertions.** It had been re-derived four independent times during the migration and matched every time, and the result was written into `admin/roles/route.js:77-100` as a table — but a table in a comment is not an assertion. Any future edit to `adminRoles`, `moderatorResources`, `mentorReadPaths`, `describeAdminRoute`, or to which files carry `admin: true` silently changes authorisation, and **a matrix error in either direction is silent**: a wrong denial looks like "the moderator cannot save posts" and a wrong grant looks like nothing at all.
+The consequence that matters: **`adminAuth.js`'s role matrix is enforced by a function with zero durable assertions.** It was re-derived four independent times during the migration and matched every time, and the result is written into `admin/roles/route.js:77-100` as a table — but a table in a comment is not an assertion. Any future edit to `adminRoles`, `moderatorResources`, `mentorReadPaths`, `describeAdminRoute`, or to which files carry `admin: true` silently changes authorisation, and **a matrix error in either direction is silent**: a wrong denial looks like "the moderator cannot save posts" and a wrong grant looks like nothing at all.
 
-**The recommendation was `node --test`** — built into Node, so **zero dependencies**, which matters in a repo whose lint tooling was also broken and whose test story was "throwaway scripts in `/tmp`". That is what the suite now is, and the three things this section asked for are the three it covers first:
+**Recommendation: `node --test`.** It is built into Node, so it adds **zero dependencies** — which matters in a repo whose lint tooling is already broken and whose test story is "throwaway scripts in `/tmp`". Write assertions for exactly three things, in priority order:
 
-1. **The role matrix** — `test/admin-auth.test.js`, driving `authorizeAdminPath({ role, method, pathname })` rather than `authorizeAdminAction`, and enumerating the rows of the table in §3 (including `HEAD` denied where `GET` is allowed, `/uploads/image` matching exactly and not `/uploads/image-2`, and `/statistics` matching `/statistics/2024`).
-2. **The four error branches of `toErrorResponse`** — `test/errors.test.js`, plus the `RESPONSE_PAIR` brand so a serialised `Event` is not mistaken for an error pair (`test/response-envelopes.test.js`).
-3. **`getClientIp`** — `test/client-ip.test.js`: the rightmost `x-forwarded-for` (`.pop()`), and `x-real-ip: " "` / `"banana"` falling through rather than becoming a shared bucket.
+1. **The role matrix.** Drive `authorizeAdminPath({ role, method, pathname })` — **not** `authorizeAdminAction`, which takes caller-supplied `resource` and `isUpload`. `adminAuth.js:183-219` exists specifically for this: a test that builds the routing context itself can assert the wrong thing and pass, pinning the bug instead of the behaviour. Enumerate every row of the table in §3, including that `HEAD` is **denied** everywhere `GET` is allowed, that `/uploads/image` matches exactly and not `/uploads/image-2`, and that `/statistics` **does** match `/statistics/2024`.
+2. **The four error branches of `toErrorResponse`.** `LIMIT_FILE_SIZE` → 400 with `uploadSizeMessage()`; `code === 11000` → 409 with a friendly per-field message (`email` and `uniID` have bespoke text); `ApiError` → its own `statusCode`/`message`/`error`; anything else → 500, redacted in production, raw otherwise, **with no `errors` key on the last branch only**. Plus the `RESPONSE_PAIR` brand: a serialised `Event` (which has a `status` field of `'upcoming'`) must **not** be mistaken for an error pair.
+3. **`getClientIp`.** `x-real-ip`; `x-vercel-forwarded-for`; the **rightmost** `x-forwarded-for` (`.pop()` — changing this to `[0]` silently disables every IP-keyed limiter); `x-real-ip: " "` and `x-real-ip: "banana"` must fall through, not become a shared bucket; no header at all → `'unknown'`.
 
-**Also added, as this section suggested:** `assertSameOrigin` (`test/csrf.test.js` — the §5.2 table is nine rows and each is a real bypass if it regresses), the anonymous projections (`test/anonymous-projections.test.js`), the `defineRoute`/`AsyncLocalStorage` bridge (`test/handler.test.js`), the route-method declaration (`test/route-method-declaration.test.js`), and **client/server endpoint parity** (`test/client-endpoint-parity.test.js`).
-
-**Still not covered — the honest remainder:**
-
-- **`parsePublicIdFromCloudinaryUrl`.** Six attack shapes are listed at `cloudinary.js:165-170` and are still only prose. This is the highest-value remaining gap: the function is a hardened parser guarding cross-tenant deletion against a **shared** Cloudinary account with the account-wide secret, and a regression in it is a capability leak rather than a 500.
-- **The `public: true` classification of all 65 endpoints.** §7 recorded that it was checked four independent times by hand, during the migration. Nothing asserts it, so a future edit that adds or drops `public: true` is caught only by review.
-- **End-to-end behaviour of the ported controllers.** The suite drives the pure helpers, not MongoDB or Cloudinary. Most of the 15 preserved defects in §6 are therefore still unasserted by design, not by omission.
-- **Prettier.** Unchanged and still unconfigured (§11.2).
+Worth adding, in the same file or a second one: `assertSameOrigin` (the §5.2 table is nine rows and each is a real bypass if it regresses), and `parsePublicIdFromCloudinaryUrl` (six attack shapes are listed at `cloudinary.js:165-170` and are ready to be turned into assertions).
 
 ---
 
 ## Related documents
 
-- [Architecture Overview](./ARCHITECTURE.md) — the frontend; the API half is **in this repository**.
-- [API Documentation](./API_DOCUMENTATION.md) — what the frontend *consumes*, plus the session model. Updated for the cutover.
-- [Security](./SECURITY.md) — the security posture of the whole application, including the `httpOnly` session model and the CSRF allow-list.
-- [Deployment](./DEPLOYMENT.md) — the single-origin Vercel deployment, its env vars, the hosting constraint, and a post-deploy smoke test.
-- [Developer Onboarding](./DEVELOPER_ONBOARDING.md) — running this repository standalone.
-- [Troubleshooting](./TROUBLESHOOTING.md) — connectivity, CSRF 403s, sessions, deploys, and the test suite.
-- [ADR](./ADR.md) — ADR-001 (Vercel + Render) and ADR-011 (auth architecture) are both marked superseded in part by this migration, with the reasoning recorded rather than rewritten.
+- [Architecture Overview](./ARCHITECTURE.md) — the frontend half; the API half it links to is now **in this repository**.
+- [API Documentation](./API_DOCUMENTATION.md) — what the frontend *consumes*. Several entries are now stale — see §9.
+- [Security](./SECURITY.md) — the frontend's security posture. Its "the backend is a separate service" framing predates this migration.
+- [Deployment](./DEPLOYMENT.md) — Vercel + Render. The Render half is obsolete for the API.
+- [Troubleshooting](./TROUBLESHOOTING.md) — includes the `build`/`lint` failure section referenced by `SECURITY.md`.
+- [ADR](./ADR.md) — ADR-001 (Vercel + Render) and ADR-011/015 (auth architecture, backend-enforced verification) are directly affected by this migration.

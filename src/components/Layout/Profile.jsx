@@ -119,15 +119,7 @@ function mapSkillsToGroups(skills = []) {
 export default function Profile({ user, isOwnProfile }) {
   const dispatch = useDispatch();
   const router = useRouter();
-  // No `token` here any more. The `httpOnly` access-token cookie is the
-  // credential and this component cannot read it, so the two queries below that
-  // used to be gated on `!token` are now gated on the two things that still
-  // answer the real question: `isOwnProfile` (itself derived from
-  // `state.auth.user`, i.e. from whether `GET /users/user` succeeded in
-  // `ProviderWrapper`) and `hydrated`. If the session is not real, `user` is
-  // null, `isOwnProfile` is false, and neither query runs — so the request the
-  // server would reject is never made rather than being made and ignored.
-  const isSessionKnown = useSelector((state) => state.auth.hydrated);
+  const token = useSelector((state) => state.auth.token);
   const [updateUser, { isLoading: isUpdating, isSuccess: isUpdateSuccess, isError: isUpdateError, reset: resetUpdate }] = useUpdateUserMutation();
   const [userImageUpload, { isLoading: isImageUploading, isSuccess: isImageSuccess, isError: isImageError, error: uploadError, reset: resetImage }] = useUserImageUploadMutation();
   const [requestJobPipelineProfile, { isLoading: isRequestingJobPipeline, isSuccess: isJobPipelineSuccess, isError: isJobPipelineError, error: jobPipelineError, reset: resetJobPipeline }] = useRequestJobPipelineProfileMutation();
@@ -137,7 +129,7 @@ export default function Profile({ user, isOwnProfile }) {
   // on `handleLogout` below for why the Redux clear alone is not enough.
   const [logout] = useLogoutMutation();
   const { data: currentUserResponse } = useFetchUsersQuery(undefined, {
-    skip: !isSessionKnown || !isOwnProfile,
+    skip: !isOwnProfile || !token,
     refetchOnFocus: true,
   });
 
@@ -243,11 +235,9 @@ export default function Profile({ user, isOwnProfile }) {
     const freshUser = currentUserResponse?.data;
 
     if (freshUser && isOwnProfile) {
-      // `freshUser` is the server's own answer to `GET /users/user`, i.e. the
-      // one place this screen can learn anything true about the session. It is
-      // stored as a CACHE, not a credential — no `token` field exists any more.
       dispatch(setCredentials({
         user: freshUser,
+        token,
       }));
       setProfile({
         avatar: freshUser.avatar || "",
@@ -268,10 +258,10 @@ export default function Profile({ user, isOwnProfile }) {
         bio: freshUser.bio || "",
       });
     }
-  }  , [currentUserResponse, dispatch, isOwnProfile]);
+  }  , [currentUserResponse, dispatch, isOwnProfile, token]);
 
   const { data: projectsResponse } = useGetProjectsQuery(undefined, {
-    skip: !isSessionKnown || !isOwnProfile,
+    skip: !isOwnProfile || !token,
   });
 
   const { data: publicProjectsResponse } = useGetPublicProjectsQuery(user?._id, {
@@ -292,35 +282,6 @@ export default function Profile({ user, isOwnProfile }) {
     }
   }, [editMode, autoResizeTextarea]);
 
-  // KNOWN REGRESSION, DELIBERATELY NOT "FIXED" HERE. Certificates silently
-  // disappear from OTHER people's profiles, and this `if (!studentId) return;`
-  // is the cause: `uniID` left `PUBLIC_PROFILE_ITEM`, so `user.uniID` is now
-  // undefined for every profile fetched anonymously and this effect bails on
-  // the first line. The section is not stuck in a spinner — `certificatesLoading`
-  // is initialised `false` and this returns before setting it, so
-  // `CertificatesSection` receives `isLoading={false}` with an empty list and
-  // renders its finished `EmptyState` ("No Certificates Yet"). That is the right
-  // SHAPE and the wrong CONTENT: a member with certificates is told they have
-  // none, and nothing in the UI distinguishes that from genuinely having none.
-  //
-  // WHY IT IS NOT FIXED WITH A ONE-LINER. `Certificate.recipientId` holds the
-  // STUDENT ID, not the Mongo `_id` — `adminContent.controller.js:1383`
-  // validates it as "Student ID is required.", `createAdminCertificate` writes
-  // `String(recipientId).trim()` straight from the admin's Student ID field,
-  // and the seeded rows in `src/lib/certificates-data.js` are `"CSE-2021-101"`
-  // and friends. `certificate.service.js:67-72` then matches it as an ANCHORED
-  // case-insensitive exact match. So `user._id` is simply not the value this
-  // query is keyed on, and the tempting one-line change would silently match
-  // nothing — which is the failure already being displayed.
-  //
-  // The only correct value is `uniID`, and re-adding `uniID` to the anonymous
-  // projection is exactly what the projection was narrowed to stop (it is an
-  // institutional identifier, enumerable across the whole member list). So the
-  // fix is a design decision, not an edit: either a dedicated authenticated-or-
-  // rate-limited endpoint that resolves certificates for a `_id`, or a separate
-  // opaque display token on the certificate record. Both are out of scope for
-  // the cutover. DO NOT re-add `uniID` to `PUBLIC_PROFILE_ITEM` to unblock
-  // this, and DO NOT pass `user._id` here.
   useEffect(() => {
     const studentId = user?.uniID;
     if (!studentId) return;
@@ -356,9 +317,8 @@ export default function Profile({ user, isOwnProfile }) {
   const handleLogout = async () => {
     // CLEARING REDUX IS A UI ACTION, NOT A SECURITY ACTION.
     //
-    // `clearCredentials` only empties the Redux store and scrubs the two
-    // `localStorage` keys this app no longer writes
-    // (`src/features/auth/authSlice.js:71`). The real session lives in the
+    // `clearCredentials` only empties the Redux store and `localStorage`
+    // (`src/features/auth/authSlice.js:30-41`). The real session lives in the
     // `accessToken` / `refreshToken` cookies, which are set with
     // `httpOnly: true` (`src/lib/server/constants.js:112`) — so client-side
     // JavaScript cannot read OR delete them, and `clearCredentials` provably
@@ -461,13 +421,9 @@ export default function Profile({ user, isOwnProfile }) {
         const res = await updateUser({ userData: updatePayload }).unwrap();
         const updatedUser = res?.data?.user || res?.data;
         if (updatedUser) {
-          // Refresh the cached user from the server's own response so the rest
-          // of the UI agrees with what was just saved. No `token` field: the
-          // three `setCredentials` sites in this file (here, and the two
-          // job-pipeline handlers below) all dropped it in the cutover, because
-          // there is no client-held session credential left to re-attach.
           dispatch(setCredentials({
             user: updatedUser,
+            token,
           }));
         }
       originalProfileRef.current = JSON.parse(JSON.stringify(profile));
@@ -608,6 +564,7 @@ export default function Profile({ user, isOwnProfile }) {
       if (updatedUser) {
         dispatch(setCredentials({
           user: updatedUser,
+          token,
         }));
         setProfile(prev => ({
           ...prev,
@@ -646,6 +603,7 @@ export default function Profile({ user, isOwnProfile }) {
       if (updatedUser) {
         dispatch(setCredentials({
           user: updatedUser,
+          token,
         }));
         setProfile(prev => ({
           ...prev,

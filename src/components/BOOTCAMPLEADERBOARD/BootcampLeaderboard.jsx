@@ -13,25 +13,8 @@ import {
 } from "lucide-react";
 import InstitudeInfo from "@/data/global/institude.json";
 
-// SAME-ORIGIN, RELATIVE, HARDCODED — the same three reasons as
-// `src/services/baseApi.js` apply here, and the consequences of getting it
-// wrong are WORSE in this file than anywhere else: this is a raw `fetch`, not an
-// RTK Query endpoint, so there is no `baseQuery` to fall back through and no
-// shared error handling. A wrong base URL here surfaces ONLY as this
-// component's own error card ("Leaderboard API error: …"), which reads as a
-// backend outage and sends whoever is on call looking in the wrong place.
-//
-// The `||` trap it replaces was real: an empty `NEXT_PUBLIC_API_BASE_URL=`
-// fell through to a hardcoded absolute URL pointing at the retired Express
-// app's local development port — cross-origin, in production, from a variable
-// that was visibly set. The env read is deleted rather than swapped for `??`
-// because `??` keeps the empty string, which is just as broken.
-// `NEXT_PUBLIC_*` is also inlined at build time, so an env edit required a
-// rebuild and could never have been a live fix anyway. The literal is spelled
-// out in prose rather than quoted so that
-// `test/client-endpoint-parity.test.js`'s "no retired origin anywhere under
-// `src/`" assertion can pass.
-const API_BASE_URL = "/api/v1";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
 
 const columns = [
   { key: "rank", label: "Rank" },

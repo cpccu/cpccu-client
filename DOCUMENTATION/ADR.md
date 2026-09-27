@@ -12,9 +12,7 @@ Related documentation: [README](../README.md) · [ARCHITECTURE.md](./ARCHITECTUR
 
 ### Status
 
-**Superseded in part (2026-09).** The Vercel half stands. The Render half and the cross-origin topology are obsolete: the Express backend was migrated into Next.js App Router route handlers inside this repository and the frontend was cut over to them, so the platform is now a **single Vercel deployment serving both the pages and the API**. See the supersession note below and [BACKEND_MIGRATION.md](./BACKEND_MIGRATION.md).
-
-> **Superseded: what changed, and why.** The split into two applications described below no longer exists. `NEXT_PUBLIC_API_BASE_URL` was deleted rather than repointed, the API is reached at the hard-coded relative literal `/api/v1`, and there is no `cpccu-server` deployment, no second repository in the runtime path, and no CORS configuration anywhere in the system. The reasoning for keeping the record rather than rewriting it: a reader who remembers the old topology needs to be told **which half is wrong**, not shown a document that quietly disagrees with their memory. The original text is preserved verbatim below so the decision that was actually made stays auditable.
+Accepted
 
 ### Context
 
@@ -58,8 +56,6 @@ flowchart LR
 
 - Vercel Edge/Server Functions could proxy API calls if CORS or token handling ever becomes a problem.
 - Keep the legacy `render.yaml`/`_render.yaml` files in mind if the frontend ever returns to Render hosting.
-
-> **What actually happened to each of those cons.** "Vercel Edge/Server Functions could proxy API calls if CORS or token handling ever becomes a problem" is the decision that was taken, and then some: the API was moved *into* the Vercel deployment, which removes the cross-origin hop outright rather than proxying it, and with it removes the CORS configuration. Token handling became a separate problem with a different answer (`httpOnly` cookies, see ADR-011). `render.yaml` / `_render.yaml` were **deleted**, not kept. The remaining live consequence of "inlined at build time" is `NEXT_PUBLIC_SITE_URL`, which seeds the CSRF allow-list — see [BACKEND_MIGRATION.md](./BACKEND_MIGRATION.md) §4.6.
 
 ---
 
@@ -370,7 +366,7 @@ The app performs many API calls (auth, users, content, admin, certificates) that
 
 All API access uses **RTK Query** (`@reduxjs/toolkit/query`):
 
-- A single `baseApi` (`src/services/baseApi.js`) with centralized tag types, a relative same-origin base path, and `credentials: 'include'`. There is no auth-header injection to centralize — the session is the `httpOnly` cookie the browser attaches (ADR-011).
+- A single `baseApi` (`src/services/baseApi.js`) with centralized tag types, auth header injection, and `credentials: 'include'`.
 - Feature modules register endpoints via `baseApi.injectEndpoints()` (`authApi`, `userApi`, `memberApi`, `certificateApi`, `contentApi`, `contactApi`, `adminApi`).
 - ~~A separate `publicApi` instance handles unauthenticated certificate verification.~~ **Superseded in part (2026-09).** The second instance existed only because the Express backend mounted verification at the **root** path `GET /verify/:certificateId` — `app.get('/verify/:certificateId', asyncHandler(verifyCertificatePublic))` at `cpccu-server/src/app.js:76` — i.e. *outside* the `/api/v1` base URL every other endpoint used. With verification unreachable under the base URL, a second `createApi` instance whose `baseUrl` stripped `/api/v1` was the only way to reach that one endpoint; its `useVerifyCertificatePublicQuery` hook had no call sites, and the instance was still wired into the store as an empty reducer plus a second middleware. The backend has since been migrated into Next.js App Router route handlers, where verification is served at **`GET /api/v1/certificates/verify/:certificateId`** by the same `baseApi` as every other certificate endpoint, and the root path is no longer served at all. `publicApi` has therefore been **deleted** together with its store registration. The single-`baseApi` decision above stands; only the second instance is withdrawn.
 - Cache invalidation is driven by tag types (`Auth`, `Users`, `Posts`, `Projects`, `PublicContent`, `AdminOverview`, `AdminMembers`, `AdminContent`, `AdminStatistics`, `AdminCertificates`, `AdminSystemSettings`, `AdminRoles`).
@@ -497,14 +493,7 @@ External scan results (as reported): **SecurityHeaders → Grade A**, **MDN Obse
 
 ### Status
 
-Accepted, **rewritten in 2026-09** (the decision below replaces the original `localStorage` bearer-token model).
-
-> **Superseded: the `localStorage` + `Authorization: Bearer` model is withdrawn.** It is recorded here because the reasoning that retired it matters, and because a reader who remembers "the token lives in `localStorage`" needs to be told plainly that it no longer does. Two changes did it, both part of the same-origin cutover:
->
-> - **The token left the response body and the client.** `POST /auth/login` returns `{ user }`; `GET /auth/refresh-token` returns `{ success: true }`. `baseApi` attaches no `Authorization` header. The `httpOnly` `accessToken` cookie is the credential, and the client cannot read it — which is the entire point of `httpOnly`.
-> - **The `localStorage` token is gone.** `authSlice` has no `token` in its state; `ProviderWrapper` no longer reads `localStorage` at all. What remains in `localStorage` is a cached `user` object for first paint, which is explicitly **not** proof of a session.
->
-> Why the original is a worse model than it looks: the cookie was set *and* the token was in the body, so a token readable by any XSS was handed to the server on every call while the unreadable cookie was already sufficient. `SameSite` had also been `none` — cross-site-capable — because the API was on another origin. Making the API same-origin let both of those be fixed together; see [BACKEND_MIGRATION.md](./BACKEND_MIGRATION.md) §5.2 and §5.5.
+Accepted
 
 ### Context
 
@@ -512,45 +501,38 @@ Users need to log in, maintain sessions across page loads, and access role-restr
 
 ### Decision
 
-Verified from the code (`src/features/auth/authSlice.js`, `authApi.js`, `src/app/redux/ProviderWrapper.js`, `src/lib/server/auth.js`, `src/lib/server/constants.js`):
+Verified from the code (`src/features/auth/authSlice.js`, `authApi.js`, `src/app/redux/ProviderWrapper.js`):
 
-- **The session is the `httpOnly` cookie.** `COOKIE_OPTIONS` sets `httpOnly: true`, `sameSite: 'lax'`, `path: '/'`, and a 7-day `maxAge`, with `secure` conditional on `NODE_ENV` so a plain-`http` local dev server is not silently refused the cookie.
-- **The client holds no token.** No `Authorization` header, no `localStorage` credential, no refresh orchestration. `authSlice` state is `{ user, loading, error, hydrated }`; `user` is a cache of what the server last returned, and `hydrated` — not `token` — is what unblocks auth-aware UI.
-- **Session identity is server-decided.** `ProviderWrapper` calls `GET /users/user` on every page load with **no `skip` gate** (the cookie is sent automatically, so there is nothing to gate on) and dispatches `setCredentials` or `clearCredentials` on any error. A 401 there *is* "not logged in".
-- **Protected routes** — `/admin` is guarded client-side for roles `admin`, `moderator`, `mentor`; unauthenticated users are redirected to `/login`. That guard is UX; the server enforces the same roles on every `/admin/*` route, auth-by-default.
+- **JWT storage** — the access token is stored in `localStorage` (`token`) and the user object in `localStorage` (`user`).
+- **Authorization headers** — `baseApi` attaches `Authorization: Bearer <token>` when a token exists and sets `credentials: 'include'`.
+- **Session hydration** — on app load, `ProviderWrapper` validates the token via `GET /users/user` and dispatches `setCredentials` / `clearCredentials` / `setHydrated`.
+- **Protected routes** — `/admin` is guarded client-side for roles `admin`, `moderator`, `mentor`; unauthenticated users are redirected to `/login`.
 - **Registration** — email OTP flow (`POST /auth/send-otp` → `POST /auth/verify-registration`).
-- **Password reset** — `POST /auth/reset-link` + `PATCH /auth/reset-password`. `reset-link` was `GET /auth/reset-link/:email` until the cutover; `GET` is exempt from the CSRF check and the address was in the path, so a bare cross-site `<img src>` was enough to make the server mail a real branded reset link to an attacker-chosen address. `POST` with the address in the body re-arms `assertSameOrigin`. Do not add a `GET` fallback.
-- **Logout** — `POST /auth/logout`, which revokes this device's refresh token and clears the cookies. It was `GET` until the cutover; `GET` is exempt from the CSRF check, which made force-logout (and seven-day refresh-token revocation) reachable cross-site.
-- **Refresh** — transparent and server-side. `GET /auth/refresh-token` exists but the client never calls it; `auth.js` re-issues the access-token cookie when it sees an expired one.
-- **Google authentication** — **not implemented**. There is no Google OAuth / Firebase code, and `firebase-admin` was removed from `serverExternalPackages` in `next.config.mjs` because the only endpoints that used it were never called.
+- **Password reset** — `GET /auth/reset-link/:email` + `PATCH /auth/reset-password`.
+- **Google authentication** — **not implemented** on the frontend. There is no Google OAuth / Firebase code, and **no refresh-token flow** exists.
 
 ### Why
 
-- **A token script cannot read is a token XSS cannot steal.** This is the entire security argument, and it is why the same-origin cutover and the auth-model change were done together rather than separately.
-- **One origin removes the reason `SameSite: 'none'` ever existed**, which closes the cross-site cookie path structurally rather than by layering. `assertSameOrigin` is the independent second layer on top.
-- **Server-decided identity removes a whole class of client bug.** A gate on `localStorage.token` left in place after the token stopped being returned would make `GET /users/user` never fire and render every page logged out — a silent, total failure that no type checker catches.
+- Simple, stateless client session with minimal infrastructure.
+- Bearer headers work across the whole RTK Query layer automatically.
 - Hydration on startup keeps auth-aware UI consistent after refreshes.
-- The cost of asking unconditionally is one small 401-shaped request per anonymous page load; the cost of a stale gate is a site where nobody is ever logged in.
 
 ### Consequences
 
 **Pros**
 
-- The XSS-token-exfiltration tradeoff this ADR previously accepted is **gone**, not mitigated.
-- No refresh orchestration on the client, and no chance of the client and server disagreeing about who is signed in.
-- Admin access gating is centralized in the admin layout, and enforced independently on the server.
+- Straightforward to implement and debug; no refresh orchestration.
+- Admin access gating is centralized in the admin layout.
 
 **Cons**
 
-- `httpOnly` means the client genuinely cannot inspect the session. Anything that used to read `auth.token` has to ask the server — which is the point, but it is a real ergonomic cost.
-- A `skip`-style optimisation on `GET /users/user` is now a correctness bug, not an optimisation. The comment in `ProviderWrapper.js` records why.
-- `WEB_DOMAIN` / `NEXT_PUBLIC_SITE_URL` become security-critical environment variables: a wrong value 403s every unsafe method.
+- `localStorage` tokens are readable by any XSS — keep CSP strong and avoid injecting untrusted HTML.
+- Sessions end when the token expires (no automatic refresh); the user is cleared on the next validation failure.
 - Google OAuth is **not present** — do not document or assume it exists.
 
 **Future considerations**
 
-- The `localStorage` `token` key is deleted on the first post-cutover sign-out, so returning browsers eventually shed the old credential. There is no migration that scrubs a browser that never signs out again.
-- Distributed rate limiting for the credential endpoints remains the largest open risk ([BACKEND_MIGRATION.md](./BACKEND_MIGRATION.md) §8) — the cookie model does not reduce the need for it.
+- Move to HTTP-only cookie sessions or add a refresh-token rotation flow (see ADR-012).
 
 ---
 
@@ -679,11 +661,9 @@ The **backend is the security authority** for email verification:
 
 **Planned.** All current data flow is request/response via RTK Query. Real-time updates (e.g., live dashboard signals, in-app notifications) would require a WebSocket/SSE layer and are not implemented.
 
-### 8. Google OAuth / Client-Side Refresh Tokens
+### 8. Google OAuth / Refresh Tokens
 
-**Planned.** Not implemented (see ADR-011). Google OAuth would be genuinely new work — the `firebase-admin` dependency and the `google-signin`/`google-signup` endpoints it backed were removed from the migrated API, so re-adding Google auth means re-adding a large dependency to `next.config.mjs`'s `serverExternalPackages` or the build fails on dynamic requires.
-
-**Client-side refresh, specifically, is no longer a planned direction** — it was superseded by the `httpOnly` cookie session. Renewal is already transparent and server-side, so what remains genuinely open is *distributed* rate limiting for the credential endpoints, not client-side token orchestration.
+**Planned.** Not implemented (see ADR-011). If adopted, would replace or complement the current localStorage bearer-token session.
 
 ---
 
@@ -691,5 +671,4 @@ The **backend is the security authority** for email verification:
 
 - ADR-001 to ADR-012 created during the documentation audit (August 2026).
 - ADR-013 to ADR-015 added in September 2026 (GitHub-synced contributors, derived statistics, backend-enforced email verification).
-- **September 2026 — backend migration and cutover.** ADR-001 marked **superseded in part** (single Vercel deployment; no Render, no `NEXT_PUBLIC_API_BASE_URL`, no CORS). ADR-011 **rewritten** to the `httpOnly` cookie session. ADR-008 already recorded the `publicApi` deletion. ADR-012 §8 updated.
-- All "Accepted" ADRs verified against the current `cpccu-client` codebase. Where a record cites `cpccu-server`, that citation is to the **archived** Express repository and is retained deliberately as the provenance for a ported decision — it is not a claim that the code lives there any more.
+- All "Accepted" ADRs verified against the current `cpccu-client` and `cpccu-server` codebases.

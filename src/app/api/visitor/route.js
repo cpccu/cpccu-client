@@ -48,15 +48,6 @@ import { defineRoute } from '@/lib/server/handler';
  * `VisitorCounter.jsx` is the consumer that has to be dealt with at the same
  * time, or the fallback 404s.
  *
- * UPDATE (cutover, 2026-09): that branch is GONE. `NEXT_PUBLIC_API_BASE_URL` was
- * deleted from the client with every other read of it, and `VisitorCounter.jsx`
- * now calls `/api/v1/visitor` as a hard-coded literal with no fallback at all —
- * so the paragraph above describes a configuration that no longer exists, and
- * THIS mount currently has zero in-app consumers. It is still PRESERVED: this
- * is a public, unauthenticated, bookmarkable path that predates the versioned
- * mount, and "our own UI no longer links it" is not the same as "removing it is
- * safe". Nothing in the cutover may be read as approval to delete it.
- *
  * `public: true` because a visitor counter is public site decoration: it is on
  * the unauthenticated landing page, and the envelope is `{ count }` with no user
  * data of any kind. Note it is NOT `ApiResponse` — this is envelope #4 of the

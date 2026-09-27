@@ -142,27 +142,34 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["AdminCertificates", "AdminOverview"],
     }),
-    // NOTE: `getActiveRoles`, `updateAdminRole` and `toggleAdminRole` were
-    // DELETED in the 2026-09 cutover. All three had live routes
-    // (`GET /admin/roles/active`, `PATCH /admin/roles/:id`,
-    // `PATCH /admin/roles/:id/toggle`) and all three had ZERO call sites in
-    // `src/` — the roles UI only ever read `getAdminRoles` and created through
-    // `createAdminRole`. Unreachable exports, not broken ones: nothing in the
-    // app was failing because of them. They are gone so that a future editor
-    // does not wire one up believing it is maintained. The routes are all still
-    // served and the server-side controllers are untouched; re-adding a client
-    // definition for one of them is a two-line change against a route that is
-    // already there and already tested.
     // ===== Role Management =====
     getAdminRoles: builder.query({
       query: () => "/admin/roles",
       providesTags: ["AdminRoles"],
+    }),
+    getActiveRoles: builder.query({
+      query: () => "/admin/roles/active",
     }),
     createAdminRole: builder.mutation({
       query: (body) => ({
         url: "/admin/roles",
         method: "POST",
         body,
+      }),
+      invalidatesTags: ["AdminRoles"],
+    }),
+    updateAdminRole: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/admin/roles/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["AdminRoles"],
+    }),
+    toggleAdminRole: builder.mutation({
+      query: (id) => ({
+        url: `/admin/roles/${id}/toggle`,
+        method: "PATCH",
       }),
       invalidatesTags: ["AdminRoles"],
     }),
@@ -190,5 +197,8 @@ export const {
   useUpdateAdminSystemSettingsMutation,
   useUploadAdminImageMutation,
   useGetAdminRolesQuery,
+  useGetActiveRolesQuery,
   useCreateAdminRoleMutation,
+  useUpdateAdminRoleMutation,
+  useToggleAdminRoleMutation,
 } = adminApi;

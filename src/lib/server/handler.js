@@ -65,18 +65,6 @@ import { createShim } from '@/lib/server/shim';
  *    `createShim`'s `collect.refreshCookie` is always `null`; it is not a second
  *    channel, it is a forward-compatible getter.
  *
- * 2a. …EXCEPT WHEN THE CONTROLLER DELETED THAT COOKIE. The precedence above is
- *     about a controller that SETS a value. A controller that calls
- *     `res.clearCookie` is not competing for the name, it is terminating the
- *     session, and `ResponseCookies.set()` replaces a same-name entry rather
- *     than appending — so a re-issued `accessToken` does not merely outrank the
- *     deletion, it ERASES it. This is how `POST /auth/logout` left a departed
- *     user with a working session for the remaining 15 minutes. So the shim
- *     reports the deleted NAMES on `collect.result()`, `runController` returns
- *     them to `apiRoute`, and `apiRoute` drops the `refreshCookie` if it names
- *     one of them. The rule is BY NAME and carries no list of auth cookie names
- *     in the shim, so it is right for a cookie this layer has never heard of.
- *
  * 3. `adminAuth.js` DERIVES ITS ROUTING CONTEXT INTERNALLY. A route author
  *    NEVER passes `resource` or the mount-relative `path`. `requireAdminAction`
  *    takes only `{ method, pathname }`, derives everything else from
@@ -436,27 +424,6 @@ function defineRoute(method, config) {
     // MUST BE AWAITED. It flushes the queued cookies through `next/headers`
     // (`applyQueuedCookies`) and only then returns the `{ status, body }` pair
     // `toResponse` knows how to serialise.
-    //
-    // THIS RETURN VALUE IS ALSO THE CHANNEL BY WHICH THE COOKIE INTENTIONS OF
-    // THE CONTROLLER REACH `apiRoute`, and it is worth being explicit that the
-    // bridge is what makes them survive. `collect.result()` returns THREE keys —
-    // `status`, `body` and `clearedCookieNames` — and this is the only line that
-    // carries the third one out of the shim. `apiRoute` needs it to know that
-    // this controller DELETED a cookie, because the auth layer holds a
-    // transparent-refresh instruction in its own closure and applies it AFTER
-    // this handler has flushed; `ResponseCookies.set()` replaces a same-name
-    // entry, so a logout that cleared `accessToken` was previously being undone
-    // by a refreshed one, leaving a live session on a shared machine for the
-    // remaining lifetime of a 15-minute token. See `suppressClearedRefreshCookie`
-    // in `http.js` for the decision, and `clearedCookieNames` in `shim.js` for
-    // the recording.
-    //
-    // IT TRAVELS ON THE RESULT OBJECT RATHER THAN ON `ctx` DELIBERATELY. `ctx` is
-    // built by `apiRoute` and handed IN to the shim, so writing to it here would
-    // be the shim mutating its caller's context, and it is read on the throw path
-    // as well as the success path — where this value does not exist, because a
-    // controller that throws never reaches `collect.result()` and therefore never
-    // flushed its queued cookies either. `http.js` documents that asymmetry.
     return collect.result();
   }
 

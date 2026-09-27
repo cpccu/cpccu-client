@@ -10,21 +10,14 @@ export const userApi = baseApi.injectEndpoints({
       query: (id) => `/users/user/${id}`,
       providesTags: (result, error, id) => [{ type: "Users", id }],
     }),
-    // NOTE: there is deliberately no `createUser` (`POST /users/user`) here.
-    // That route has NEVER EXISTED in either backend — not the Express original
-    // and not the migrated API, which serves only `GET /users/user` and
-    // `DELETE /users/user` on that path (see `fetchUsers` and `deleteOwnAccount`
-    // below). The definition was unreachable dead weight: its hook
-    // (`useCreateUserMutation`) had zero call sites, so nothing ever noticed.
-    //
-    // CREATING A USER GOES THROUGH ONE OF THESE TWO, DEPENDING ON WHO IS
-    // CREATING IT:
-    //   - SELF-REGISTRATION is `POST /auth/register` — `authApi.register`, the
-    //     `/signup` page. It is `public: true` and starts the OTP flow.
-    //   - AN ADMIN CREATING A MEMBER is `POST /admin/members` —
-    //     `adminApi.createAdminMember`, the admin panel's member form. It is
-    //     `admin: true` and creates the account already verified.
-    // Do not reintroduce a `POST /users/user` without a route to point it at.
+    createUser: builder.mutation({
+      query: (userData) => ({
+        url: "/users/user",
+        method: "POST",
+        body: userData,
+      }),
+      invalidatesTags: ["Users"],
+    }),
     updateUser: builder.mutation({
       query: ({ userData }) => ({
         url: "users/userInfo-update",
@@ -127,6 +120,7 @@ export const userApi = baseApi.injectEndpoints({
 export const {
   useFetchUsersQuery,
   useFetchUserByIdQuery,
+  useCreateUserMutation,
   useUpdateUserMutation,
   useUserImageUploadMutation,
   useRequestJobPipelineProfileMutation,

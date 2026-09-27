@@ -296,11 +296,6 @@ async function createShim(request, ctx = {}, options = {}) {
     sent: false,
     cookies: [],
     headers: {},
-    // Cookie NAMES this controller deleted, accumulated as they are queued
-    // rather than derived from `cookies` on demand. `http.js` needs the set after
-    // the handler has returned, and this is the only place the `clearing` marker
-    // exists. See `collect.clearedCookieNames` for why the auth layer cares.
-    clearedCookieNames: new Set(),
   };
 
   const res = {
@@ -383,17 +378,6 @@ async function createShim(request, ctx = {}, options = {}) {
         },
         clearing: true,
       });
-
-      // A handler that DELETES a cookie is asserting that the session behind it
-      // is over. That assertion has to travel out of the shim, because the
-      // shim is the only thing that knows it happened: `http.js`'s auth layer
-      // holds a closure-scoped `refreshCookie` that it applies AFTER this shim
-      // has flushed, and `ResponseCookies.set()` replaces a same-name entry
-      // rather than appending — so without this set, a logout that cleared
-      // `accessToken` would be silently undone by a transparent refresh. The
-      // name is recorded so the decision is made by NAME, generically, and not
-      // by hard-coding knowledge of the auth cookie names here.
-      collected.clearedCookieNames.add(name);
       return res;
     },
 
@@ -528,36 +512,6 @@ async function createShim(request, ctx = {}, options = {}) {
     },
 
     /**
-     * The NAMES of every cookie this controller deleted, as a `Set`.
-     *
-     * WHY THE SHIM EXPOSES THIS AT ALL, AND WHY IT IS BY NAME. `res.clearCookie`
-     * is a DECLARATION OF INTENT ("this session is over, drop the cookie"), but
-     * the shim cannot enforce it: `http.js` holds the auth layer's transparent
-     * refresh instruction in a closure and applies it after `collect.result()`
-     * has already flushed, and `ResponseCookies.set()` REPLACES a same-name
-     * entry instead of appending a second one. So the deletion is written and
-     * then overwritten, and the browser keeps a live session the endpoint
-     * explicitly threw away. The intent therefore has to be reported to the
-     * layer that would otherwise defeat it — see `suppressClearedRefreshCookie`
-     * in `http.js` for the consumer and the exact route this was found on.
-     *
-     * BY NAME, AND NOT AS A BOOLEAN, is deliberate: the rule is "the controller
-     * deleted this cookie, so do not re-issue a cookie of that name", which
-     * applies identically to `accessToken` and to any future auth cookie, and it
-     * must not be encoded as a special case for a cookie this module has no
-     * business knowing about. It also makes the rule safe on routes that are not
-     * about authentication at all: a route that clears an unrelated cookie is
-     * suppressing nothing, because `refreshCookie` only ever names a cookie
-     * `verifyToken` minted.
-     *
-     * EMPTY FOR EVERY ROUTE THAT DELETES NOTHING, which is the overwhelming
-     * majority — so a caller that checks it pays one `Set` membership test.
-     */
-    get clearedCookieNames() {
-      return collected.clearedCookieNames;
-    },
-
-    /**
      * The `refreshCookie` instruction `auth.js`'s `verifyToken` produced, or
      * `null`.
      *
@@ -586,27 +540,11 @@ async function createShim(request, ctx = {}, options = {}) {
      * cookie write that is not awaited before the response is serialised is a
      * write that may never be flushed.
      *
-     * `clearedCookieNames` RIDES ALONG ON THIS OBJECT and is the third key of the
-     * returned pair. It is additive, so it changes nothing about the pair itself:
-     * `http.js`'s `toResponse` reads only `.status` and `.body` (it re-serialises
-     * `result.body` into a fresh `Response`), so the `Set` is never itself
-     * serialised into a response body, and the shape the route returns is
-     * unchanged. `apiRoute` reads it to decide whether the auth layer may still
-     * re-issue a cookie the controller just deleted — see
-     * `suppressClearedRefreshCookie` there. The alternative (a side channel,
-     * a `ctx` field, a module-level variable) would all be worse: this value is
-     * genuinely part of what the controller DID, and `ctx` is not reachable from
-     * the shim's flush point without a signature change.
-     *
-     * @returns `Promise<{ status, body, clearedCookieNames }>`
+     * @returns `Promise<{ status, body }>`
      */
     async result() {
       await applyQueuedCookies(collected.cookies);
-      return {
-        status: collected.status,
-        body: collected.body,
-        clearedCookieNames: collected.clearedCookieNames,
-      };
+      return { status: collected.status, body: collected.body };
     },
   };
 
@@ -633,36 +571,16 @@ function pathname(request) {
  * instruction), and it means a controller never has to know that
  * `next/headers` exists.
  *
- * ORDER MATTERS WHEN BOTH TOUCH `accessToken`, AND THE AUTH-LAYER WRITER WINS —
- * WITH ONE EXCEPTION, AND THE EXCEPTION IS A DELETION. `finalizeShim` runs inside
- * the route handler; `applyAuthCookie` runs afterwards, inside `finalizeResponse`.
- * So on a route where `verifyToken` already issued a fresh `accessToken` AND the
- * controller also queued one, the AUTH-LAYER cookie wins — which is right,
- * because `verifyToken` validated the token against the current session state
- * moments earlier, whereas a controller-queued value is whatever that endpoint
- * decided to hand out. For `refreshAccessToken` — the one endpoint that mints its
- * own cookie — no `verifyToken` runs, so there is no refresh instruction and the
- * controller's cookie stands.
- *
- * THE EXCEPTION IS `clearCookie`, AND IT IS NOT OPTIONAL. A controller that
- * DELETES a cookie is not offering a value, it is declaring that the session is
- * over. Letting the auth layer re-issue `accessToken` on top of that deletion is
- * not "the same order applied to a different case" — `ResponseCookies.set()`
- * REPLACES a same-name entry rather than appending a second one, so the deletion
- * is not merely outranked, it is ERASED, and the browser is left holding a live,
- * correctly-signed token for a session the endpoint just terminated. That is
- * precisely what `POST /auth/logout` did: log out with an EXPIRED `accessToken`
- * and a valid `refreshToken`, and `verifyToken`'s transparent-refresh branch
- * produced a fresh `accessToken`, `logoutHandler` queued the deletion, the
- * deletion was written — and then the fresh token replaced it, leaving
- * `GET /users/user` answering 200 with the departed user's `email`, `phone`,
- * `uniID` and `roles` for the next 15 minutes on a shared machine. The decision
- * itself lives in `http.js` (`suppressClearedRefreshCookie`), because that is the
- * only place both cookies are in scope; what this module owes it is the
- * `clearedCookieNames` set. THE PRECEDENCE FOR EVERY OTHER CASE IS UNCHANGED AND
- * MUST NOT BE REVERSED: the transparent refresh still wins on every route that
- * merely SETS a cookie, because that is the correct reading of a token that was
- * validated against live session state moments earlier.
+ * ORDER MATTERS WHEN BOTH TOUCH `accessToken`, and the WRITER-WINS order is the
+ * correct one. `finalizeShim` runs inside the route handler; `applyAuthCookie`
+ * runs afterwards, inside `finalizeResponse`. So on a route where `verifyToken`
+ * already issued a fresh `accessToken` AND the controller also queued one, the
+ * AUTH-LAYER cookie wins — which is right, because `verifyToken` validated the
+ * token against the current session state moments earlier, whereas a
+ * controller-queued value is whatever that endpoint decided to hand out. For
+ * `refreshAccessToken` — the one endpoint that mints its own cookie — no
+ * `verifyToken` runs, so there is no refresh instruction and the controller's
+ * cookie stands.
  *
  * Failures are SWALLOWED WITH A LOG rather than thrown. A cookie write failing
  * must not convert a 200 into a 500: the body has already been produced and the
