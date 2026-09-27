@@ -333,10 +333,17 @@ describe("the loader — the two forced deviations from Node's resolver", () => 
     // declares `format: 'module'` for in-repo files to state the fact once. This
     // test is the behavioural proof: a module that uses `import`/`export`
     // statements round-trips and its named exports are present.
+    //
+    // THE LIST IS AN EXACT ENUMERATION, not a subset, so it also fails on an
+    // export nobody intended to add. `resolveVerboseErrors` is here because it
+    // is the shared `VERBOSE_ERRORS`/`NODE_ENV` redaction gate that `auth.js`
+    // calls as well as this module — extracting it is what stopped the two
+    // redactions from disagreeing about when they applied.
     return import("@/lib/server/errors").then((module) => {
       assert.deepEqual(Object.keys(module).sort(), [
         "ApiError",
         "isResponsePair",
+        "resolveVerboseErrors",
         "toErrorResponse",
       ]);
     });

@@ -6,10 +6,28 @@ import CountUp from "react-countup";
 
 const VISITOR_KEY = "cpccu_last_visit";
 const ONE_HOUR = 60 * 60 * 1000;
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-const VISITOR_API_URL = API_BASE_URL
-  ? `${API_BASE_URL.replace(/\/+$/, "")}/visitor`
-  : "/api/visitor";
+// ONE EXPLICIT PATH, NOT A DUAL-MOUNT FALLBACK. This used to be
+//
+//     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+//     const VISITOR_API_URL = API_BASE_URL
+//       ? `${API_BASE_URL.replace(/\/+$/, "")}/visitor`
+//       : "/api/visitor";
+//
+// i.e. it reached for the versioned `/api/v1/visitor` only when the env var was
+// set and the bare `/api/visitor` when it was empty. That branch is gone with
+// the env var: the API is same-origin and the URL is fixed, so there is no
+// longer any configuration in which the fallback could be taken, and leaving it
+// in would be a second, untested URL path that nothing exercises.
+//
+// The increment is derived by appending `/increment` to this one constant, so
+// the two calls can never drift onto different mounts.
+//
+// BOTH SERVER MOUNTS STAY. `/api/visitor` and `/api/v1/visitor` are two
+// deliberate backwards-compatibility mounts of the same handler — the Express
+// router registered both — and `src/app/api/visitor/route.js` argues the case at
+// length. This component simply no longer uses the unversioned one; it is not
+// removed, and nothing about that removal is this component's decision.
+const VISITOR_API_URL = "/api/v1/visitor";
 
 const getStoredVisitTimestamp = () => {
   try {

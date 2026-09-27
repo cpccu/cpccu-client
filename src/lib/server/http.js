@@ -505,9 +505,14 @@ function apiRoute({
       // only way `handler` can see a `Request` is the one this invocation was
       // given. (`handler.js` therefore takes them as ordinary parameters and
       // needs no async-context bridge at all.)
+      //
+      // THE RESULT IS HELD IN A LOCAL, not inlined, because the auth cookie may
+      // have to be withheld from it — see `suppressClearedRefreshCookie`.
+      const handlerResult = await handler(ctx, request, routeContext);
+
       return await finalizeResponse(
-        await handler(ctx, request, routeContext),
-        refreshCookie,
+        handlerResult,
+        suppressClearedRefreshCookie(refreshCookie, handlerResult),
       );
     } catch (error) {
       // Step 8 — anything thrown in 1–6 becomes the `{ status, message, errors? }`
@@ -576,6 +581,124 @@ function apiRoute({
       }
     }
   };
+}
+
+/**
+ * Withholds the auth layer's refreshed cookie when the controller DELETED a
+ * cookie of the same name.
+ *
+ * ============================================================================
+ * WHY THIS FUNCTION EXISTS — THE ONE CASE WHERE "THE REFRESH WINS" IS WRONG
+ * ============================================================================
+ * `applyAuthCookie` runs AFTER the route handler, so on a route where
+ * `verifyToken` performed a transparent refresh AND the controller also touched
+ * the same cookie, the auth layer's value is written last. `ResponseCookies.set`
+ * REPLACES a same-name entry rather than appending a second `Set-Cookie`, so
+ * "written last" is not "one of two" — it is "the only one the browser sees".
+ *
+ * For a controller that CALLS `res.cookie`, last-writer-wins is CORRECT:
+ * `verifyToken` validated the presented token against live session state moments
+ * earlier, so its token is the more trustworthy of the two, and a controller
+ * that hand-rolls its own token is choosing to override that deliberately. That
+ * precedence is preserved here and must not be reversed.
+ *
+ * For a controller that CALLS `res.clearCookie`, last-writer-wins is a
+ * CREDENTIAL LEAK. A deletion is not a competing value, it is the endpoint
+ * stating that the session is over; re-issuing the cookie does not lose to it,
+ * it ERASES it. The concrete instance this was found on is
+ * `POST /api/v1/auth/logout`:
+ *
+ *   1. `verifyToken` runs on the logout request. The presented `accessToken` is
+ *      EXPIRED, so `jwt.verify` throws `TokenExpiredError` and the
+ *      transparent-refresh branch mints and returns a FRESH `accessToken`
+ *      (`auth.js`) — a side effect the route never asked for.
+ *   2. `logoutHandler` revokes this device's refresh token and queues
+ *      `clearCookie('accessToken')`.
+ *   3. `collect.result()` flushes the queued deletion:
+ *      `accessToken=; Max-Age=0; Expires=Thu, 01 Jan 1970`.
+ *   4. `finalizeResponse` → `applyAuthCookie` writes the fresh token under the
+ *      same name, REPLACING the deletion.
+ *
+ * The refresh token IS revoked, so the session cannot be extended — but the
+ * browser keeps a live, correctly-signed 15-minute `accessToken`, and
+ * `GET /users/user` answers 200 with the departed user's `email`, `phone`,
+ * `uniID` and `roles` for its remaining lifetime. The realistic trigger is the
+ * ordinary one: a tab left open past 15 minutes, then logged out on a shared
+ * machine. Logging out did not log you out.
+ *
+ * ============================================================================
+ * WHY IT IS BY NAME, GENERICALLY, RATHER THAN SPECIAL-CASED TO `accessToken`
+ * ============================================================================
+ * The rule being enforced is "the controller deleted this cookie, so do not
+ * re-issue a cookie of that name", and that rule is a property of the CONTROLLER,
+ * not of any particular cookie. Expressing it as a list of known auth cookie
+ * names here would mean the next auth cookie added to the app is unprotected
+ * until somebody remembers to add it here — a fail-open default wearing the
+ * costume of a fix. The shim reports names because names are what it knows.
+ *
+ * IT THEREFORE CORRECTLY COVERS THE REFRESH COOKIE NAME TOO, and that is worth
+ * stating rather than leaving to be re-derived. Today it is unreachable for
+ * `refreshToken`, because `verifyToken`'s transparent-refresh branch only ever
+ * mints an ACCESS token — it has no path that produces a `refreshToken` cookie at
+ * all. But the suppression is by name, so if that ever changes, the behaviour is
+ * already the correct one and requires no edit: `logoutHandler` revokes the
+ * refresh token server-side by removing it from `user.refreshTokens`, so
+ * re-issuing a `refreshToken` cookie after a logout would hand the browser a
+ * credential for a session the server has already terminated. Suppressing it is
+ * the same bug, not a new one. No special case is added, and none should be.
+ *
+ * ============================================================================
+ * WHAT IT DOES NOT COVER — THE ERROR PATH, AND WHY THAT IS CONSISTENT
+ * ============================================================================
+ * This is applied on the SUCCESS path only, and that is not an oversight. The
+ * queued cookies are written by `collect.result()`, which a controller that
+ * THROWS never reaches — the throw propagates out of `runController` before the
+ * flush. So on the throw path no deletion was ever written, there is nothing to
+ * be resurrected, and `finalizeResponse` re-applying the refresh cookie does not
+ * contradict a decision the controller never got to express. The two paths are
+ * therefore consistent rather than differently-buggy: a controller that deletes
+ * a cookie and then throws has not successfully deleted it, and this function
+ * does not pretend otherwise. Making the deletion survive a throw would be a
+ * separate change with its own failure modes (it would need the intent reported
+ * out of `runController` before the controller's own throw unwinds past it), and
+ * no controller in this codebase does it.
+ *
+ * @param {object|null} refreshCookie the instruction `verifyToken` returned
+ * @param {*}          handlerResult what the route handler returned; `null` for a
+ *                                    route that did not go through the shim, and
+ *                                    for the `apiRoute` paths that short-circuit
+ *                                    before the handler runs
+ * @returns {object|null} `null` when the cookie must be withheld, otherwise the
+ *                         instruction unchanged
+ */
+function suppressClearedRefreshCookie(refreshCookie, handlerResult) {
+  // Nothing to suppress: this is the common case (no refresh happened, or the
+  // request never authenticated), and it is checked first so the common case
+  // never touches `handlerResult`.
+  if (!refreshCookie) return null;
+
+  // `clearedCookieNames` is a `Set` on the shim's result pair, and `Set` has
+  // `has` via its prototype — so this reads the names only if one is present.
+  // The `?.` matters: a hand-written route (the `GET /api/v1` health probe
+  // bypasses `defineRoute` entirely) and the `apiRoute` short-circuits both
+  // return something that is not the shim's pair at all, and none of them ever
+  // authenticate, so there is nothing to withhold from them.
+  if (!handlerResult?.clearedCookieNames?.has?.(refreshCookie.name)) {
+    return refreshCookie;
+  }
+
+  // LOGGED, NOT SILENT. Reaching here means a controller deliberately deleted a
+  // cookie the auth layer was about to refresh — which today is only `logout`.
+  // It is a normal outcome, not a malfunction, so it must not look like one in
+  // the logs; but it is also the shape a future bug would take (a controller that
+  // clears a cookie it did not mean to), so the pairing is worth one line an
+  // operator can find. The name and the value are NOT logged: the value is a
+  // credential.
+  console.log(
+    `apiRoute: not re-issuing "${refreshCookie.name}" — the controller deleted it.`,
+  );
+
+  return null;
 }
 
 /**

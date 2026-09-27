@@ -451,6 +451,16 @@ function assertBodySizeWithinLimit(request) {
  * no bearer token there is nothing left to distinguish a script from an attacker,
  * so the request is rejected.
  *
+ * THE FIRST-PARTY BROWSER CLIENT NO LONGER USES THIS ESCAPE HATCH. Since the
+ * cutover to same-origin, the app's own `fetchBaseQuery` authenticates purely
+ * with the `httpOnly` `accessToken` cookie and attaches no `Authorization`
+ * header at all — deliberately, so that a token readable by XSS is never the
+ * credential. That is safe here precisely because a browser ALWAYS sets
+ * `Sec-Fetch-Site`, so the browser branch above is taken first and this one is
+ * only ever reached by genuine non-browser callers (curl, CLI, integration
+ * tests) that are the intended audience of the exemption. It is left in place
+ * for them; do not read it as a requirement for the web client.
+ *
  * @param request the incoming `Request`
  * @throws {ApiError} 403 when the request's origin cannot be established
  */

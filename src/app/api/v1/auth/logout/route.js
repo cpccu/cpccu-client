@@ -2,7 +2,7 @@ import { logoutHandler } from '@/lib/server/controllers/auth.controller';
 import { defineRoute } from '@/lib/server/handler';
 
 /**
- * `GET /api/v1/auth/logout` — revoke this device's refresh token and clear cookies.
+ * `POST /api/v1/auth/logout` — revoke this device's refresh token and clear cookies.
  *
  * AUTHENTICATED, which here means simply OMITTING `public`. That is the whole
  * point of the inverted default in `apiRoute`: there is no `auth: true` to
@@ -10,15 +10,30 @@ import { defineRoute } from '@/lib/server/handler';
  * can see and a reviewer can question. The Express original listed `verifyToken`
  * explicitly in the chain; here the absence of `public` is the lock.
  *
- * `GET`, not `POST`, because that is how the Express original registered it.
- * NOTE THE CSRF CONSEQUENCE, since it is a real one and is preserved rather than
- * "fixed": `GET` is in `SAFE_METHODS`, so a cross-site request to this URL is not
- * blocked by `assertSameOrigin`. An attacker who can get a victim's browser to
- * issue a top-level `GET` (an `<img>`, a redirect) can therefore log that victim
- * out — a denial of convenience, not a compromise, and the attacker's own
- * browser is not logged out because the `refreshToken` cookie is scoped to the
- * origin the request was made from. Changing this to `POST` would be a client
- * contract change, not a porting decision, so it is recorded here instead.
+ * `POST`, NOT `GET` — CHANGED 2026-09 IN THE CUTOVER, and the previous `GET`
+ * was a real hole that this docblock used to preserve rather than fix. `GET` is
+ * in `SAFE_METHODS`, so `assertSameOrigin` no-ops on it: a cross-site
+ * top-level `GET` — an `<img src="/api/v1/auth/logout">`, a redirect, a
+ * `<link rel=prefetch>` — was not blocked at all, and an attacker who could get
+ * a victim's browser to issue one logged that victim out. The original comment
+ * called this "a denial of convenience, not a compromise", which understated
+ * it in one specific way: logout also REVOKES the refresh token from
+ * `user.refreshTokens`, so the victim is signed out for the full seven days
+ * with no way back but logging in again.
+ *
+ * WHY CHANGING THE VERB IS SUFFICIENT. `assertSameOrigin` runs on every method
+ * outside `SAFE_METHODS` (`src/lib/server/request.js`), so `POST` is the first
+ * verb this endpoint has ever been behind. The browser sends
+ * `Sec-Fetch-Site: same-origin` and an `Origin` this deployment allows on a
+ * same-origin `fetch`, so the first-party client passes; a cross-site request
+ * that somehow avoided a preflight carries neither and is 403'd.
+ *
+ * THE CLIENT VERB LIVES IN EXACTLY ONE PLACE — `method: 'POST'` in
+ * `src/features/auth/authApi.js` — and `test/route-method-declaration.test.js`
+ * asserts that this file's declared method matches its export name, so the two
+ * halves cannot drift apart silently. Do not "restore GET for compatibility":
+ * there is no third-party caller to be compatible with, and doing so re-opens
+ * the hole.
  */
 
 // `nodejs` because this route reaches `mongoose` and `jsonwebtoken`, neither of
@@ -27,6 +42,6 @@ import { defineRoute } from '@/lib/server/handler';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export const GET = defineRoute('GET', {
+export const POST = defineRoute('POST', {
   controller: logoutHandler,
 });

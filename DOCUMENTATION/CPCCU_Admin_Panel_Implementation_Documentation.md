@@ -270,16 +270,7 @@ Gallery items can be linked to a gallery event via `eventId`.
 
 ## JSON Data Migration
 
-The data migration script lives in the **backend** repository (`cpccu-server`):
-
-- `cpccu-server/scripts/seedDataFromJson.js`
-
-Package scripts (run from `cpccu-server`, not this frontend repo):
-
-- `npm run data:export` creates ready MongoDB JSON files in `docs/mongodb-import`.
-- `npm run data:seed` upserts mapped data into the configured MongoDB database.
-
-The migration excludes `contributors.json` by request.
+> ⚠️ **There is no seed script in this repository.** The JSON→Mongo seeder was written for the Express backend and was **not** ported when the API moved into route handlers here. It survives only in the archived `cpccu-server` repository (`scripts/seedDataFromJson.js`, with `npm run data:export` and `npm run data:seed`). Porting it is outstanding work; until then a fresh database stays empty and public pages fall back to the JSON files in `data/`. This section is kept as the **record of the mapping** it performs, not as a procedure to run.
 
 Known mappings:
 
@@ -291,26 +282,9 @@ Known mappings:
 - `job-pipeline/Info.json` -> `DeveloperProfile`
 - Every valid JSON file except `contributors.json` -> `SiteData` raw backup
 
-`Member.json` is currently empty, so the migration skips it.
+`Member.json` is currently empty, so the migration skips it. The migration excludes `contributors.json` by request.
 
-The latest generated import files are in:
-- `docs/mongodb-import/committees.json`
-- `docs/mongodb-import/alumni.json`
-- `docs/mongodb-import/donators.json`
-- `docs/mongodb-import/events.json`
-- `docs/mongodb-import/gallery.json`
-- `docs/mongodb-import/profiles.json`
-- `docs/mongodb-import/siteData.json`
-
-To move this local branch to the dev branch and seed the main MongoDB database:
-1. Back up the target MongoDB database.
-2. Merge this branch into `dev`.
-3. Put the target database URI in `cpccu-server/.env` as `MONGODB_URI`.
-4. From `cpccu-server`, run `npm run data:export` if you only need JSON import files.
-5. From `cpccu-server`, run `npm run data:seed` once to upsert the JSON data into MongoDB.
-6. Start the server and verify `/api/v1/content/events`, `/api/v1/content/committees`, `/api/v1/content/donators`, `/api/v1/content/gallery`, and `/api/v1/content/profiles`.
-
-The seeder uses upserts, so re-running it updates matching records instead of blindly duplicating them. Events match by `title` and `date`; committees match by `email`, `position`, and `term`; developer profiles match by `email`.
+The seeder uses upserts, so re-running it updates matching records instead of blindly duplicating them. Events match by `title` and `date`; committees match by `email`, `position`, and `term`; developer profiles match by `email`. Whenever a seeder is run against a real database, back that database up first, and verify afterwards with `GET /api/v1/content/events`, `/content/committees`, `/content/donators`, `/content/gallery`, and `/content/profiles`.
 
 ## Job Pipeline
 
@@ -403,7 +377,7 @@ The mobile navbar now reads the authenticated Redux user instead of stale API ca
 
 ## Deployment
 
-The frontend admin panel is part of the single Next.js app deployed on **Vercel** (production: https://cpccu.club/). The backend (all `/api/v1/admin/*` endpoints) is deployed on **Render** as `cpccu-server`. See [DEPLOYMENT.md](./DEPLOYMENT.md) for environment configuration.
+The admin panel and the API it calls are both part of the single Next.js app deployed on **Vercel** (production: https://cpccu.club/). All `/api/v1/admin/*` endpoints are route handlers in this repository, reached same-origin at the relative path `/api/v1` — there is no second service, no second host, and no CORS configuration. See [DEPLOYMENT.md](./DEPLOYMENT.md) for environment configuration.
 
 ## Notes For Future Work
 

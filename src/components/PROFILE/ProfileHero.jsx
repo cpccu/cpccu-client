@@ -85,7 +85,19 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, jobPipeli
                 <div className="flex items-center gap-2">
                   <IdCard className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <dt className="sr-only">University ID</dt>
-                  <dd className="text-muted-foreground">ID : {member.universityId}</dd>
+                  {/* `|| "—"` is NOT decorative, it is required. `uniID` was
+                      removed from `PUBLIC_PROFILE_ITEM`
+                      (`src/lib/server/constants.js`), so it is ABSENT for any
+                      profile this page fetched anonymously — the projection is
+                      the whole of that endpoint's security boundary and dropping
+                      it back is not an option. Every sibling row above and
+                      below renders the same em-dash placeholder for an absent
+                      value, and this one did not, so a public profile read
+                      "ID :" with a label and nothing after it. The fallback is
+                      added rather than the row removed because the row is still
+                      correct for a member viewing their OWN profile, where
+                      `state.auth.user` does carry `uniID`. */}
+                  <dd className="text-muted-foreground">ID : {member.universityId || "—"}</dd>
                 </div>
                 <div className="flex items-center gap-2">
                   <BadgeCheck className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

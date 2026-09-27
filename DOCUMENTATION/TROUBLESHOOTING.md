@@ -2,29 +2,30 @@
 
 Real problems you are likely to hit with the CPCCU platform, based on the actual architecture. Each entry states the symptom, the likely cause, and the fix.
 
-> Backend-side issues (MongoDB, Resend, Cloudinary, Render) have their own troubleshooting table in [cpccu-server/docs/SETUP.md](https://github.com/cpccu/cpccu-server/blob/dev/docs/SETUP.md).
+> **The frontend and the API are the same application.** Pages are served from the Next.js app and the API is mounted at `/api/v1` inside it, reached same-origin. There is no separate backend to start, no second host, and no CORS to configure. Anything below that used to tell you to start a second process is history.
 
 ---
 
-## 1. Frontend cannot connect to the backend
+## 1. The frontend cannot reach the API
 
-**Symptoms:** every API-backed page shows fallback data; Network tab shows failed requests to `.../api/v1/...`; the visitor counter stays 0.
+**Symptoms:** every API-backed page shows fallback data; the Network tab shows failed requests to `/api/v1/...`; the visitor counter stays 0.
 
 **Causes & fixes:**
 
-1. **Backend isn't running** — start `cpccu-server` (`npm run dev`). Verify with `curl http://localhost:<PORT>/` (the backend's port — `3000` by default, or `5000` if you set `PORT=5000` in `cpccu-server/.env`) — expect the plain-text heartbeat.
-2. **Wrong `NEXT_PUBLIC_API_BASE_URL`** — check `.env` (frontend) matches the backend origin + `/api/v1`. Default is `http://localhost:5000/api/v1`. Remember: changes to `NEXT_PUBLIC_*` require a dev-server restart / redeploy.
-3. **Deployed mismatch** — on Vercel the variable must point at the Render service (`https://<service>.onrender.com/api/v1`), not localhost. See [DEPLOYMENT.md](./DEPLOYMENT.md#2-backend--render).
-4. **CORS blocking** — the browser console shows a CORS error. The backend allow-list includes `localhost:3000..3002`, `cpccu.club`, `cpccu.pro.bd`, and the Vercel preview domain. If you run the frontend on a different origin, add it to the backend's `CORS_ORIGIN` env var (no code change needed).
+1. **The app isn't running** — start it with `npm run dev` (pages *and* API on `http://localhost:3000`). Verify with `curl http://localhost:3000/api/v1` — expect the plain-text heartbeat. If that fails, the route handlers did not build or serve; check the server console first.
+2. **The base path was changed** — it is the hard-coded relative literal `/api/v1` in `src/services/baseApi.js`. There is no environment variable to fix, and a stale absolute origin cannot be reintroduced without failing `test/client-endpoint-parity.test.js`.
+3. **Missing secrets → 500s, not 401s.** `MONGODB_URI`, `ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET` and `PASSWORD_TOKEN_SECRET` are validated **lazily**, on first use, so a missing one builds green and fails at runtime. The 500's message names the missing variables — read it rather than assuming a code bug.
+4. **No database** — `MONGODB_URI` pointing at a reachable but empty database is *not* an error; most public pages fall back to `data/*.json` and the site looks healthy. Confirm with `GET /api/v1/content/events` before concluding the API is broken.
+5. **CORS is not a possible cause.** The browser never makes a cross-origin API request, so there is no allow-list to extend and no preflight to satisfy. If you are seeing a CORS error, you are pointed at some *other* host, which means the base path is wrong.
 
 ## 2. OTP email not arriving
 
 **Causes & fixes:**
 
-1. **`RESEND_API_KEY` missing/invalid on the backend** — check backend logs (`Failed to send registration OTP` / `Resend API error`). Resend rejects unverified sender domains; `noreply@cpccu.club` must be verified in the Resend account.
+1. **`RESEND_API_KEY` missing/invalid** — check the server logs (`Failed to send registration OTP` / `Resend API error`). Resend rejects unverified sender domains; `noreply@cpccu.club` must be verified in the Resend account. The client is constructed lazily, so a missing key fails the first send rather than the build.
 2. **Emails in spam** — check spam/junk; the sender is `CPCCU <noreply@cpccu.club>`.
 3. **Wrong email case** — registration lowercases the email, but `send-otp` looks it up by the raw input. Submit the same casing you registered with (known debt, see [SECURITY.md](./SECURITY.md)).
-4. **Rate limited** — `POST /auth/send-otp` allows 5 requests / 15 min per IP (`429`). Wait and retry.
+4. **Rate limited** — `POST /auth/send-otp` allows 5 requests / 15 min per IP (`429`). Wait and retry. Note that the store behind that limiter is in-process, so on a multi-instance deployment the limit is enforced **intermittently** — see [BACKEND_MIGRATION.md](./BACKEND_MIGRATION.md) §8.
 
 ## 3. Verification popup issues
 
@@ -34,20 +35,25 @@ Real problems you are likely to hit with the CPCCU platform, based on the actual
 
 ## 4. Login fails with "Please verify your email to continue"
 
-This is **by design** — the backend enforces email verification (`403` + code `EMAIL_NOT_VERIFIED`) and issues no session for unverified accounts. Complete the OTP verification (popup should open automatically), then log in again. This is the current security contract — do not weaken it client-side.
+This is **by design** — the server enforces email verification (`403` + code `EMAIL_NOT_VERIFIED`) and issues no session for unverified accounts. Complete the OTP verification (popup should open automatically), then log in again. This is the current security contract — do not weaken it client-side.
 
-## 5. Session / token issues
+## 5. Session issues
 
-- **"Session expired" / redirected to login after refresh** — the frontend stores only the access token in `localStorage` (`token`). On app load, `ProviderWrapper` validates it via `GET /users/user`; if invalid, credentials are cleared. Log in again.
-- **No auto-refresh on the frontend** — there is no refresh-token flow in this repo. The backend renews the access-token cookie transparently for cookie-based requests, but the `localStorage` bearer token is not refreshed. If you need longer sessions, that's a planned architecture change (see [ADR.md](./ADR.md#adr-012--future-decisions-planned-not-implemented)).
+The session is the **`httpOnly` cookie**. The client holds no token, so most "my token expired" reasoning from before the cutover does not apply.
+
+- **"Session expired" / redirected to login after a refresh** — the cookie is gone or expired. `ProviderWrapper` calls `GET /api/v1/users/user` on every page load; a 401 there dispatches `clearCredentials` and that is what "logged out" means. **This is the request to debug** — a failing auth check *is* `GET /api/v1/users/user` 401ing. The client cannot clear the cookies itself; they are cleared by `POST /auth/logout` or they expire.
+- **Everything renders logged out, even right after logging in** — check whether `GET /api/v1/users/user` is actually being sent. It is called with **no `skip` gate**, because the credential is a cookie the browser sends automatically; a stale `skip: !localStorage.token` would make it never fire and the site permanently anonymous.
+- **A stale `user` object in `localStorage` is not a session.** It is a cache for first paint and is overwritten by `GET /users/user` before anything trusts it. Never use it to decide whether someone is logged in — a logged-out visitor on a shared machine is in exactly that state.
+- **No client-side refresh flow, and none is needed.** The server renews the access-token cookie transparently whenever an expired token is presented. `GET /auth/refresh-token` exists but the client never calls it.
+- **Signing out did not clear everything** — the stale `localStorage` `token` key is removed on the first post-cutover sign-out, but a browser that has not signed out since the cutover may still hold one. It is dead weight: nothing reads it.
 
 ## 6. Admin panel problems
 
 - **"Admin access required"** — your account's `roles.role` is not `admin`/`moderator`/`mentor`. Have an existing admin change it in `/admin/members`.
 - **Admin page redirects to `/login`** — you're not authenticated (or hydration hasn't finished); log in first.
-- **Contributors page shows "Live sync unavailable" / amber banner** — the backend couldn't fetch `data/contributors.json` from GitHub. Causes: `CONTRIBUTOR_GITHUB_TOKEN` missing/expired on the server (returns `503`), the token lacks access, or GitHub rate limits. The page falls back to the bundled JSON. Fix the token on Render; see [DEPLOYMENT.md](./DEPLOYMENT.md).
+- **Contributors page shows "Live sync unavailable" / amber banner** — the server couldn't fetch `data/contributors.json` from GitHub. Causes: `CONTRIBUTOR_GITHUB_TOKEN` missing/expired on the server (returns `503`), the token lacks access, or GitHub rate limits. The page falls back to the bundled JSON. Fix the token in the Vercel environment variables; see [DEPLOYMENT.md](./DEPLOYMENT.md).
 - **Saving a contributor fails** — only `batch` and `linkedin` are writable; role and GitHub fields are read-only by design. A `404` means the GitHub username wasn't found in `data/contributors.json` (it may not be synced yet — run the workflow).
-- **Statistics show zeros** — statistics are **derived** from real data (members, gallery, events, certificates, visitor counter, verification logs). Empty collections = zeros. Seed data with `npm run data:seed` (from `cpccu-server`) or add real records. There is no manual edit form (no `PATCH /admin/statistics`).
+- **Statistics show zeros** — statistics are **derived** from real data (members, gallery, events, certificates, visitor counter, verification logs). Empty collections = zeros, and most public pages fall back to `data/*.json` in the meantime. There is no seeder in this repository and no manual edit form (no `PATCH /admin/statistics`), so adding records through the admin panel or a script is the only route.
 
 ## 7. Certificate page problems
 
@@ -55,11 +61,16 @@ This is **by design** — the backend enforces email verification (`403` + code 
 - **Profile shows no certificates** — the profile fetches certificates by the member's student ID (`uniID`). If the certificate's `recipientId` doesn't exactly match the user's `uniID` (case/spacing), nothing shows.
 - **Verification statistics don't change** — success/failure counts come from `CertificateVerificationLog`; they update as people use the verify page.
 
-## 8. Vercel / Render environment mismatch
+## 8. Vercel deployment problems
 
-- **Site works locally but not on Vercel** — check the Vercel project's `NEXT_PUBLIC_API_BASE_URL` (Environment Variables) and redeploy after changing it (it's inlined at build time).
-- **Backend deployed but frontend errors** — confirm the Render service is up (`https://<service>.onrender.com/` heartbeat) and that `NODE_ENV=production` is set on Render (enables HSTS).
-- **CORS errors on the live site** — the backend allow-list must include your exact frontend origin (including `https://`). Use `CORS_ORIGIN` for anything not in the built-in list.
+**Check the CSRF allow-list first.** `WEB_DOMAIN` and `NEXT_PUBLIC_SITE_URL` seed the origin allow-list in `src/lib/server/request.js`, and a wrong or missing value **403s every unsafe method** — login, registration, profile edits, uploads, the admin panel — while reads and the homepage keep working perfectly. The site looks healthy and nothing saves. Both must be the **bare origin with the scheme and no trailing slash** (e.g. `https://cpccu.club`). The `www.` sibling is derived automatically, so listing one half of a pair is not the problem. For a host that is genuinely neither, add it to `EXTRA_ALLOWED_ORIGINS` (comma-separated, additive only).
+
+Other deploy issues:
+
+- **Site works locally but not on Vercel** — the usual cause is missing secrets. `validateEnv()` is lazy, so a deploy with none of the four required values set builds green and fails at runtime with 500s. Check them in **Settings → Environment Variables**, and remember they must each be a *different* random string.
+- **Changed `NEXT_PUBLIC_SITE_URL` and nothing changed** — `NEXT_PUBLIC_*` values are **inlined at build time**. Editing the dashboard does not affect any already-built bundle; trigger a rebuild. (It is the only `NEXT_PUBLIC_*` variable left, and it is not an API URL.)
+- **CORS errors on the live site** — not expected, and not fixable by configuration. The client is same-origin by design. A CORS error means something is being requested from a different host than the one serving the page.
+- **`getClientIp` and rate limiting** — every IP-keyed limiter trusts `x-real-ip` / `x-vercel-forwarded-for` / `x-forwarded-for` because the Vercel edge overwrites them. Hosting this app anywhere else makes all of them forgeable with a single header; `src/lib/server/request.js` documents the requirement and the blast radius. Separately, the in-process rate-limit store is not shared across instances, so the limiters are only intermittently enforced — see [BACKEND_MIGRATION.md](./BACKEND_MIGRATION.md) §8 before declaring a deploy hardened.
 
 ## 9. Contributor GitHub Action failure
 
@@ -71,14 +82,17 @@ The `update-contributors.yml` workflow (frontend repo, `release` branch, daily 1
 
 The workflow commits `data/contributors.json` directly to `release`. If the JSON looks stale, re-run the workflow manually (Actions → Update Contributors → Run workflow).
 
-## 10. Build / lint failures
+## 10. Build / lint / test failures
 
-- **`npm run build` fails on image domains** — `next.config.mjs` allows all remote patterns; if you add a new image host, verify it's reachable over HTTPS (CSP `img-src` in `src/proxy.ts` allows `https:`).
-- **`npm run lint` doesn't run at all** — `next lint` was removed in Next.js 16, and the installed ESLint 10 needs a flat config (`eslint.config.js`) while the repo only has `.eslintrc.cjs`. This is a pre-existing toolchain issue, not your code — verify with `npm run build` instead until the repo migrates to flat config.
-- **CSP blocks a new external origin at runtime** — update `connect-src` in `src/proxy.ts` (production CSP) when adding new API/font/CDN origins.
+- **`npm run build` fails on an image host** — `next.config.mjs` allows exactly two remote patterns (`res.cloudinary.com`, `avatars.githubusercontent.com`). Adding a host means adding it there **explicitly**; do not widen it back to `hostname: "**"`, which is a real SSRF surface (see [BACKEND_MIGRATION.md](./BACKEND_MIGRATION.md) §5.14). The error is `Invalid src prop … hostname is not configured`.
+- **`npm test` reports a client URL with no `route.js`** — you added, renamed, moved or re-methoded an endpoint on one side only. `test/client-endpoint-parity.test.js` joins the two; fix it by adding the route or repointing the client, and if the endpoint is genuinely not client-facing add a reasoned entry to `SKIPPED_NOT_CLIENT_FACING`. **Do not delete the assertion.**
+- **`npm test` reports a retired origin under `src/`** — the string `localhost:5000` or `cpccu-server.onrender.com` has reappeared in a comment, a default or a config. The whole point of that check is that a stale origin gets pasted back in from stale docs.
+- **ESLint** — `npm run lint` works. It is `eslint .` against the flat config in `eslint.config.mjs`; the old `next lint` script and `.eslintrc.cjs` are gone. The config is deliberately **warn-first** for advisory rules, so a large warning count is the recorded pre-existing backlog, not a regression; `error` still fails the command and CI.
+- **CSP blocks a new external origin at runtime** — update `connect-src` in `src/proxy.ts` (production CSP) when adding new font/CDN origins.
 
 ## 11. Misc
 
-- **Bootcamp leaderboard errors** — `GOOGLE_SHEETS_API_KEY` / `BOOTCAMP_SHEET_ID` are backend vars; if missing, the backend returns `500` and the page shows a hint.
-- **Image uploads fail** — uploads go through the backend (`POST /admin/uploads/image` for admin, `PATCH /users/user/upload-image/:key` for profile images) → Cloudinary. Check backend Cloudinary credentials and the 5 MB file limit.
-- **"Unable to Load Profile" / "Profile Not Found"** — the profile page couldn't fetch the user (backend down) or the `id` (ObjectId or `uniID`) doesn't exist.
+- **Bootcamp leaderboard errors** — `GOOGLE_SHEETS_API_KEY` / `BOOTCAMP_SHEET_ID` are server-side variables read by the bootcamp leaderboard controller; if missing, the endpoint returns `500` and the page shows a hint.
+- **Image uploads fail** — uploads go to Cloudinary via `POST /admin/uploads/image` (admin) and `PATCH /users/user/upload-image/:key` (profile images). Check the Cloudinary credentials, and note the cap is **4 MiB per file** (`MAX_UPLOAD_BYTES`), not 5 MB — the limit was lowered to sit just under Vercel's 4.5 MB edge cap so our code produces the documented 400 instead of an opaque platform error.
+- **A write returns `403 Cross-origin request rejected` while reads work** — this is the CSRF allow-list, not a permissions problem. See §8.
+- **"Unable to Load Profile" / "Profile Not Found"** — the profile page couldn't fetch the user (API or database unreachable) or the `id` (ObjectId or `uniID`) doesn't exist.

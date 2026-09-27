@@ -52,10 +52,27 @@ export function AdminSidebar() {
         // machine. This is the identical omission that was fixed in
         // `src/components/Layout/Profile.jsx`; the two sign-out buttons must
         // not drift apart.
-        await logout();
-        dispatch(clearCredentials());
-        dispatch(baseApi.util.resetApiState());
-        router.push('/login');
+        // `try/finally` (not a bare `await`) for the same reason as
+        // `src/components/Layout/Profile.jsx`: an admin who pressed "Log out"
+        // must never be left looking at a signed-in panel because the network
+        // was down. The `catch` exists only to record the failure — the
+        // `finally` does the clearing either way.
+        try {
+            // `.unwrap()` so the failure mode is a real `catch` rather than a
+            // resolved `{ error }` that the next line would ignore. Without it a
+            // failed logout is indistinguishable from a successful one, and the
+            // UI clears while the refresh token stays live on the server for the
+            // full seven days its cookie is scoped to.
+            await logout().unwrap();
+        } catch (logoutError) {
+            console.error('Logout request failed; clearing local session anyway.', {
+                message: logoutError?.message,
+            });
+        } finally {
+            dispatch(clearCredentials());
+            dispatch(baseApi.util.resetApiState());
+            router.push('/login');
+        }
     };
     return (<Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="px-4 py-5">

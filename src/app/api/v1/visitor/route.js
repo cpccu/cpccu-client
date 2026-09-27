@@ -19,6 +19,14 @@ import { defineRoute } from '@/lib/server/handler';
  * empty. See the reworded block in `src/app/api/visitor/route.js` for the full
  * reasoning and for why both mounts nevertheless stay.
  *
+ * UPDATE (cutover, 2026-09): `NEXT_PUBLIC_API_BASE_URL` has been DELETED from the
+ * client along with every other read of it, and `VisitorCounter.jsx` now builds
+ * `/api/v1/visitor` — THIS path — as a hard-coded literal with no fallback
+ * branch. So the "only falls back … when the variable is empty" clause above is
+ * now history: the bare `/api/visitor` mount has no in-app consumer at all. It
+ * is still PRESERVED, for the backwards-compatibility reasons in
+ * `src/app/api/visitor/route.js`; "no in-app consumer" is not "safe to delete".
+ *
  * `public: true` — public site decoration, `{ count }` envelope, no user data.
  */
 

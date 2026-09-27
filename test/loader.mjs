@@ -38,7 +38,13 @@
 //   3. `next/<x>`      -> `next/<x>.js`, because the `next` package ships no
 //      `exports` map and Node's ESM resolver will not guess the extension for
 //      an extensionless subpath of an exports-less package (the Next bundler
-//      does guess, which is why the app builds and a bare `node` does not).
+//      does guess, which is why the app builds and a bare `node` does not). The
+//      same retry applies to a RELATIVE specifier inside this repo, because the
+//      email templates under `src/lib/server/email/` import their siblings as
+//      `./layout` and `./theme`; without it `auth.controller.js` — which imports
+//      the email module — could not be loaded by ANY test, and the in-repo-only
+//      restriction is what keeps a mistyped BARE package name from being
+//      silently redirected (see the detailed note at the retry itself).
 //
 //   4. Additionally, `format: 'module'` is asserted for in-repo `.js` files, to
 //      suppress Node's `MODULE_TYPELESS_PACKAGE_JSON` re-parse warning. Each of
@@ -68,6 +74,27 @@ import path from "node:path";
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
 const SERVER_ONLY_STUB = pathToFileURL(
   path.join(import.meta.dirname, "stubs", "server-only.mjs"),
+).href;
+
+/**
+ * The `resend` stub, resolved in place of the real mail SDK.
+ *
+ * OPT-IN VIA AN ENVIRONMENT VARIABLE, and that gating is the point rather than a
+ * convenience. A stub that were always active would mean no test in this suite
+ * could ever exercise a real `Resend` construction, and — more importantly — a
+ * future test that legitimately wanted the real SDK would have no way to ask for
+ * it. `test/auth-reset-link.test.js` sets `CPCCU_TEST_STUB_RESEND=1` before its
+ * dynamic imports; nothing else does, so every other test resolves the real
+ * package exactly as production does.
+ *
+ * WHY SUBSTITUTION HAPPENS HERE AND NOT IN THE TEST FILE. `resend` is an
+ * ESM-first package: its `exports` map routes `import` to `dist/index.mjs`, so it
+ * is loaded as real ESM and `require.cache` — the mechanism the `next/headers`
+ * stub below relies on — cannot touch it. Resolution is the only interception
+ * point available, and the loader already exists to provide one.
+ */
+const RESEND_STUB = pathToFileURL(
+  path.join(import.meta.dirname, "stubs", "resend.mjs"),
 ).href;
 
 /**
@@ -206,6 +233,13 @@ registerHooks({
       return { url: SERVER_ONLY_STUB, shortCircuit: true };
     }
 
+    // The mail-transport stub. See the `RESEND_STUB` note for why this is
+    // opt-in and why it is a resolution-time substitution rather than a
+    // `require.cache` entry.
+    if (specifier === "resend" && process.env.CPCCU_TEST_STUB_RESEND === "1") {
+      return { url: RESEND_STUB, shortCircuit: true, format: "module" };
+    }
+
     if (specifier.startsWith("@/")) {
       const url = resolveAlias(specifier);
       if (url) return { url, shortCircuit: true, format: "module" };
@@ -220,7 +254,9 @@ registerHooks({
     try {
       resolved = nextResolve(specifier, context);
     } catch (error) {
-      // EXTENSIONLESS `next/*` SUBPATH FALLBACK. `next/headers` (imported by
+      // EXTENSIONLESS FALLBACK, IN TWO DISJOINT CASES.
+      //
+      // CASE A — `next/<x>`. `next/headers` (imported by
       // `src/lib/server/auth.js` and `src/lib/server/shim.js`) is a plain
       // CommonJS file at `node_modules/next/headers.js`, and the `next` package
       // ships NO `exports` map. Node's ESM resolver deliberately does not guess
@@ -229,17 +265,42 @@ registerHooks({
       // hint. The Next bundler does guess, which is why the application builds
       // and this test process did not.
       //
-      // SCOPED TO `next/` DELIBERATELY. A blanket "retry with `.js`" fallback
-      // would convert every genuine typo in a specifier into a different
-      // failure, or worse, into a silent success against an unintended file.
-      // `next/` is a first-party package under our own lockfile, it is the only
-      // one imported extensionlessly in this codebase, and the retry is a
-      // documented mirror of what the Next resolver already does for it.
-      if (
-        error?.code === "ERR_MODULE_NOT_FOUND" &&
-        specifier.startsWith("next/")
-      ) {
-        resolved = nextResolve(`${specifier}.js`, context);
+      // CASE B — A RELATIVE SPECIFIER INSIDE THIS REPO. The email templates
+      // under `src/lib/server/email/` import their siblings extensionlessly
+      // (`from './layout'`, `from './theme'`, `from './components/button'`), and
+      // so do `src/lib/certificates/index.js` and `src/app/redux/store.js`.
+      // Node does not guess there either. The effect was that
+      // `auth.controller.js` — which imports the email module — could not be
+      // loaded by ANY test, so the whole of the auth controller was untestable
+      // even though its sibling controllers are covered.
+      //
+      // WHY CASE B IS SAFE, AND WHY IT IS NOT EXTENDED TO BARE SPECIFIERS. The
+      // obvious hazard of any "retry with `.js`" fallback is that it converts a
+      // genuine typo into a different failure, or into a silent success against
+      // an unintended file. Two properties keep that from applying here: the
+      // retry runs only AFTER Node has already failed, so a real typo still
+      // throws (from the second attempt, naming the specifier it retried), and
+      // it is restricted to RELATIVE specifiers, never to a bare package name —
+      // so a mistyped `@/…` or `lodash-merge` cannot be silently redirected.
+      // A blanket bare-specifier retry is still refused, for exactly the reason
+      // the original comment gave.
+      if (error?.code === "ERR_MODULE_NOT_FOUND") {
+        if (specifier.startsWith("next/")) {
+          resolved = nextResolve(`${specifier}.js`, context);
+        } else if (specifier.startsWith(".") && context.parentURL) {
+          // ANCHORED TO `context.parentURL`, THE MODULE THAT ASKED — and never to
+          // `error.url`. `error.url` is the ALREADY-RESOLVED absolute path Node
+          // failed on, so joining the specifier against it treats a FILE as if it
+          // were a directory: `./components/button` imported by
+          // `email/layout.js` would resolve against `email/components/button`
+          // and produce `email/components/components/button.js`. The importer
+          // is the only correct base, and taking it from `context` (rather than
+          // `process.cwd()`) is also what keeps the loader CWD-independent.
+          const base = new URL(specifier, context.parentURL).href;
+          resolved = nextResolve(`${base}.js`, context);
+        } else {
+          throw error;
+        }
       } else {
         throw error;
       }

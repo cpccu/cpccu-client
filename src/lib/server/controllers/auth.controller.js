@@ -455,7 +455,20 @@ const loginHandler = async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { user: loggedInUser, token: accessToken },
+        // NO `token` IN THE BODY. It used to be `{ user, token: accessToken }`.
+        // The same JWT is set, one line above, as an `httpOnly` cookie, and
+        // returning a second copy in readable JSON defeats the entire purpose of
+        // `httpOnly`: any XSS on this origin can read `response.data.token` out
+        // of memory and exfiltrate it, whereas the cookie is unreachable from
+        // JavaScript by construction. The credential is the cookie; the body
+        // carries only who the user is, which is not a secret.
+        //
+        // The client was changed with this in the same pass — `localStorage` no
+        // longer holds a token, and `baseApi.js` no longer attaches an
+        // `Authorization` header — so the two halves cannot drift back apart
+        // without the client visibly breaking (a 401 on every authenticated
+        // query if the body token were relied on and missing).
+        { user: loggedInUser },
         'Login successfully',
       ),
     );
@@ -511,7 +524,7 @@ const refreshAccessToken = async (req, res) => {
   // than a leak: the next check reads `user.refreshTokens` to confirm the
   // presented token is still a LIVE session entry. Projecting it away would
   // make `.some` throw a TypeError and 401 every refresh. Nothing serialises
-  // this document — the response body below is `{ accessToken }` only.
+  // this document — the response body below is `{ success: true }` only.
   const user = await User.findById(decodedToken._id).select('-password');
 
   if (!user) {
@@ -541,7 +554,15 @@ const refreshAccessToken = async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { accessToken: renewToken },
+        // `{ success: true }`, NOT `{ accessToken }`. The renewed token is the
+        // cookie set one line above and is `httpOnly`, so a body copy of it
+        // could only ever be read by whatever XSS is already on the page. An
+        // explicit `success` flag is kept rather than an empty `{}` so a client
+        // can branch on "the refresh worked" without inspecting a shape — the
+        // envelope's own `success` is not always in the payload slice, and the
+        // `accessToken` key's absence is a much subtler signal to code against
+        // than an affirmative one.
+        { success: true },
         'Access token renewed successfully',
       ),
     );
@@ -583,9 +604,36 @@ const logoutHandler = async (req, res) => {
 // ========================= FORGOT PASSWORD =========================
 
 const forgottenPasswordHandler = async (req, res) => {
-  const { email } = req.params;
+  // READ FROM THE BODY, NOT FROM `req.params` — CHANGED 2026-09 ALONGSIDE THE
+  // `GET` -> `POST` MIGRATION of `POST /api/v1/auth/reset-link`.
+  //
+  // WHY, AND IT IS THE WHOLE POINT OF THE MIGRATION. The address used to be a
+  // PATH SEGMENT (`reset-link/[email]/route.js` served
+  // `req.params.email`), which combined with a `GET` verb — and `GET` is in
+  // `SAFE_METHODS`, so `assertSameOrigin` was a no-op on the route — meant a
+  // bare cross-site `<img src>` or a top-level navigation was enough to make the
+  // server send a real CPCCU-branded password-reset mail to an address an
+  // attacker chose. That is a mail-bomb and sender-quota-burn primitive, and a
+  // phishing lure, and it needed no credential, no script on the page and no
+  // CORS. `authEmailRateLimiter` does not cover it: its store is per-INSTANCE,
+  // so on Vercel every warm lambda keeps its own counter.
+  //
+  // A `POST` body cannot be produced by an image tag, a link, or a cross-site
+  // navigation, and a cross-origin `POST` of `application/json` is preflighted —
+  // so the same-origin check is armed and can refuse the request before any mail
+  // goes out. Reading the address from the body is what makes that true; a `GET`
+  // route could only read it from the path, which is the exploitable half of the
+  // old design. DO NOT REVERT THIS TO `req.params` without also reverting the
+  // route back to `GET`, and see that route's docblock for why that is not a
+  // change to make.
+  //
+  // `req.body` may be `null` — the shim passes `null` through for a request with
+  // no parseable body rather than coercing it to `{}`, so the destructuring is
+  // guarded and the handler raises its own 400 below rather than throwing a
+  // `TypeError` that `toErrorResponse` would turn into a 500.
+  const email = req.body?.email;
 
-  if (!email || email.trim() === '') {
+  if (!email || typeof email !== 'string' || email.trim() === '') {
     throw new ApiError(400, 'Email is required');
   }
 
@@ -598,9 +646,23 @@ const forgottenPasswordHandler = async (req, res) => {
   // "email sent", and the 404 for a missing user is deliberately NOT raised.
   // Answering differently would turn this unauthenticated endpoint into an
   // account-existence oracle: anyone could enumerate registered addresses by
-  // watching which ones came back 200-with-mail versus 200-without. The `email`
-  // is in the URL path, so this also keeps it out of a request body that might
-  // be logged.
+  // watching which ones came back 200-with-mail versus 200-without.
+  //
+  // THIS IS THE PROPERTY THE `GET` -> `POST` MIGRATION HAD TO PRESERVE, and the
+  // migration did not weaken it — the verb changed, the address moved from the
+  // path into the body, and both responses are still the same
+  // `ApiResponse(200, null, 'Reset link sent successfully!')` below. Asserted in
+  // `test/auth-reset-link.test.js` on both paths, so a future change that
+  // differentiates them fails a test rather than shipping an enumeration oracle.
+  //
+  // NOTE THE CORRECTION to the rationale that used to sit here. The old comment
+  // justified keeping the address out of the body because "the `email` is in the
+  // URL path, so this also keeps it out of a request body that might be logged".
+  // That was true when it was written and is no longer a reason for anything: a
+  // path segment is logged by every proxy, CDN and access log on the way in, and
+  // a body is not — so the original arrangement leaked the address MORE, not
+  // less. The property worth preserving is the identical response, which is what
+  // the two branches below actually do.
   if (!user) {
     return res
       .status(200)
