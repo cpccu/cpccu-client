@@ -11,43 +11,16 @@ const path = require('path');
 const envPath = path.resolve(__dirname, '..', '.env');
 const projectJsonPath = path.resolve(__dirname, '..', '.vercel', 'project.json');
 
-// Resolve project linkage.
-//
-// THE OVERRIDES EXIST BECAUSE `.vercel/project.json` DESCRIBES ONLY *A* LINK, and
-// this repo is linked to more than one Vercel project over its life: the branch
-// preview the team actually uses lives in a different team than the one `.vercel`
-// currently points at. With the link as the only source of truth there is no way
-// to sync that preview without destructively re-linking the repo (which changes
-// what `vercel --prod` deploys to), so the target is overridable per-invocation
-// and the file remains the default.
-const projectIdOverride = process.env.VERCEL_PROJECT_ID;
-const teamIdOverride = process.env.VERCEL_TEAM_ID;
-
+// Read project linkage
 let projectId, teamId;
-if (projectIdOverride && teamIdOverride) {
-  ({ projectId, teamId } = { projectId: projectIdOverride, teamId: teamIdOverride });
-  console.log(
-    `Target overridden: project=${projectId} team=${teamId} ` +
-      '(from VERCEL_PROJECT_ID / VERCEL_TEAM_ID)'
-  );
-} else if (projectIdOverride || teamIdOverride) {
-  console.error(
-    'Set BOTH VERCEL_PROJECT_ID and VERCEL_TEAM_ID, or neither. ' +
-      'Falling back to .vercel/project.json.'
-  );
+try {
+  const pj = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
+  projectId = pj.projectId;
+  teamId = pj.orgId;
+} catch (e) {
+  console.error('Cannot read .vercel/project.json — is the project linked?');
+  process.exit(1);
 }
-
-if (!projectId || !teamId) {
-  try {
-    const pj = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
-    projectId = pj.projectId;
-    teamId = pj.orgId;
-  } catch (e) {
-    console.error('Cannot read .vercel/project.json — is the project linked?');
-    process.exit(1);
-  }
-}
-console.log(`Using project=${projectId} team=${teamId}`);
 
 // Parse .env
 const content = fs.readFileSync(envPath, 'utf8');
@@ -68,22 +41,11 @@ for (const line of content.split('\n')) {
   envVars[key] = value;
 }
 
-// The CLI keeps ONE ambient login, so syncing a project in a second team with
-// that login either fails or — worse — silently acts on the wrong team. Passing
-// `VERCEL_TOKEN` makes the target explicit per invocation instead of requiring a
-// re-login that would break every other Vercel command in the repo.
-const tokenArg = process.env.VERCEL_TOKEN ? ` --token ${process.env.VERCEL_TOKEN}` : '';
-const vercel = `npx vercel${tokenArg}`;
-
-if (process.env.VERCEL_TOKEN) {
-  console.log('Using VERCEL_TOKEN for CLI authentication.');
-}
-
 // List existing env vars on the project, then delete them all for a clean slate
 let existingVars = [];
 try {
   const listResult = execSync(
-    `${vercel} api /v3/projects/${projectId}/env?teamId=${teamId}`,
+    `npx vercel api /v3/projects/${projectId}/env?teamId=${teamId}`,
     { encoding: 'utf8', timeout: 15000 }
   );
   existingVars = JSON.parse(listResult);
@@ -95,7 +57,7 @@ try {
 for (const v of existingVars) {
   try {
     execSync(
-      `${vercel} api /v3/projects/${projectId}/env/${v.id}?teamId=${teamId} --dangerously-skip-permissions -X DELETE`,
+      `npx vercel api /v3/projects/${projectId}/env/${v.id}?teamId=${teamId} --dangerously-skip-permissions -X DELETE`,
       { encoding: 'utf8', timeout: 15000, stdio: 'pipe' }
     );
     console.log(`Deleted existing: ${v.key}`);
@@ -115,7 +77,7 @@ for (const [key, value] of Object.entries(envVars)) {
   }
 
   const body = JSON.stringify({ key, value, target: ['preview', 'production'], type: 'encrypted' });
-  const cmd = `${vercel} api /v3/projects/${projectId}/env?teamId=${teamId} -X POST --input -`;
+  const cmd = `npx vercel api /v3/projects/${projectId}/env?teamId=${teamId} -X POST --input -`;
 
   try {
     const result = execSync(cmd, {
