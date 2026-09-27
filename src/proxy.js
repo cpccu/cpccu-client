@@ -9,8 +9,21 @@ function setSecurityHeaders(response: NextResponse, req: NextRequest) {
       'Content-Security-Policy',
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' https://vercel.live",
-        "script-src 'self' 'unsafe-inline' https://vercel.com",
+        // ONE `script-src`, NOT TWO. A previous revision listed
+        // `https://vercel.live` and `https://vercel.com` as two separate
+        // `script-src` directives. Per CSP, a duplicate directive is DISCARDED
+        // and the browser reports "Ignoring duplicate Content-Security-Policy
+        // directive 'script-src'", so the second origin silently stopped being
+        // enforced — the header looked stricter than it was.
+        "script-src 'self' 'unsafe-inline' https://vercel.live https://vercel.com",
+        // `frame-src` IS SET EXPLICITLY, AND IT HAS TO BE. Vercel's Toolbar and
+        // LiveReload inject an IFRAME from `https://vercel.live`, and `frame-src`
+        // falls back to `default-src 'self'`, which does not contain that origin
+        // — so the frame was blocked and the browser logged "Framing
+        // 'https://vercel.live/' violates the following Content Security Policy
+        // directive". Widening `script-src` (as the previous revision tried)
+        // cannot fix a framing error; only `frame-src` can.
+        "frame-src 'self' https://vercel.live https://vercel.com",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "img-src 'self' data: blob: https:",
         "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://res.cloudinary.com https://ui-avatars.com https: ws:",
