@@ -9,9 +9,8 @@ function setSecurityHeaders(response: NextResponse, req: NextRequest) {
       'Content-Security-Policy',
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' https://vercel.live",
-        "script-src 'self' 'unsafe-inline' https://vercel.com",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "script-src 'self' 'unsafe-inline'",
+        "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https:",
         "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://res.cloudinary.com https://ui-avatars.com https: ws:",
         "font-src 'self' https://fonts.gstatic.com data:",
