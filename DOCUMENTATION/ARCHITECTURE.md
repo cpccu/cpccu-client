@@ -65,6 +65,8 @@ cpccu-client/
 - `src/app/ScrollToTop.jsx` provides global scroll-to-top behavior.
 - `src/app/not-found.jsx` renders the custom 404 page.
 
+Nav visibility is data-driven from `data/global/navBar.json`, and some entries are **filtered at runtime**, not in the JSON. The `Hackathon` entry carries `requiresLiveHackathon: true`, which `NavBar.jsx` resolves by reading the cached `GET /content/hackathon` query: the entry is shown only on a `200`, and hidden while loading and on error. There is deliberately **no** separate `/content/hackathon/status` endpoint — that 200-vs-404 is the only bit the nav needs, and it is the same cache entry the `/hackathon` page reads, so clicking through costs zero extra requests.
+
 ### 3.2 Main Public Route Group (`(main)`)
 
 - Shared shell in `src/app/(main)/layout.jsx`: `Header` → `NavBar` → children → `Footer` → `GoToTop`.
@@ -82,6 +84,7 @@ cpccu-client/
 | `/donators` | Donators page |
 | `/event` | Event page |
 | `/gallery` | Gallery page |
+| `/hackathon` | Hackathon page — countdown, details, registration CTA, rule book, problem set (see §19) |
 | `/history` | Club history |
 | `/job-pipeline` | Developer job pipeline |
 | `/member` | Member directory |
@@ -110,6 +113,7 @@ cpccu-client/
 | `/admin/messages` | Contact messages |
 | `/admin/events` | Events |
 | `/admin/gallery` | Gallery |
+| `/admin/hackathon` | Hackathon (visibility toggle, rule book, problem set, CTA label, schedule) |
 | `/admin/jobs` | Developer profiles / job pipeline |
 | `/admin/alumni` | Alumni |
 | `/admin/contributors` | Contributors |
@@ -194,7 +198,7 @@ AdminStatistics, AdminCertificates, AdminSystemSettings, AdminRoles
 | `userApi` | `features/users/userApi.js` | user CRUD, image upload, job pipeline request/remove, password change, account deletion, projects CRUD |
 | `memberApi` | `features/members/memberApi.js` | public member directory |
 | `certificateApi` | `features/certificate/certificateApi.js` | certificate verify/search, stats, recent + public verify |
-| `contentApi` | `features/content/contentApi.js` | public content + statistics |
+| `contentApi` | `features/content/contentApi.js` | public content + statistics + hackathon + hackathon problem set |
 | `contactApi` | `features/contact/contactApi.js` | contact form submission |
 | `adminApi` | `features/admin/adminApi.js` | admin overview, members, content, roles, statistics, system settings, certificates, image upload |
 
@@ -210,7 +214,7 @@ AdminStatistics, AdminCertificates, AdminSystemSettings, AdminRoles
 
 `src/proxy.ts` implements Next.js 16's proxy (middleware) convention. It exports `proxy(request)` and applies security headers to every route except `_next/static` and `_next/image` (via `config.matcher`):
 
-- **Content-Security-Policy** — production only; restricts script/style/img/connect/font sources.
+- **Content-Security-Policy** — production only; restricts script/style/img/connect/font sources, and pins `frame-src` to `'self' https://drive.google.com https://docs.google.com` (see §19 and [SECURITY.md](./SECURITY.md#3-transport--headers)).
 - **X-Content-Type-Options** — `nosniff`
 - **Referrer-Policy** — `strict-origin-when-cross-origin`
 - **Permissions-Policy** — disables camera, microphone, geolocation, usb, payment, accelerometer, gyroscope, magnetometer
@@ -435,7 +439,8 @@ flowchart LR
 | Dashboard | `GET /admin/overview` | Live stats + Recharts (area, bar, pie) |
 | Members | `GET/POST/PATCH/DELETE /admin/members` | Approval, status, official role assignment |
 | Posts | Generic content `posts` | Title, content, cover image, status |
-| Events | Generic content `events` | Date phases, rewards, rules, buttons |
+| Events | Generic content `events` | Date phases, rewards, rules, buttons. Excludes hackathon rows from the public list |
+| Hackathon | Generic content `events` (same endpoint, no new admin route) | Visibility toggle, rule book, problem set, CTA label, Dhaka-time schedule |
 | Gallery | Generic content `gallery` + `gallery-events` | Image upload, event grouping |
 | Certificates | `GET/POST/PATCH/DELETE /admin/certificates` | Issue, bulk issue, delete |
 | Jobs | `GET /admin/content/profiles` | Developer profile review |
@@ -456,6 +461,9 @@ See [CPCCU_Admin_Panel_Implementation_Documentation.md](./CPCCU_Admin_Panel_Impl
 | File | Responsibility |
 | --- | --- |
 | `roles.js` | Official role helpers (see §10.3) |
+| `countdown.js` | Pure hackathon countdown arithmetic: `getCountdownPhase`, `getRemainingMs`, `splitDuration`, `getCountdownTarget`, `hasHackathonStarted` (see §19) |
+| `hackathon.js` | Client mirror of the server URL policy (`isSafeHttpUrl`, `toSafeHref`) + `deriveEmbeddableUrl` (see §19) |
+| `dhaka-time.js` | Asia/Dhaka conversion and formatting for admin-entered and displayed times (see §19) |
 | `certificates/` | Certificate parsing/sorting/badges/permissions (see §8.4) |
 | `certificates-data.js` | Static demo certificate dataset (`CERTIFICATES`, `CONTEST_NAMES`, `STATS`) |
 | `public-content.js` | Public content mappers (`chooseLiveItems`, `toPublicContributor`, `toPublicEvent`, `groupGalleryItemsByEvent`, ...) + GitHub username extraction |
@@ -474,6 +482,7 @@ See [CPCCU_Admin_Panel_Implementation_Documentation.md](./CPCCU_Admin_Panel_Impl
 | Hook | Purpose |
 | --- | --- |
 | `useAdminContent(resource, fallback)` | Local CRUD state for generic admin content tables with RTK Query + fallback JSON |
+| `useHackathonPhase({ startAt, endAt, serverPhase })` | The **single** source of the ticking hackathon phase for the countdown, the registration CTA and the problem-set panel (see §19) |
 | `useIsMobile()` | Mobile breakpoint detection (768px) via `matchMedia` |
 | `useToast()` / `toast()` | Global toast system (limit 1, reducer-based) |
 
@@ -491,9 +500,72 @@ See [CPCCU_Admin_Panel_Implementation_Documentation.md](./CPCCU_Admin_Panel_Impl
 | --- | --- | --- |
 | `NEXT_PUBLIC_API_BASE_URL` | Yes (prod) | `baseApi.js`, `certificateApi.js`, `certificate-metadata.js`, `VisitorCounter.jsx`, `BootcampLeaderboard.jsx` |
 
+⚠️ **`NEXT_PUBLIC_*` is inlined at build time**, so a set-but-wrong value silently wins in production and the `|| 'http://localhost:5000/api/v1'` fallback in `baseApi.js:4` never gets a chance to apply. The current `.env` deliberately leaves it unset and `.env.sample` carries it commented. If you do set it, set it for the build, not for the server.
+
+> ⚠️ **Any component that resolves its own base URL must use an absolute fallback.** `VisitorCounter.jsx` bypasses RTK Query, so it does not inherit `baseApi.js`'s fallback and has to resolve one itself — it now uses `http://localhost:5000`, matching `baseApi.js`. A `""` fallback silently degrades to the same-origin relative path `/api/visitor`, which Next does not serve (404), and the failure surfaces only as "Failed to fetch" in the console. This is the actual rule behind the fix; the file's own comment block records it.
+
 > `GOOGLE_SHEETS_API_KEY` and `BOOTCAMP_SHEET_ID` are **backend** variables referenced only in the leaderboard's error hint. `NODE_ENV` is used by `proxy.ts` to enable production-only headers.
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for production configuration.
+
+## 19. Hackathon
+
+Two routes, one data shape, and four client-side modules whose whole job is to keep the two from disagreeing.
+
+```mermaid
+flowchart TD
+    A[NavBar - navBar.json requiresLiveHackathon] -->|reads cached query| B[GET /content/hackathon]
+    B -->|200 or 404| A
+    B --> C[toPublicHackathon - renames + toSafeHref on every URL]
+    C --> D[Hackathon.jsx - page shell]
+    D --> E[HackathonCountdown]
+    D --> F[HackathonRegistrationCta]
+    D --> G[HackathonRuleBook - iframe or link card]
+    D --> H[HackathonProblemSet]
+    E & F & H -->|shared phase| I[useHackathonPhase - one clock, one phase]
+    I --> J[lib/countdown.js - pure arithmetic, mirrors the server]
+    H -->|skipped until started and signed in| K[GET /content/hackathon/problem-set]
+    C --> L[lib/dhaka-time.js - Asia/Dhaka display and input]
+```
+
+### 19.1 Data flow
+
+- `GET /content/hackathon` (no auth) is the **only** public read. `toPublicHackathon` (`src/lib/public-content.js`) renames the server's model names to UI names (`location → venue`, `registrationLink → registrationUrl`, `date/endDate → startAt/endAt`) and passes **every** URL through `toSafeHref`.
+- `toPublicHackathon` deliberately **does not** apply `chooseLiveItems`. That primitive is array-shaped (it reads `response.data` and `.map()`s it) and its fallback semantics — "show demo data on error" — are wrong for a page whose entire content is one record. Loading / error / empty are three explicit branches, following `JobPipeline.jsx`.
+- `toPublicEvent` also gained `isHackathon: event.type === 'hackathon'` and routes `btnLink` / `btnLink1` through the same `toSafeHref`. The flag is the one place the client decides "is this row a hackathon?"; `NoticeSection` and `EventLayout` both filter on it. The server already omits hackathons from the events list, so the client filter is a no-op in practice — deliberately, as the forward-compatible shape.
+
+### 19.2 The phase, and why it is derived twice
+
+The server resolves `phase` once at request time and ships it. `lib/countdown.js` mirrors that mapping client-side (`getCountdownPhase`, **inclusive** boundaries: `now === start` and `now === end` are both `live`) so a tab left open across a boundary updates without a refetch — no timer invalidates the `PublicContent: 'hackathon'` tag, so a refetch would mean a hard refresh.
+
+`useHackathonPhase` is the single hook that owns the clock (1 s interval) and the single source of the phase for the countdown, the CTA and the problem-set panel. It returns `{ now, phase }` where `now` is **`null` before mount**: reading the clock during render would make the first client render differ from the server's HTML (a hydration mismatch), so the server's verdict is used verbatim until the first tick. Components needing a neutral pre-mount state check `now === null`.
+
+`problemSetAvailable` comes from the server and is **advisory**. The client ANDs it with `hasHackathonStarted({ date: startAt })` — deliberately **not** with `phase === 'live' || 'ended'`, because the server's release predicate consults `date` only. A record with a valid start and a missing/inverted end resolves to `phase === 'unannounced'` while the server would still answer `200`; keying off `phase` produced a permanently dead button. The client query is `skip`ped entirely before release, so a signed-in visitor cannot even probe the endpoint.
+
+### 19.3 The rule book: iframe or link card
+
+`deriveEmbeddableUrl` (`src/lib/hackathon.js`) rewrites Google Drive `/view`, `/open?id=`, `uc?export=download&id=`, and Google Docs `gview` / `/document/d/<ID>/edit` into their embeddable preview forms, and returns `null` for any other host. `null` is a meaningful return, not a failure: `HackathonRuleBook` must then render an **"open in a new tab" card**, never `<iframe src={originalUrl}>`.
+
+Two properties make the coupling with the CSP hold:
+
+- The host allow-list is `drive.google.com` / `docs.google.com` only. Anything else in an iframe inside our own origin is a phishing / UI-redressing surface, and most document hosts send `X-Frame-Options: DENY` anyway.
+- **Every returned URL is rebuilt on a bare, canonical host** — never passed through verbatim. A `www.` prefix is stripped for the comparison *and* for the emitted `src`, because CSP host matching is exact and `frame-src` lists the non-`www.` form. Passing the admin's href through would work under `next dev` (no CSP) and render a silently blank frame in production.
+
+⚠️ **The CSP `frame-src` list and `EMBED_ALLOWED_HOSTS` are coupled on purpose. Add a host to one and you must add it to the other.** See [ADR-017](./ADR.md).
+
+### 19.4 Admin page
+
+`/admin/hackathon` (`src/app/admin/hackathon/page.jsx` + `src/components/hackathon-content.jsx`) reads and writes the **same** `/admin/content/events` records. There is no new backend route; the sidebar entry therefore carries the identical `roles: ['admin', 'moderator']` list as Events, and the page inherits the events authorisation.
+
+Its "current hackathon" lookup is a deliberate **mirror** of the server's `currentHackathonQuery`. If the two rules differ, the admin would be editing a record the public site is not showing — so any change to the server's selection rule must be made here in the same commit.
+
+Schedule input uses `datetime-local`, which yields a naive wall-clock string. It is interpreted as **Dhaka time** via `utcIsoFromDhakaInput` (explicit `+06:00`; Dhaka has observed UTC+6 with no DST since 2009), so the stored instant does not depend on the admin's device timezone. `events-content.jsx:133` still uses `new Date(value).toISOString()`, which interprets the input in the *browser's* zone — correct for a Dhaka admin, silently wrong for one abroad. That is left alone deliberately: changing it would rewrite the stored instant of every historical event.
+
+### 19.5 Timezone handling
+
+`lib/dhaka-time.js` is the only place that converts between the server's UTC ISO strings and Dhaka wall-clock. It is a dedicated module because two existing helpers are both wrong for this feature and were deliberately not reused: `lib/format-date.js` (its docstring claims UTC determinism but it formats a browser-local `Date`), and raw `new Date(datetimeLocalValue).toISOString()`. Both are reported, not fixed — changing either would alter every date on the public site or every historical event's stored instant, which is far outside a hackathon change.
+
+---
 
 ## 18. Current Notes and Inconsistencies
 
@@ -508,4 +580,8 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for production configuration.
 - `src/components/ADMIN/AdminPanel.jsx`, `src/components/Layout/Profile1.jsx`, and the legacy `PROFILE` components (`ProfileCard`, `ProfileDetails`, `ProfileID`, `ProfileBlog`, `Profile_Blog_Modal`, `ProfileNotFound`) are unused code kept in the tree.
 - There are two `ui/` folders (`src/components/ui/` and `src/components/CERTIFICATE/ui/`) with duplicated shadcn-style components.
 - `generateCertificateId` is a **local function** inside `src/components/certificates-content.jsx` (there is no `generateCertificateId.js` file).
-- `render.yaml` / `_render.yaml` remain in the repo from the earlier Render-based frontend deployment; production frontend hosting is now **Vercel**.
+- The former `render.yaml` / `_render.yaml` leftovers from the earlier Render-based frontend deployment have been **deleted**; production frontend hosting is **Vercel**. Nothing in the build or deploy path reads a Render config.
+- `events-content.jsx:133` converts the admin-entered `datetime-local` value with `new Date(value).toISOString()`, which interprets it in the **browser's** timezone. Correct for a Dhaka admin, silently wrong for one abroad. The hackathon admin page uses `lib/dhaka-time.js` instead; the events form is left alone on purpose (changing it would rewrite the stored instant of every historical event).
+- `lib/format-date.js`'s docstring claims it formats "deterministically using UTC", but it calls `date-fns` `format()` on a browser-local `Date`, so it renders in the *viewer's* timezone. Used by the public site; reported, not fixed.
+- `UpComingEventCard.jsx` puts the admin-supplied external `btnLink` on a `next/link` `href` with no `target`. This is the opposite of the outbound-link rule the hackathon components follow (plain anchor, `rel="noopener noreferrer"`), and the server-side URL policy plus `toPublicEvent`'s `toSafeHref` are what currently keep it from being a `javascript:` sink. It is pre-existing and out of scope; do not copy it.
+- `memberApi.js` uses a `Members` tag, `userApi.js` omits leading slashes on some URLs, and several defined client endpoints have no backend route — all pre-existing, all listed above.

@@ -57,8 +57,42 @@ const EventLayout = ({ clName }) => {
 function EventLayoutContent({ eventsResponse, clName }) {
   const slider = useRef(null);
   const [slidePx, setSlidePx] = useState(0);
-  const events = chooseLiveItems(eventsResponse, fallbackData, toPublicEvent, false, false);
+  const allEvents = chooseLiveItems(eventsResponse, fallbackData, toPublicEvent, false, false);
 
+  // ⚠️ THE HACKATHON IS NOT AN EVENT CARD — SAME DECISION AS `NoticeSection`.
+  //
+  // `GET /content/events` is type-blind: the hackathon is an ordinary Event
+  // document with `type: 'hackathon'`, so it arrives in this carousel like any
+  // other event. `UpComingEventCard` is phase-blind — no notion of
+  // upcoming/live/ended — so a FINISHED hackathon keeps rendering its
+  // "Register" button and its free-text `rules4` status line forever, and a
+  // hackathon the admin switched off keeps showing up on the HOMEPAGE with a
+  // live register link. The homepage is the highest-traffic surface on the
+  // site, so leaving this unfiltered would defeat the master toggle exactly
+  // where it matters most. The hackathon has its own phase-aware page at
+  // `/hackathon`; this carousel is not that page.
+  //
+  // The decision is made ONCE, in `toPublicEvent` (`public-content.js`), which
+  // sets `isHackathon`. This file obeys that one flag rather than re-deriving
+  // `type === 'hackathon'`, so the homepage and `/event` cannot drift apart
+  // again — the same single-decision principle `NoticeSection` already
+  // follows. It was not applied here in the first pass, which is how the
+  // toggle came to be bypassed on the homepage.
+  //
+  // This is deliberately a no-op if the server later excludes
+  // `type: 'hackathon'` from `listPublicContent('events')` (the more thorough
+  // fix): the rows would simply never arrive, `isHackathon` would be absent
+  // everywhere, and this filter would change nothing. The filter is not a
+  // second, competing rule — it is the client half of the same decision, so
+  // that either side being fixed independently leaves the behaviour identical.
+  //
+  // The static fallback (`data/upcomingEvent.json`) carries no `type` field,
+  // so it passes through untouched — `!undefined` is true, i.e. kept.
+  const events = allEvents.filter((event) => !event.isHackathon);
+
+  // Derived from the FILTERED list on purpose: the label ("Upcoming" vs
+  // "Recent") describes what the carousel is actually showing, so it must not
+  // be decided by a hackathon row that is about to be filtered out.
   const firstEventStart = events[0]?.date ? new Date(events[0].date).getTime() : 0;
   const sectionLabel = firstEventStart && firstEventStart > Date.now() ? "Upcoming Event" : "Recent Event";
 

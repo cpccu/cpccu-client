@@ -22,7 +22,7 @@ Can manage content-focused modules (per the admin sidebar):
 - Site Statistics
 - Account Settings
 
-Moderators can create, update, and delete allowed content resources. (`gallery-events` is not a separate sidebar module — it is a generic content resource used to group gallery items and is managed within the Gallery module.)
+Moderators can create, update, and delete allowed content resources. (`gallery-events` is not a separate sidebar module — it is a generic content resource used to group gallery items and is managed within the Gallery module. The Hackathon module carries the identical `roles: ['admin', 'moderator']` list as Events, because it writes the same `events` records through the same endpoint.)
 
 ### Mentor
 Read-oriented access (per the admin sidebar):
@@ -60,6 +60,7 @@ There is **no dedicated `/admin/roles` page**. Role management UI (role dropdown
 | `/admin/posts` | Blog/news/content management |
 | `/admin/events` | Event, contest, link, and reward management |
 | `/admin/gallery` | Gallery and featured media management |
+| `/admin/hackathon` | Hackathon publication toggle, rule book, problem set, CTA label, schedule |
 | `/admin/certificates` | Certificate issue, bulk issue, view, and export |
 | `/admin/contributors` | Website contributor records |
 | `/admin/donators` | Donator recognition records |
@@ -111,13 +112,22 @@ Public content is exposed through `/api/v1/content/:resource`.
 
 Public pages try live database content first and keep their previous JSON files as fallback when the database collection is empty. Ordered public resources are sorted by `order` first so migrated data keeps the same page order as the original JSON arrays.
 
+> The hackathon page is a **singleton** resource, so it deliberately does *not* use the `chooseLiveItems` fallback pattern — that helper is array-shaped and its "show demo data on error" semantics are wrong for a page whose entire content is one record. It uses explicit loading / error / empty branches.
+
 Public resources include:
 - `alumni`
 - `committees`
 - `donators`
-- `events`
+- `events` (excludes `type: 'hackathon'` rows)
 - `gallery`
 - `profiles`
+
+The hackathon is published on its own two routes, not as a `:resource` value:
+
+- `GET /api/v1/content/hackathon` — anonymous. `404` when no hackathon is enabled. Returns the title, description, image, venue, organiser, start/end instants, registration link, CTA label, rule book URL, an advisory `problemSetAvailable` flag, and a server-derived `phase`.
+- `GET /api/v1/content/hackathon/problem-set` — requires a session **and** the start time having passed. `403` before the start, `404` when the hackathon is off or no problem set is set.
+
+Admin writes to `events` invalidate both hackathon cache entries as well as the generic one — otherwise turning the toggle off would leave the public nav entry on screen.
 
 ### Frontend Hooks
 - `useAdminContent(resource, fallback)` — manages CRUD state for generic admin content tables with local state and fallback JSON data.
@@ -179,6 +189,32 @@ The public card still computes the three phases from `date` and `endDate`:
 - `remaining`
 - `running`
 - `ended`
+
+The public events list **excludes `type: 'hackathon'` rows**. A hackathon is published only on `/hackathon` (see [Hackathon Management](#hackathon-management)), which renders a server-derived lifecycle phase rather than the hand-set `status` this card reads. The admin Events page is intentionally **not** filtered — an admin must still be able to see that a hackathon exists.
+
+⚠️ The server now validates all eight admin-writable event URL fields (`registrationLink`, `btnLink`, `btnLink1`, `contestLink`, `meetLink`, `vjudgeGroupLink`, and the two hackathon URLs) as absolute `http(s)` URLs, and rejects a hackathon whose `endDate` is not strictly after its `date`.
+
+## Hackathon Management
+
+The hackathon is managed at `/admin/hackathon` (`src/components/hackathon-content.jsx`).
+
+**There is no new server endpoint.** The hackathon is an ordinary `Event` document with `type: 'hackathon'`, written through the existing generic content API (`resource: events`). The page therefore issues no path of its own, and `authorizeAdminAction` in the backend is unchanged — it inherits the `events` authorisation. That is why the sidebar entry carries the same roles as Events.
+
+Fields managed:
+
+- `hackathonEnabled` — the **visibility toggle** for the public `/hackathon` page. When off, `GET /content/hackathon` returns `404`.
+- `hackathonRuleBookUrl` — the rule book document URL.
+- `hackathonProblemSetUrl` — the problem set URL. **Never returned to anonymous callers**; served only by the gated `GET /content/hackathon/problem-set`.
+- `hackathonCtaLabel` — the registration CTA label (default `Register Now`).
+- `title`, `description`, `image`, `location`, `organizer` — the event details shown on the page.
+- `date` / `endDate` — the live window, entered as `datetime-local` and interpreted as **Dhaka time (UTC+6, no DST since 2009)** via `src/lib/dhaka-time.js`, so the stored instant does not depend on the admin's device timezone. The generic Events form still uses `new Date(value).toISOString()` and is deliberately left alone: changing it would rewrite the stored instant of every historical event.
+
+**Server-side guards on `events` writes** (all return `400` with a per-field error the form can render next to the input):
+
+- All eight admin-writable URL fields must be absolute `http:`/`https:` URLs of at most 2048 characters with no embedded credentials. Empty means "cleared" and is accepted.
+- A hackathon's `endDate` must be **strictly after** its `date`. A zero-width or inverted window is rejected. On edit this is checked against the merged post-update state, because the endpoint is a `$set` and any field may be omitted.
+
+The panel's "current hackathon" lookup mirrors the server's rule (`type: 'hackathon'`, `hackathonEnabled: true`, latest `date` first). If those diverge, an admin would be editing a record the public site is not showing — so change both in the same commit.
 
 ## Gallery Management
 

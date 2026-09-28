@@ -48,9 +48,10 @@ Set these in the Vercel project dashboard (**Settings → Environment Variables*
 
 ### 1.5 Legacy Files (can be ignored on Vercel)
 
-- `render.yaml` / `_render.yaml` — leftover Render config from the previous frontend hosting. If the frontend ever returns to Render, the `render.yaml` `web` service uses `bun install; bun run build` and `bun run start`.
 - `.htaccess` — Apache rewrite rules from the even older static/`out` deployment; unused by Vercel and Render.
 - `public/_redirects` — Netlify-style redirects; unused by Vercel.
+
+> ℹ️ `render.yaml` and `_render.yaml` **used to** sit in this repo as leftovers from a previous Render frontend hosting. They have been **deleted** — the frontend is on Vercel and nothing reads them. Do not reintroduce them; if a Render frontend is ever needed again, write the blueprint fresh rather than trusting the old one, whose build command was `bun install; bun run build` and therefore did not match this project's npm-based `package-lock.json`.
 
 ---
 
@@ -58,16 +59,19 @@ Set these in the Vercel project dashboard (**Settings → Environment Variables*
 
 The backend (`cpccu-server`) is a separate repository deployed on Render as a web service.
 
-### 2.1 Reference Configuration (from `render.yaml`)
+### 2.1 Where the Backend's Render Configuration Lives
 
-```yaml
-services:
-  - type: web
-    name: cpccu-server
-    runtime: node
-    buildCommand: <backend build command>
-    startCommand: <backend start command>
-```
+**There is no `render.yaml` or `Procfile` in `cpccu-server` — there never has been, at any commit.** The service is configured entirely in the **Render dashboard** (Settings → Environment, and the service's build/start settings). This section previously showed an illustrative `render.yaml` snippet titled "Reference Configuration (from `render.yaml`)", which was misleading: the file it claimed to quote did not exist, and its build/start values were placeholders.
+
+What matters functionally:
+
+| Concern | Where it is set |
+| --- | --- |
+| Build / start commands | Render dashboard, per service — Render's Node default is `npm install` + the service start command |
+| Environment variables | Render dashboard (see §2.2) |
+| Auto-deploy trigger | Render dashboard (branch / deploy hooks) |
+
+> If a Render **Blueprint** is ever adopted for the backend, the blueprint becomes the source of truth and this section should be rewritten to quote it. Until then, do not look for an in-repo deploy descriptor.
 
 ### 2.2 Backend Environment Variables (server-side only)
 

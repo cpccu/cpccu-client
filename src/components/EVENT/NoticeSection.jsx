@@ -64,8 +64,34 @@ export default function NoticeSection() {
 
 function NoticeSectionContent({ eventsResponse }) {
   const [currentPage, setCurrentPage] = useState(0);
-  const events = chooseLiveItems(eventsResponse, Data, toPublicEvent, false, false);
+  const allEvents = chooseLiveItems(eventsResponse, Data, toPublicEvent, false, false);
   const pageItem = 4;
+
+  // ⚠️ THE HACKATHON IS NOT AN EVENT CARD, AND THIS IS THE ONE PLACE THAT SAYS SO.
+  //
+  // `GET /content/events` is type-blind: the hackathon is an ordinary Event
+  // document with `type: 'hackathon'`, so it arrives in this list like any
+  // other event. `UpComingEventCard` has no phase awareness at all, so it
+  // renders a permanent "Register" button off `registrationLink` and a
+  // free-text `rules4` status line — which is precisely how a FINISHED
+  // hackathon keeps advertising registration, and how a hackathon the admin
+  // switched off keeps appearing as a normal event. The hackathon has its own
+  // phase-aware page at `/hackathon`; this list is not that page.
+  //
+  // The decision is made ONCE, in `toPublicEvent` (`public-content.js`), which
+  // sets `isHackathon`. Every list consumer obeys that one flag rather than
+  // re-deriving `type === 'hackathon'`, so `/event` and `/hackathon` cannot
+  // drift apart again.
+  //
+  // This is deliberately a no-op if the server later excludes
+  // `type: 'hackathon'` from `listPublicContent('events')` (the more thorough
+  // fix): the rows would simply never arrive. The filter is not a second,
+  // competing rule — it is the client half of the same decision, expressed so
+  // that either side being fixed independently leaves the behaviour identical.
+  const events = useMemo(
+    () => allEvents.filter((event) => !event.isHackathon),
+    [allEvents]
+  );
 
   const rows = useMemo(() => {
     const startIdx = currentPage * pageItem;
