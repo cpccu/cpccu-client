@@ -64,6 +64,29 @@ const UpComingEventCard = ({ data, clName }) => {
           {data?.rules4}
         </p>
 
+        {/*
+          ⚠️ KNOWN DEFECT, DELIBERATELY NOT FIXED HERE — read before "fixing" it.
+
+          `next/link` is the WRONG component for this href. The house rule for
+          admin-supplied, outbound links is a PLAIN ANCHOR
+          (`<a target="_blank" rel="noopener noreferrer">`, see the EXTERNAL
+          LINK RULE block in `src/lib/hackathon.js:11-33`): `next/link`
+          client-navigates, so an external target is pulled through our own
+          router instead of handed to the browser, and a non-http scheme can
+          break the router outright.
+
+          Why it is still here: this predates the hackathon feature and is
+          unrelated to it. Swapping the component changes client-navigation
+          behaviour for EVERY existing event link on `/event` and the homepage
+          carousel, which is a behaviour change that deserves its own review and
+          its own verification — not a drive-by edit inside a security fix. It
+          is also currently a *latent* bug rather than a live one, because the
+          href now arrives already filtered: `toPublicEvent` runs it through
+          `toSafeHref`, so by the time it reaches this line only http/https
+          URLs can be present, and `rel="noopener noreferrer"` is already set.
+
+          Logged as follow-up. Do not copy this pattern into new code.
+        */}
         {data?.btnLink ? (
           <Link href={data?.btnLink} target="_blank" rel="noopener noreferrer">
             <button

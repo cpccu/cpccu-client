@@ -1,7 +1,7 @@
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, FileText, Users, Calendar, Image as ImageIcon, Briefcase, Settings, LogOut, ChevronDown, Code2, UserCog, Wrench, Mail, Award, GitPullRequest, Heart, BarChart3, Home, UserRoundCog, GraduationCap, ScrollText, } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Calendar, Image as ImageIcon, Briefcase, Settings, LogOut, ChevronDown, Code2, UserCog, Wrench, Mail, Award, GitPullRequest, Heart, BarChart3, Home, UserRoundCog, GraduationCap, ScrollText, Trophy, } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from '@/components/ui/dropdown-menu';
@@ -16,6 +16,13 @@ const navItems = [
     { title: 'Alumni', href: '/admin/alumni', icon: GraduationCap, roles: ['admin'] },
     { title: 'Committees', href: '/admin/committees', icon: UserRoundCog, roles: ['admin'] },
     { title: 'Events', href: '/admin/events', icon: Calendar, roles: ['admin', 'moderator'] },
+    // Reads and writes the SAME `/admin/content/events` collection as the
+    // Events page (the hackathon is an Event document with
+    // `type: 'hackathon'`), so it must carry the identical role list. Giving
+    // it different roles would either hide the control from moderators who can
+    // already publish the underlying record, or grant write access to a role
+    // the events route rejects.
+    { title: 'Hackathon', href: '/admin/hackathon', icon: Trophy, roles: ['admin', 'moderator'] },
     { title: 'Gallery', href: '/admin/gallery', icon: ImageIcon, roles: ['admin', 'moderator'] },
     { title: 'Certificates', href: '/admin/certificates', icon: Award, roles: ['admin', 'mentor'] },
     { title: 'Contributors', href: '/admin/contributors', icon: GitPullRequest, roles: ['admin'] },

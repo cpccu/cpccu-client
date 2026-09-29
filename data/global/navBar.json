@@ -45,6 +45,12 @@
     "level": 0
   },
   {
+    "page": "Hackathon",
+    "path": "/hackathon",
+    "level": 0,
+    "requiresLiveHackathon": true
+  },
+  {
     "page": "Bootcamp Leaderboard",
     "path": "/bootcamp-leaderboard",
     "level": 0

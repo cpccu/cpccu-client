@@ -1,5 +1,48 @@
 import { baseApi } from "@/services/baseApi";
 
+/**
+ * Tag invalidation shared by create / update / delete of any admin content
+ * resource.
+ *
+ * Three jobs, all of them load-bearing:
+ *
+ *  1. `{ type: 'AdminContent', id: resource }` — refreshes the admin table.
+ *  2. `{ type: 'PublicContent', id: resource }` — refreshes the public view of
+ *     the same collection.
+ *  3. `'AdminOverview'` — why the admin dashboard counters move the instant
+ *     any content is edited.
+ *
+ * ⚠️ The hackathon needs TWO EXTRA entries, and it is the reason this is a
+ * function rather than a literal array. The hackathon is an `Event` document
+ * with `type: 'hackathon'`, but it is published over its own two routes
+ * (`/content/hackathon`, `/content/hackathon/problem-set`) which are cached
+ * under their own tag ids — `'hackathon'` and `'hackathon-problem-set'` — NOT
+ * under `'events'`. A plain `{ type: 'PublicContent', id: resource }` array
+ * therefore leaves both hackathon cache entries stale after an events write,
+ * and the public nav entry would survive an admin toggling the hackathon off
+ * until a reload. The conditional spread below fixes that — for the tab that
+ * PERFORMED the write.
+ *
+ * ⚠️ SCOPE, STATED PRECISELY: tag invalidation is per-browser, per-tab. It
+ * evicts the cache entry in the Redux store of the client instance that made
+ * the mutation. It does NOT push anything to a visitor sitting on another tab,
+ * who keeps the stale entry until the RTK Query `keepUnusedDataFor` window
+ * elapses or they reload. So this is "the admin's own open tab updates
+ * immediately", NOT "the admin panel and the public site are always in
+ * agreement" — a second claim this comment used to make, and should not.
+ */
+const adminContentInvalidates = (result, error, { resource } = {}) => [
+  { type: "AdminContent", id: resource },
+  { type: "PublicContent", id: resource },
+  ...(resource === "events"
+    ? [
+        { type: "PublicContent", id: "hackathon" },
+        { type: "PublicContent", id: "hackathon-problem-set" },
+      ]
+    : []),
+  "AdminOverview",
+];
+
 export const adminApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAdminOverview: builder.query({
@@ -51,11 +94,7 @@ export const adminApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { resource }) => [
-        { type: "AdminContent", id: resource },
-        { type: "PublicContent", id: resource },
-        "AdminOverview",
-      ],
+      invalidatesTags: adminContentInvalidates,
     }),
     updateAdminContent: builder.mutation({
       query: ({ resource, id, body }) => ({
@@ -63,22 +102,14 @@ export const adminApi = baseApi.injectEndpoints({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: (result, error, { resource }) => [
-        { type: "AdminContent", id: resource },
-        { type: "PublicContent", id: resource },
-        "AdminOverview",
-      ],
+      invalidatesTags: adminContentInvalidates,
     }),
     deleteAdminContent: builder.mutation({
       query: ({ resource, id }) => ({
         url: `/admin/content/${resource}/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: (result, error, { resource }) => [
-        { type: "AdminContent", id: resource },
-        { type: "PublicContent", id: resource },
-        "AdminOverview",
-      ],
+      invalidatesTags: adminContentInvalidates,
     }),
     uploadAdminImage: builder.mutation({
       query: (body) => ({

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, MapPin, CalendarDays, Gift, ExternalLink, Link2, ListOrdered } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, MapPin, CalendarDays, Gift, ExternalLink, Link2, ListOrdered, Settings2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +62,34 @@ export function EventsContent() {
         order: 0,
         image: '',
     });
+    // ⚠️ THE HACKATHON IS NOT EDITED HERE. `/admin/events` and
+    // `/admin/hackathon` are two editors for the SAME record with DIFFERENT
+    // date rules, which is a trap rather than a convenience:
+    //
+    //   this form  — `event.date.slice(0, 16)` (a UTC slice) on the way in and
+    //                 `new Date(value).toISOString()` on the way out, which
+    //                 interprets the typed wall-clock in the ADMIN'S BROWSER
+    //                 timezone. Correct for a Dhaka admin, silently wrong —
+    //                 shifted by the browser's UTC offset — for one abroad.
+    //   that form  — `toDhakaInputValue` / `utcIsoFromDhakaInput`, i.e. Dhaka
+    //                 wall-clock pinned to UTC+6 regardless of where the admin
+    //                 is.
+    //
+    // The data survives an Events-form save (it spreads `...editingEvent`), so
+    // this is a corruption-of-timing trap, not a data-loss one. The chosen
+    // direction is: THIS PAGE STOPS EDITING HACKATHONS. `/admin/hackathon` is
+    // the single editor, which is also the premise the master toggle rests on —
+    // a toggle that lives on one page and whose dates are edited on another is
+    // not a coherent control surface.
+    //
+    // ⚠️ `events-content.jsx`'s own date/timezone handling is DELIBERATELY NOT
+    // CHANGED. It is used for every other event in the system, and rewriting it
+    // would re-interpret the stored instant of the whole historical event
+    // archive. `src/lib/dhaka-time.js` documents that same blast radius.
+    const HACKATHON_PATH = '/admin/hackathon';
+
+    // Counted over ALL events (including hackathons) so the stat tiles keep
+    // reporting the real collection size; only the editable list is narrowed.
     const filtered = useMemo(() => {
         return events.filter((e) => {
             const matchesSearch = (e.title || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -261,6 +290,23 @@ export function EventsContent() {
         </Card>) : (<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((event) => {
                 const hasLinks = event.btnLink || event.btnLink1;
+                // See the ⚠️ block above `filtered`: a hackathon row is shown
+                // for visibility but its Edit action is withheld, because this
+                // form's browser-timezone date round trip would silently shift
+                // the schedule for an admin outside UTC+6.
+                //
+                // ⚠️ THIS ADMIN GRID IS INTENTIONALLY *NOT* FILTERED BY
+                // `isHackathon`, unlike the two public consumers
+                // (`NoticeSection` on `/event` and `EventLayout` on the
+                // homepage), which both drop hackathon rows. It reads the RAW
+                // document via `useAdminContent('events')` rather than going
+                // through `toPublicEvent`, and it MUST keep showing the
+                // hackathon: the admin toggle and the hackathon's own record
+                // live here, so hiding the row would make an admin unable to
+                // see or find the thing they are supposed to control. The
+                // "is the hackathon live?" decision belongs to the public
+                // render path, not to the management surface.
+                const isHackathon = event.type === 'hackathon';
                 return (<Card key={event.id} className="flex flex-col">
                 <CardHeader className="flex flex-row items-start justify-between pb-3">
                   <div className="flex-1 min-w-0">
@@ -274,6 +320,17 @@ export function EventsContent() {
                     </div>
                     <CardTitle className="text-base leading-snug">{event.title}</CardTitle>
                   </div>
+                  {isHackathon ? (
+                    /* The whole affordance, in place of an Edit button. An admin
+                       looking for the hackathon editor finds it here rather than
+                       being silently given a form that would corrupt the dates. */
+                    <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 text-xs" asChild>
+                      <Link href={HACKATHON_PATH}>
+                        <Settings2 className="size-3.5"/>
+                        Managed in Hackathon
+                      </Link>
+                    </Button>
+                  ) : (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="size-8 shrink-0">
@@ -290,6 +347,7 @@ export function EventsContent() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  )}
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col gap-3">
                   <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>

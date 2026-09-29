@@ -12,6 +12,9 @@ import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { faSignInAlt } from "@fortawesome/free-solid-svg-icons";
 import Data from "@/data/global/navBar.json";
 import { useSelector } from "react-redux";
+import { useGetPublicHackathonQuery } from "@/features/content/contentApi";
+import { toPublicHackathon } from "@/lib/public-content";
+import NavHackathonCountdown from "@/components/HACKATHON/NavHackathonCountdown";
 
 const adminPanelRoles = ["admin", "moderator", "mentor"];
 
@@ -196,6 +199,58 @@ export function NavItem({ setOpen }) {
   const [aboutOpen, setAboutOpen] = useState(null);
   const pathname = usePathname();
 
+  // WHY THERE IS NO `/content/hackathon/status` ENDPOINT
+  // --------------------------------------------------
+  // The nav only needs one bit: "is a hackathon live right now?". That is
+  // exactly what the 200-vs-404 of `GET /content/hackathon` already answers,
+  // and it is the FULL payload the `/hackathon` page needs anyway. This query
+  // therefore piggy-backs on the SAME RTK Query cache entry
+  // (`{ type: 'PublicContent', id: 'hackathon' }`) that the page reads, so
+  // clicking through costs zero extra requests. A dedicated status endpoint
+  // would be a second network round trip and a second cache entry to keep in
+  // sync with the first.
+  //
+  // While loading, and on error, the entry is HIDDEN rather than shown: a nav
+  // link that appears and then leads to "not available" reads as a bug, and the
+  // alternative (showing it immediately) would flash it in on every page load.
+  const {
+    data: hackathonResponse,
+    isLoading: hackathonLoading,
+    isError: hackathonError,
+  } = useGetPublicHackathonQuery();
+
+  const hackathonLive =
+    !hackathonLoading && !hackathonError && Boolean(hackathonResponse?.data);
+
+  // The nav badge is the only nav consumer that READS a field off this payload,
+  // so the house rule applies (doc.md §10.5): never render an API field
+  // directly, always go through `toPublicHackathon`. The existence check above
+  // deliberately stays a plain `Boolean(...)` — it reads no field, and keeping
+  // it on the raw response means the "hide while loading" behaviour cannot be
+  // changed by a mapper edit.
+  const hackathon = hackathonLive ? toPublicHackathon(hackathonResponse.data) : null;
+
+  // ⚠️ `requiresLiveHackathon` IS honoured; `requireLogin` IS DELIBERATELY NOT.
+  //
+  // `requireLogin` in `navBar.json` is currently DEAD CONFIG: it is declared on
+  // the Job Pipeline entry and read by nothing. It is left unwired on purpose.
+  // `/job-pipeline` is backed by the PUBLIC `GET /content/profiles` and
+  // `JobPipeline.jsx` renders no login prompt, so honouring the flag would not
+  // "lock" anything — it would simply remove a publicly reachable entry point
+  // from the navigation of every signed-out visitor, which is a product change
+  // nobody asked for on a page unrelated to the hackathon. Hiding a link is not
+  // authorisation: the page and its data are public either way, and an admin
+  // editing `navBar.json` would silently be changing who can find a page rather
+  // than who can read it.
+  //
+  // If a nav entry ever does need to be genuinely member-only, the gate has to
+  // go where the data is — on the endpoint and/or in the page — and the nav
+  // flag can then mirror it. Do not wire this up on its own.
+  const navItems = (Data || []).filter((item) => {
+    if (item.requiresLiveHackathon && !hackathonLive) return false;
+    return true;
+  });
+
   useEffect(() => {
     if (paths.includes(pathname)) {
       setIsOpen(true);
@@ -206,10 +261,33 @@ export function NavItem({ setOpen }) {
 
   return (
     <ul className="flex flex-col lg:flex-row z-50 mt-2 lg:mt-0 w-full lg:w-auto">
-      {Data
-        ? Data.map((item, index) => {
+      {navItems.length
+        ? navItems.map((item, index) => {
             if (item.level === 0) {
               const isActive = pathname === item.path;
+
+              // The live countdown is attached ONLY to the entry that is gated
+              // on a hackathon existing, and only for a top-level (`level === 0`)
+              // item. Keyed off `requiresLiveHackathon` rather than a hard-coded
+              // path or label, so an admin renaming or re-pointing the entry in
+              // `navBar.json` keeps the badge instead of silently losing it. The
+              // `hackathon` null check is belt-and-braces: the filter above has
+              // already removed the entry when no hackathon is live, and this
+              // guarantees a badge is never rendered without dates behind it.
+              //
+              // ONE instance: the `<ul>` below is rendered once and reflowed
+              // (`flex-col lg:flex-row`) into the mobile panel and the desktop
+              // row, so the badge — and the single interval inside
+              // `useHackathonPhase` — exists once per page, not once per layout.
+              const countdownBadge =
+                item.requiresLiveHackathon && hackathon ? (
+                  <NavHackathonCountdown
+                    phase={hackathon.phase}
+                    startAt={hackathon.startAt}
+                    endAt={hackathon.endAt}
+                  />
+                ) : null;
+
               return (
                 <li key={index} className="w-full lg:w-auto">
                   <Link
@@ -221,7 +299,20 @@ export function NavItem({ setOpen }) {
                     } block px-6 md:px-8 py-4 lg:py-7 cursor-pointer font-bold capitalize transition-all`}
                     onClick={() => setOpen(false)}
                   >
-                    {item.page}
+                    {/* The wrapper is added ONLY where a badge exists, so every
+                        other nav item keeps its original bare-text markup and
+                        the existing layout/classes are untouched. `whitespace-nowrap`
+                        keeps the label on one line: the label is the link's
+                        purpose, the badge is only an annotation, and a wrapped
+                        label in a `py-7` nav row would reflow the whole row. */}
+                    {countdownBadge ? (
+                      <span className="inline-flex items-center whitespace-nowrap">
+                        <span>{item.page}</span>
+                        {countdownBadge}
+                      </span>
+                    ) : (
+                      item.page
+                    )}
                   </Link>
                 </li>
               );
