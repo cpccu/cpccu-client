@@ -55,7 +55,7 @@ flowchart LR
 **Future considerations**
 
 - Vercel Edge/Server Functions could proxy API calls if CORS or token handling ever becomes a problem.
-- Keep the legacy `render.yaml`/`_render.yaml` files in mind if the frontend ever returns to Render hosting.
+- The legacy `render.yaml` / `_render.yaml` have been **deleted** (they were abandoned config, not the live deploy path). If the frontend ever returns to Render hosting, write a new blueprint from scratch — do not assume the old one exists or that it was correct; it built with `bun install`, which did not match this project's npm-based lockfile.
 
 ---
 
@@ -629,6 +629,91 @@ The **backend is the security authority** for email verification:
 
 ---
 
+## ADR-016 — Hackathon Reuses the `Event` Model, With Dedicated Public Routes and a Per-Record Toggle
+
+### Status
+
+Accepted
+
+### Context
+
+The hackathon needs its own public page: a countdown, a registration CTA, a rule book, and a problem set that must not be readable before the event starts. The obvious first move is a new `Hackathon` collection with its own admin CRUD, its own public route, and its own visibility flag.
+
+That was rejected, but the naive alternative — treating the hackathon as an ordinary event and serving it from the generic events list — fails in a specific, demonstrable way.
+
+### Decision
+
+A hackathon is an **ordinary `Event` document with `type: 'hackathon'`**, carrying four extra fields (`hackathonEnabled`, `hackathonRuleBookUrl`, `hackathonProblemSetUrl`, `hackathonCtaLabel`). It is published over **two dedicated public routes** and edited through the **existing** generic admin content route.
+
+| Decision | Detail |
+| --- | --- |
+| Reuse `Event`, not a new collection | The toggle, the URLs, the CTA label and the schedule are per-event data that belong to the same document and are edited together. A `SystemSettings` entry would need its own admin route and could drift out of sync with the event it refers to. |
+| The **toggle lives on the record**, not in settings | It is a per-event publication switch. `default: false` means adding the field publishes nothing — and since this repo has **no migration system**, the default is what makes "no migration needed" true. |
+| The toggle is **date-independent** | The product owner requires the hackathon to stay visible after it ends until an admin turns it off. So `hackathonEnabled` is never inferred from the clock; the dates drive only the lifecycle `phase` and the problem-set gate. |
+| Two dedicated public routes | `GET /content/hackathon` (anonymous) and `GET /content/hackathon/problem-set` (gated). Not `:resource` values — a dedicated route can carry a different auth level and a deliberately different payload shape. |
+| **Exclude hackathons from the generic events list** | `publicEventFilter()` drops `type: 'hackathon'` rows whether or not the toggle is on. |
+| **No new admin route** | Writes go through `POST/PATCH /admin/content/events`. `admin.route.js` and `authorizeAdminAction` are unchanged, so the admin page inherits the `events` authorisation — there is no second place to get the role matrix wrong. |
+
+### Why
+
+- **One record cannot contradict itself.** The generic event card is phase-blind: it renders whatever the hand-set free-text `status` says and keeps showing a "Register" button after the event ends. The hackathon page renders a server-derived `phase`. Serving the same row under two different lifecycle rules, with nothing forcing them to agree, is why the hackathon gets exactly one publication surface.
+- **A toggle that actually gates.** Because the hackathon is removed from the events list entirely, there is no state in which a disabled hackathon's title, venue, image or registration link still leaks to anonymous callers through `/content/events`. Treating the toggle as a master switch over every read path is what previously let a disabled hackathon keep flowing.
+- **`phase` is authoritative, so `status` was removed from the public payload** rather than exposed as a convenience alias. It is never derived from the dates and never reconciled, so an admin-set "upcoming" on an ended hackathon would contradict the countdown in the same response indefinitely.
+- **One predicate, not two.** The advisory `problemSetAvailable` flag and the endpoint's 200/403 both call the same `isProblemSetReleased()`. Recomputing it locally is how the UI once advertised a button the endpoint would refuse — a permanently dead button on a page that looked live.
+- **Gating on the start time only.** Participants often start reviewing the set after the closing ceremony, so `endDate` is deliberately not consulted. A missing or unparseable `date` fails **closed**.
+
+### Consequences
+
+**Pros:** one document to edit; one lifecycle signal; a problem set that is unreachable to anonymous callers; the admin UI cannot drift out of authorisation with the data.
+
+**Cons:** the hackathon's rules are partly duplicated between the server's `resolveHackathonPhase` / `isProblemSetReleased` and the client mirrors in `lib/countdown.js` and the admin page. That duplication is deliberate and bounded, and the admin page's lookup rule is documented as a mirror that must be changed in the same commit.
+
+**Future considerations:** A `type` index plus a compound `{ type, hackathonEnabled, date, _id }` index serves the hot anonymous lookup. A separate collection becomes justified only if hackathons need fields no event has (multi-track, per-track problem sets, team registration).
+
+---
+
+## ADR-017 — Fixed `frame-src` Allowlist, Coupled to the Embeddable Host List
+
+### Status
+
+Accepted
+
+### Context
+
+The hackathon rule book is an admin-supplied document URL — in practice a Google Drive or Google Docs link. Rendering it in-page means an `<iframe>` pointed at a host chosen by whoever filled in the admin form.
+
+Two obvious CSP options both fail:
+
+- **Omit `frame-src` entirely.** `default-src 'self'` then governs `<iframe>` targets, so a Drive frame is **blocked in production** — and works under `next dev`, because the whole CSP block in `src/proxy.ts` is `NODE_ENV === 'production'` only. That is a silent, production-only breakage that local testing cannot catch.
+- **`frame-src https:`.** Functionally it works, and it is a phishing / UI-redressing surface: a framed page inherits our address bar, our TLS indicator and our layout, so **any** admin-supplied URL can be made to look like it is ours. Most document hosts send `X-Frame-Options: DENY` anyway, so a blanket allow-list buys nothing legitimate.
+
+### Decision
+
+`frame-src 'self' https://drive.google.com https://docs.google.com` — a **fixed two-host list**, coupled by contract to `EMBED_ALLOWED_HOSTS` in `src/lib/hackathon.js`.
+
+| Property | Detail |
+| --- | --- |
+| Two mechanisms, one allow-list | `deriveEmbeddableUrl` decides *which* URLs may be framed and rewrites them into embeddable preview forms; the CSP decides whether the frame loads. |
+| **They must not diverge** | Add a host to one without the other and the rule book renders correctly under `next dev` and as a silently blank frame in production. |
+| Every returned URL is **rebuilt**, never passed through | CSP host matching is **exact** and the list has no `www.`, so a `www.docs.google.com` input must be normalised to `docs.google.com` *in the emitted `src`*, not only for the comparison. Passing the admin's href through verbatim works in dev and breaks in prod. |
+| `null` is a meaningful return | Any unrecognised host yields `null`, and the component must then render an **"open in a new tab" card** — never `<iframe src={originalUrl}>`. A dead iframe looks broken; a link card does not. |
+
+### Why
+
+- **Host allow-listing beats scheme allow-listing here**, because the only legitimate hosts are two well-known document providers and everything else genuinely is a redrressing risk.
+- **Rebuilding is what makes the rewrite idempotent.** `deriveEmbeddableUrl` always returns the canonical preview form, so running it on its own output is a no-op — and the emitted host is guaranteed to be inside the CSP list.
+- **The explicit list is also self-documenting.** The next reader sees exactly which two hosts are framed and why, instead of inheriting an invisible `default-src` decision.
+
+### Consequences
+
+**Pros:** a framed page is always a Google preview, and the page degrades to a link for everything else. No dependence on an implicit `default-src` fallback.
+
+**Cons:** a new document provider requires editing **two** files in the same commit, and the failure mode of getting it wrong is production-only. ⚠️ The Drive embed is therefore **not verifiable in `next dev`** — check it against production response headers (`npm run build && npm run start`, then inspect the CSP header on `/hackathon`).
+
+**Future considerations:** If a wider set of embeddable hosts is ever needed, both lists still have to be updated together; the coupling comment in `proxy.ts` is the thing to grep for. `X-Frame-Options: DENY` and `frame-ancestors 'none'` govern whether *we* may be framed and are unrelated — they must not be relaxed to make an embed work.
+
+---
+
 ## ADR-012 — Future Decisions (Planned, Not Implemented)
 
 > The following are **Planned** directions. None of them are implemented in the current codebase — treat them as proposals, not facts.
@@ -671,4 +756,5 @@ The **backend is the security authority** for email verification:
 
 - ADR-001 to ADR-012 created during the documentation audit (August 2026).
 - ADR-013 to ADR-015 added in September 2026 (GitHub-synced contributors, derived statistics, backend-enforced email verification).
+- ADR-016 and ADR-017 added in September 2026 (hackathon reuses the `Event` model with dedicated public routes; fixed `frame-src` allowlist coupled to the embeddable host list).
 - All "Accepted" ADRs verified against the current `cpccu-client` and `cpccu-server` codebases.

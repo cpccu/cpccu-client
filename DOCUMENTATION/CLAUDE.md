@@ -165,4 +165,4 @@ Official CPCCU position roles (President, Vice President, etc.) are **display-on
 - `src/components/ADMIN/AdminPanel.jsx` — unused (dashboard is `dashboard-content.jsx`).
 - `src/components/Layout/Profile1.jsx` + legacy `PROFILE` components (`ProfileCard`, `ProfileDetails`, `ProfileID`, `ProfileBlog`, `Profile_Blog_Modal`, `ProfileNotFound`) — unused.
 - There is **no** `generateCertificateId.js` file; `generateCertificateId` is a local function inside `src/components/certificates-content.jsx`.
-- `render.yaml` / `_render.yaml` are leftover from the old Render frontend deployment — the frontend now deploys on **Vercel**.
+- The old `render.yaml` / `_render.yaml` from the previous Render frontend deployment have been **deleted** — the frontend deploys on **Vercel** and reads no Render config.

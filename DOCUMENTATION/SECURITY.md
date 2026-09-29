@@ -27,10 +27,24 @@ See [ADR-015](./ADR.md#adr-015--backend-enforced-email-verification) and the bac
 
 - `src/proxy.ts` (Next.js 16 proxy) applies on every route (except `_next/static` and `_next/image`):
   - **CSP** (production only): `default-src 'self'`; scripts/styles allow inline; `img-src` allows `data: blob: https:`; `connect-src` allows the app origin, Google Fonts, Cloudinary, ui-avatars, and `https: ws:`; `frame-ancestors 'none'`; `form-action 'self'`; `upgrade-insecure-requests`.
+  - **`frame-src` — `'self' https://drive.google.com https://docs.google.com`.** A fixed, two-host allow-list rather than `https:`. Without an explicit `frame-src`, the `default-src 'self'` above governs `<iframe>` targets, so a frame pointing at Google Drive is blocked in production while working under `next dev` — the whole CSP block is production-only, making that a silent prod-only breakage local testing cannot catch. And a blanket `frame-src https:` would let **any** admin-supplied URL be framed inside our own origin, which is a phishing / UI-redressing surface: a framed page inherits our address bar, our TLS indicator and our layout. See [ADR-017](./ADR.md#adr-017--fixed-frame-src-allowlist-coupled-to-the-embeddable-host-list).
   - `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Permissions-Policy` (camera/mic/geolocation/USB/payment/sensors off), COOP/COEP/CORP, and **HSTS** (except on localhost).
 - The backend adds its own helmet headers + HSTS (`NODE_ENV=production`).
 
-## 4. Known tradeoffs & debt (frontend)
+> ⚠️ **`frame-src` and `EMBED_ALLOWED_HOSTS` in `src/lib/hackathon.js` are coupled by design and must not diverge.** The allow-list in `deriveEmbeddableUrl` decides *which* admin URLs may be framed; the CSP decides whether the frame actually loads. Add a host to one without the other and the rule book renders correctly under `next dev` and as a silently blank frame in production. `deriveEmbeddableUrl` also **rebuilds** every URL it returns on a bare, canonical host (never `www.`-prefixed) because CSP host matching is exact.
+>
+> `X-Frame-Options: DENY` / `frame-ancestors 'none'` are unrelated and must not be relaxed: they govern whether **our** pages may be framed by someone else, not what we may frame.
+
+## 4. Hackathon surface (frontend view)
+
+The frontend **never** enforces the hackathon's access rules — the backend does, and the client only decides what to *offer*. Two things are worth stating precisely because they are easy to read backwards:
+
+- **The problem set is server-gated twice.** `GET /content/hackathon/problem-set` requires `verifyToken` **and** a start-time check. The `problemSetAvailable` flag on the public payload, and the local `hasHackathonStarted()` mirror, are **advisory**: forging either in devtools earns a 403 and nothing else, because the endpoint re-checks server-side. The client's rule is a strict AND of the server flag and the local clock, and it `skip`s the request entirely until both are satisfied — so a signed-in visitor cannot even probe for a set that has not been released.
+- **Every admin-supplied URL passes through `toSafeHref`** in `toPublicHackathon` and in `toPublicEvent`'s `btnLink` / `btnLink1`, and is re-validated on arrival in `HackathonProblemSet`. This is a *read-time* backstop independent of the server's write-time validation: documents written before the validator existed, or hand-edited in Mongo, would otherwise reach React as a live `javascript:` href. Blanking degrades the field to "no link", which is the correct outcome for a value that should never have been linkable. `img` is deliberately **not** sanitised — it renders as an `<img src>`, never an `href`, and `toSafeHref` would reject the legitimate root-relative upload paths.
+- **`/hackathon` has no route guard, deliberately.** A bookmarked URL renders the page shell with an "unavailable" message when the toggle is off. Nothing on the page is protected — the one confidential artefact is fetched from a separate gated endpoint that the page never embeds. A client-side guard would be security theatre: it would hide an empty page while the actual gate stays on the endpoint.
+- **Outbound links are plain anchors.** Every admin-supplied external link is `<a target="_blank" rel="noopener noreferrer">`, never `next/link` (which client-navigates, pulling an external href through our own router). Without `noopener` the opened page keeps a `window.opener` handle back into our site. This is manual discipline: `.eslintrc.cjs` sets `react/jsx-no-target-blank: "error"` but `npm run lint` cannot run at all. Internal routes such as `/login` correctly keep using `next/link`.
+
+## 5. Known tradeoffs & debt (frontend)
 
 ### localStorage JWT (XSS tradeoff) — INFO
 
@@ -42,18 +56,25 @@ The backend exposes `GET /auth/refresh-token`, but this app never calls it. If y
 
 ### No frontend tests — INFO
 
-There are no automated frontend tests; security-sensitive changes are verified with `npm run build` (frontend lint is currently broken — see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md#10-build--lint-failures)) and the backend's auth regression suite (`npm test` in `cpccu-server`).
+There are no automated frontend tests and **no test runner** in this repo — no framework, no config, no setup file, no `test` script. Do not claim frontend unit tests exist. Security-sensitive changes are verified by `npm run build` and, for anything crossing the HTTP boundary, by the backend suite (`npm test` in `cpccu-server`).
 
-## 5. Do not
+> ⚠️ `next build` is **not** a type-safety result. There is no `tsconfig.json` in this repo — `jsconfig.json` provides path aliases for editor resolution only — so the build performs no project-wide type check and its "Running TypeScript" step is a no-op. It is a module-resolution and render check. The pure helpers in `src/lib/countdown.js` were written without React, timers or hidden state specifically so they can be verified by inspection, which is the only option available here.
 
-- Do not implement client-side-only verification gates — the backend enforces `isValid`.
-- Do not weaken the CSP `connect-src` without a reason; new external origins must be added there deliberately.
-- Do not move secrets into `NEXT_PUBLIC_*` — anything prefixed that way ships to the browser.
+## 6. Do not
+
+- Do not implement client-side-only verification gates — the backend enforces `isValid` **and** the hackathon's problem-set release.
+- Do not add a host to `EMBED_ALLOWED_HOSTS` (or `deriveEmbeddableUrl`) without adding it to the CSP `frame-src` list, or the embed breaks in production only.
+- Do not weaken the CSP `connect-src` or replace the fixed `frame-src` with `https:` without a reason; new external origins must be added there deliberately.
+- Do not put an admin-supplied external href on `next/link`, and do not render an `<iframe src={adminSuppliedUrl}>` for a host `deriveEmbeddableUrl` returned `null` for — render the "open in a new tab" card.
+- Do not move secrets into `NEXT_PUBLIC_*` — anything prefixed that way ships to the browser, and it is inlined at **build** time, so a set-but-wrong value silently wins in production.
 - Do not log tokens, passwords, or OTPs on the client.
 
-## 6. Related documents
+## 7. Related documents
 
 - [Architecture — Auth (§6)](./ARCHITECTURE.md#6-authentication)
+- [Architecture — Hackathon (§19)](./ARCHITECTURE.md#19-hackathon)
 - [ADR-011 — Authentication architecture](./ADR.md#adr-011--authentication-architecture)
 - [ADR-015 — Backend-enforced email verification](./ADR.md#adr-015--backend-enforced-email-verification)
-- Backend [SECURITY.md](https://github.com/cpccu/cpccu-server/blob/dev/docs/SECURITY.md) — full backend controls + known security debt (including the unthrottled `verify-registration` endpoint).
+- [ADR-016 — Hackathon reuses the Event model](./ADR.md#adr-016--hackathon-reuses-the-event-model-with-dedicated-public-routes)
+- [ADR-017 — Fixed `frame-src` allowlist](./ADR.md#adr-017--fixed-frame-src-allowlist-coupled-to-the-embeddable-host-list)
+- Backend [SECURITY.md](https://github.com/cpccu/cpccu-server/blob/dev/docs/SECURITY.md) — full backend controls, the URL policy (§6.1) and the problem-set gating design (§6.2).

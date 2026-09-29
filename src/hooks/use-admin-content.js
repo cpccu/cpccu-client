@@ -13,9 +13,12 @@ const normalizeItem = (item) => ({
   id: item.id || item._id,
 });
 
-export default function useAdminContent(resource, fallback) {
+export default function useAdminContent(resource, fallback, params) {
   const [items, setItems] = useState(fallback);
-  const { data, error, isLoading } = useGetAdminContentQuery({ resource });
+  // `params` is passed straight through as the query string. It is part of the
+  // RTK Query cache key, so two callers of the same resource with different
+  // params keep separate cache entries and cannot overwrite each other.
+  const { data, error, isLoading } = useGetAdminContentQuery({ resource, params });
   const [createContent] = useCreateAdminContentMutation();
   const [updateContent] = useUpdateAdminContentMutation();
   const [deleteContent] = useDeleteAdminContentMutation();

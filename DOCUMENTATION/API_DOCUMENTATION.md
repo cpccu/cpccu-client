@@ -115,8 +115,14 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 | :--- | :--- | :--- | :--- |
 | `/content/:resource` | `GET` | Fetch public content by resource key | Provides `PublicContent` tag with resource ID |
 | `/content/statistics` | `GET` | Fetch public statistics payload | Provides `PublicContent:statistics` tag |
+| `/content/hackathon` | `GET` | Fetch the current hackathon | Provides `PublicContent:'hackathon'` tag. **404** when no hackathon is enabled — that 404 *is* the "not available" signal, which is why the nav bar needs no separate status endpoint |
+| `/content/hackathon/problem-set` | `GET` | Fetch the problem-set URL | Provides `PublicContent:'hackathon-problem-set'` tag. Behind the backend's `verifyToken` **and** its start-time gate: `403` before the start, `404` when off or unset. Never part of the payload above |
 
-**Supported public resources** (backend `content.controller.js`): `alumni`, `committees`, `contributors`, `donators`, `events`, `gallery`, `gallery-events`, `profiles` (only **approved** developer profiles are returned)
+**Supported public resources** (backend `content.controller.js` `publicModels`): `alumni`, `committees`, `contributors`, `donators`, `events`, `gallery`, `gallery-events`, `profiles` (only **approved** developer profiles are returned)
+
+> ⚠️ **`hackathon` is NOT a `:resource` value.** It is not a key of the backend's `publicModels` map, and `GET /content/hackathon` is a dedicated fixed route on the content router (declared **above** the single-segment `/:resource` catch-all, which would otherwise swallow it and 404 from the wrong handler). The tag id is `'hackathon'`, not `'events'`: the record is an `Event`, but it is served over its own route with its own payload shape, so it gets its own cache entry.
+>
+> The generic `events` resource omits `type: 'hackathon'` documents and projects the gated `hackathonProblemSetUrl` field out of the result, so a hackathon never appears on `/event` or the homepage carousel.
 
 ## 7. Contact (`contactApi`)
 
@@ -233,6 +239,22 @@ RTK Query tag types are used for cache invalidation:
 - **Auth operations** invalidate `Auth`, which triggers re-fetch of the current user.
 - **User mutations** invalidate `Auth` and `Users` tags to keep member lists and profile data fresh.
 - **Admin content mutations** invalidate `AdminContent`, `PublicContent`, and `AdminOverview` to keep both admin and public views in sync.
+
+### 12.1 The hackathon `invalidatesTags` coupling rule
+
+`adminApi.js` uses a shared `adminContentInvalidates(result, error, { resource })` helper rather than a literal array, because `events` writes must invalidate **four** entries, not the usual three:
+
+```
+{ type: 'AdminContent',   id: resource }
+{ type: 'PublicContent',  id: resource }          // the generic public list
+{ type: 'PublicContent',  id: 'hackathon' }      // ← extra
+{ type: 'PublicContent',  id: 'hackathon-problem-set' }  // ← extra
+'AdminOverview'
+```
+
+⚠️ **Why the two extra entries are not optional.** The hackathon is an `Event` document, but it is published over its own two routes and cached under their own tag ids — not under `'events'`. Invalidating only `PublicContent: 'events'` leaves both hackathon cache entries stale after an events write, and the concrete failure is visible: an admin toggles the hackathon off, the write succeeds, and **the nav entry stays on screen** because the cached 200 that drives `requiresLiveHackathon` was never invalidated. The public page is equally stale in the other direction.
+
+The rule generalises: **whenever an admin write changes data that is served over a route other than `/content/:resource`, that route's `PublicContent` tag id must be added to the invalidation set in the same change.** Adding a new public surface without the matching invalidation is a silent, cache-only bug — the request succeeds, the response is correct, and the UI lies.
 - **Statistics mutations** invalidate `AdminStatistics` and `PublicContent:statistics`.
 - **System settings mutations** invalidate `AdminSystemSettings`.
 - **Admin role mutations** invalidate `AdminRoles`.

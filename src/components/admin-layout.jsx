@@ -17,6 +17,9 @@ const routeLabels = {
     '/admin/posts': 'Posts',
     '/admin/members': 'Members',
     '/admin/events': 'Events',
+    // Without this entry the breadcrumb silently falls back to 'Dashboard'
+    // (see `routeLabels[pathname] || 'Dashboard'` above).
+    '/admin/hackathon': 'Hackathon',
     '/admin/gallery': 'Gallery',
     '/admin/jobs': 'Job Pipeline',
     '/admin/messages': 'Contact Messages',
