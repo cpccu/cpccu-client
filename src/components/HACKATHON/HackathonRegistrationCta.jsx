@@ -58,7 +58,10 @@ export default function HackathonRegistrationCta({
   }
 
   return (
-    <section className="flex flex-col items-start gap-4 rounded-2xl bg-header px-6 py-7 text-white md:px-8">
+    /* `px-5` on the smallest screens: the card sits inside an already-narrow
+       `px-4` page gutter, and 24px of padding on each side of a 320px screen
+       left the label barely 230px to wrap into. */
+    <section className="flex flex-col items-start gap-4 rounded-2xl bg-header px-5 py-6 text-white sm:px-6 sm:py-7 md:px-8">
       <div className="flex flex-col gap-1">
         <h2 className="text-xl font-bold md:text-2xl">Registrations are open</h2>
         <p className="text-white/85">
@@ -72,7 +75,11 @@ export default function HackathonRegistrationCta({
         // `motion-reduce:` disables the hover scale for visitors who ask their
         // OS to reduce motion — a decorative zoom is exactly the kind of
         // incidental animation that setting exists to suppress.
-        className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-bold text-header transition-transform hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
+        // `max-w-full` + `break-words`: `ctaLabel` is admin-supplied free text,
+        // so a long label ("Register for the CPCCU Winter Hackathon 2026") had
+        // no overflow guard and pushed past the card's padding on a phone.
+        // `text-center` keeps a wrapped label centred rather than ragged-left.
+        className="inline-flex max-w-full items-center justify-center gap-2 break-words rounded-lg bg-white px-6 py-3 text-center font-bold text-header transition-transform hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
       >
         {ctaLabel || "Register Now"}
         <span className="sr-only">(opens in a new tab)</span>

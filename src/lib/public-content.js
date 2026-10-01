@@ -165,6 +165,12 @@ export const toPublicHackathon = (hackathon) => ({
   registrationUrl: toSafeHref(hackathon.registrationLink),
   ctaLabel: hackathon.ctaLabel || 'Register Now',
   ruleBookUrl: toSafeHref(hackathon.ruleBookUrl),
+  // Public, and deliberately NOT gated the way `hackathonProblemSetUrl` is on
+  // the server: a submission form is the participation path, so a participant
+  // has to be able to find it. Same `toSafeHref` treatment as every other
+  // admin-supplied href, so a poisoned stored value degrades to `''` and the
+  // CTA renders nothing rather than becoming a live link.
+  submissionUrl: toSafeHref(hackathon.submissionUrl),
   // ADVISORY ONLY — it decides whether the problem-set affordance is offered.
   // The real gate is the `verifyToken` + start-time protected endpoint, so
   // forging this in the browser earns a 403 and nothing else.

@@ -2,6 +2,7 @@
 
 import { ExternalLink, FileText } from "lucide-react";
 import { deriveEmbeddableUrl, toSafeHref } from "@/lib/hackathon";
+import HackathonDocumentFrame from "@/components/HACKATHON/HackathonDocumentFrame";
 
 /**
  * Rule book viewer.
@@ -51,22 +52,10 @@ export default function HackathonRuleBook({ ruleBookUrl, title = "Hackathon" }) 
     return (
       <section className="flex flex-col gap-3">
         <h2 className="text-2xl font-bold text-foreground">Rule book</h2>
-        <iframe
-          src={embedUrl}
-          // `sandbox` withholds everything the viewer does not need. It has to
-          // include `allow-scripts` + `allow-same-origin` because Google's
-          // preview viewer is a script-driven app, and `allow-popups` because
-          // "Open in Drive" inside the viewer is the normal escape hatch.
-          // `allow-popups-to-escape-sandbox` is what lets that escape hatch
-          // actually work instead of being neutered by the sandbox.
-          sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation"
-          // `no-referrer` keeps the visitor's URL and any query string off the
-          // framed request entirely.
-          referrerPolicy="no-referrer"
-          loading="lazy"
-          title={`${title} rule book`}
-          className="h-[70vh] min-h-[28rem] w-full rounded-2xl border border-border bg-white"
-        />
+        {/* The frame's sandbox, referrer policy and responsive height live in
+            `HackathonDocumentFrame` so the problem set's frame cannot drift from
+            this one. */}
+        <HackathonDocumentFrame src={embedUrl} title={`${title} rule book`} />
       </section>
     );
   }
@@ -74,10 +63,14 @@ export default function HackathonRuleBook({ ruleBookUrl, title = "Hackathon" }) 
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-2xl font-bold text-foreground">Rule book</h2>
-      <div className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
+      {/* ⚠️ The row switch is `md` (768px), not `sm` (480px — this theme
+          redefines `sm`, it is not Tailwind's 640px). At 480px the 24px icon,
+          the gap and a ~130px button leave the sentence ~230px, which then
+          wraps four lines vertically centred beside a short button. */}
+      <div className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <FileText className="size-6 shrink-0 text-header" />
-          <p className="text-muted-foreground">
+          <p className="break-words text-muted-foreground">
             The rule book is hosted on an external service and cannot be
             displayed here.
           </p>
@@ -86,7 +79,11 @@ export default function HackathonRuleBook({ ruleBookUrl, title = "Hackathon" }) 
           href={safeUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-lg bg-header px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-header-hover"
+          /* `min-h-[2.75rem]` (44px) is the touch-target floor; `px-4 py-2 text-sm`
+             alone is ~36px. `md:min-h-0` hands the height back to the padding
+             once there is a mouse. `shrink-0` stops a long sentence from
+             squeezing the label mid-word. */
+          className="inline-flex min-h-[2.75rem] shrink-0 items-center justify-center gap-2 rounded-lg bg-header px-4 py-2 text-center text-sm font-bold text-white transition-colors hover:bg-header-hover md:min-h-0"
         >
           Open rule book
           <span className="sr-only">(opens in a new tab)</span>
