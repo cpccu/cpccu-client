@@ -6,6 +6,7 @@ import HackathonCountdown from "@/components/HACKATHON/HackathonCountdown";
 import HackathonRuleBook from "@/components/HACKATHON/HackathonRuleBook";
 import HackathonProblemSet from "@/components/HACKATHON/HackathonProblemSet";
 import HackathonRegistrationCta from "@/components/HACKATHON/HackathonRegistrationCta";
+import HackathonSubmissionCta from "@/components/HACKATHON/HackathonSubmissionCta";
 import { useGetPublicHackathonQuery } from "@/features/content/contentApi";
 import { toPublicHackathon } from "@/lib/public-content";
 import { DHAKA_TIME_ZONE_LABEL, formatDhakaDateTime } from "@/lib/dhaka-time";
@@ -64,8 +65,10 @@ export default function Hackathon() {
 
   if (isLoading) {
     return (
-      <div className="flex grow min-h-[50svh] flex-col gap-8 px-6 py-12 md:px-10">
-        <Skeleton className="h-72 w-full rounded-3xl" />
+      <div className="flex grow min-h-[50svh] flex-col gap-8 px-4 py-12 sm:px-6 md:px-10">
+        {/* Matches the hero's stacked shape on phones — a 288px-tall placeholder
+            is a third of a small screen. */}
+        <Skeleton className="h-48 w-full rounded-3xl sm:h-72" />
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-5 w-full" />
         <Skeleton className="h-5 w-4/5" />
@@ -79,7 +82,7 @@ export default function Hackathon() {
   // entry's absence implies, so it is preferred over a hard-coded string.
   if (isError || !data?.data) {
     return (
-      <div className="flex grow min-h-[50svh] flex-col items-center justify-center gap-6 px-6 py-24">
+      <div className="flex grow min-h-[50svh] flex-col items-center justify-center gap-6 px-4 py-24 sm:px-6">
         <div className="flex size-20 items-center justify-center rounded-full bg-red-50">
           <AlertTriangle className="size-10 text-red-500" />
         </div>
@@ -114,25 +117,45 @@ export default function Hackathon() {
   ].filter((item) => item.value);
 
   return (
-    <div className="flex grow min-h-[50svh] flex-col px-6 py-10 md:px-10 md:py-14">
+    <div className="flex grow min-h-[50svh] flex-col px-4 py-8 sm:px-6 sm:py-10 md:px-10 md:py-14">
       <div className="mx-auto flex w-full max-w-[100rem] flex-col gap-10">
-        {/* Hero */}
-        <section className="flex gap-6">
+        {/* Hero — STACKED BELOW `lg`, SIDE BY SIDE ABOVE IT.
+            ⚠️ WHY `lg` AND NOT `md`: the content column is roughly 55% of the
+            viewport, so at `md` (768px) it is ~303px and the countdown tiles
+            (260px) plus a `text-3xl` title have no room to breathe. `lg` (976px)
+            is also the exact width NavBar collapses at, so the hero and the nav
+            change shape together. */}
+        <section className="flex flex-col gap-6 lg:flex-row lg:gap-10">
           {hackathon.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={hackathon.image}
               alt={hackathon.title}
-              className="h-[50%] w-[50%] rounded-3xl object-cover"
+              /* ⚠️ NO PERCENTAGE HEIGHT HERE. The old `h-[50%]` resolved against
+                 a flex container whose height is `auto`, so it computed to
+                 `auto` and `object-cover` never got a box to crop into — the
+                 banner rendered at its own aspect ratio and the hero height
+                 changed with every image an admin uploaded. `aspect-[16/9]` gives
+                 the stacked layout a deterministic box; at `lg` the aspect is
+                 dropped so the flex row's `stretch` (the default) plus
+                 `object-cover` does the cropping, matching the house pattern in
+                 `HOME/OurMission.jsx`. `shrink-0` stops a long description from
+                 squeezing the banner. */
+              className="aspect-[16/9] w-full shrink-0 rounded-3xl object-cover lg:aspect-auto lg:w-[45%]"
             />
           ) : null}
-          <div className="flex flex-col gap-4">
+          {/* `min-w-0` is the horizontal-overflow guard: a flex item defaults to
+              `min-width: auto`, so a bare URL in an admin-written description
+              would otherwise push the whole page into a sideways scroll. */}
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
             <div className="flex flex-col gap-4">
-              <h1 className="text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
+              {/* `break-words` — titles are free text and can contain a single
+                  very long token (a hashtag, a sponsor name). */}
+              <h1 className="break-words text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
                 {hackathon.title}
               </h1>
               {hackathon.description ? (
-                <p className="max-w-3xl text-lg text-muted-foreground">
+                <p className="max-w-3xl text-base text-muted-foreground sm:text-lg">
                   {hackathon.description}
                 </p>
               ) : null}
@@ -157,30 +180,43 @@ export default function Hackathon() {
               <p className="text-sm text-muted-foreground">
                 All times shown in {DHAKA_TIME_ZONE_LABEL}.
               </p>
-
-              {/* Details grid */}
-              {details.length ? (
-                <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {details.map(({ label, value, Icon }) => (
-                    <div
-                      key={label}
-                      className="flex flex-col gap-2 rounded-2xl border border-border bg-card px-5 py-4"
-                    >
-                      <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        <Icon className="size-3.5" />
-                        {label}
-                      </span>
-                      <span className="text-base font-semibold text-foreground">
-                        {value}
-                      </span>
-                    </div>
-                  ))}
-                </section>
-              ) : null}
             </div>
           </div>
-
         </section>
+
+        {/* Details grid — FULL WIDTH, DELIBERATELY OUTSIDE THE HERO COLUMN.
+            ⚠️ Tailwind's `lg:` measures the VIEWPORT, not the parent. While this
+            grid lived inside the hero's 45%-width text column, `lg:grid-cols-4`
+            at a 976px viewport still asked for four tiles inside a ~417px
+            column — ~95px each, and after `px-5` plus the border a 57px text
+            box, which shredded any real venue name. Hoisting it out makes the
+            breakpoint mean what it says, and five facts read better as a
+            full-width strip than crammed into one column. Container queries
+            (`@container` + `@xl:grid-cols-4`) would measure the column
+            correctly, but that would be the only container query in the
+            codebase, so the simpler layout wins. */}
+        {details.length ? (
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {details.map(({ label, value, Icon }) => (
+              <div
+                key={label}
+                className="flex h-full flex-col gap-2 rounded-2xl border border-border bg-card px-5 py-4"
+              >
+                <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Icon className="size-3.5 shrink-0" />
+                  {label}
+                </span>
+                {/* `break-words` — venue and organiser are free-text admin
+                    fields, and one long unbroken string would otherwise force a
+                    horizontal scroll on a phone. `h-full` on the tile above
+                    keeps every tile in a grid row the same height. */}
+                <span className="break-words text-base font-semibold text-foreground">
+                  {value}
+                </span>
+              </div>
+            ))}
+          </section>
+        ) : null}
 
 
 
@@ -203,6 +239,18 @@ export default function Hackathon() {
           startAt={hackathon.startAt}
           endAt={hackathon.endAt}
           problemSetAvailable={hackathon.problemSetAvailable}
+        />
+
+        {/* Submission — live AND ended, see HackathonSubmissionCta. Sits below
+            the problem set on purpose: a team reads the questions, builds, and
+            then submits, so the action follows the thing it acts on. It renders
+            nothing when no form is configured, so an unconfigured hackathon
+            pays no layout cost here. */}
+        <HackathonSubmissionCta
+          phase={hackathon.phase}
+          startAt={hackathon.startAt}
+          endAt={hackathon.endAt}
+          submissionUrl={hackathon.submissionUrl}
         />
       </div>
     </div>

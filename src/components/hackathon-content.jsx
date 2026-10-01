@@ -64,6 +64,7 @@ const emptyForm = {
     ruleBookUrl: '',
     problemSetUrl: '',
     registrationUrl: '',
+    submissionUrl: '',
 };
 
 /** URL fields on the Event document, paired with the label shown in errors. */
@@ -71,6 +72,13 @@ const URL_FIELDS = [
     { key: 'ruleBookUrl', schemaKey: 'hackathonRuleBookUrl', label: 'Rule book URL' },
     { key: 'problemSetUrl', schemaKey: 'hackathonProblemSetUrl', label: 'Problem set URL' },
     { key: 'registrationUrl', schemaKey: 'registrationLink', label: 'Registration URL' },
+    // ⚠️ This entry is the ONLY thing that makes the field save. `handleSave`
+    // builds the payload by looping `URL_FIELDS` (see the `payload[field.schemaKey]`
+    // assignment) and the server's update handler is a `$set` of the raw body —
+    // so a form key that is not in this list, or a schema key that is not
+    // declared on the model, is silently DROPPED with a 200 and no error
+    // anywhere. Adding a URL field to the admin form means adding it here.
+    { key: 'submissionUrl', schemaKey: 'hackathonSubmissionUrl', label: 'Project submission URL' },
 ];
 
 const getErrorMessage = (error) =>
@@ -153,6 +161,7 @@ export function HackathonContent() {
             ruleBookUrl: hackathon.hackathonRuleBookUrl || '',
             problemSetUrl: hackathon.hackathonProblemSetUrl || '',
             registrationUrl: hackathon.registrationLink || '',
+            submissionUrl: hackathon.hackathonSubmissionUrl || '',
         });
         setFormError('');
         setDialogOpen(true);
@@ -656,6 +665,34 @@ export function HackathonContent() {
                             <p className="text-xs text-muted-foreground">
                                 Only released to signed-in members once the hackathon has started.
                                 It is never included in any public payload.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="hackathon-submission">Project submission URL</Label>
+                            <Input
+                                id="hackathon-submission"
+                                value={formData.submissionUrl}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, submissionUrl: e.target.value }))}
+                                placeholder="https://docs.google.com/forms/..."
+                            />
+                            {/* ⚠️ The wording here is load-bearing on two counts.
+                                First, the visibility rule is PHASE-DERIVED and this
+                                field has no switch: an admin "turns it on" by
+                                publishing a URL, and "turns it off" by clearing it.
+                                Second, and more easily misread: this URL is PUBLIC
+                                from kickoff onwards, unlike the problem set above,
+                                which is gated until the hackathon starts. That is
+                                intended — a participant must be able to FIND the
+                                form to submit at all. Do not "fix" this by gating
+                                it; the form's own response settings are the real
+                                deadline, which is also why the page keeps showing
+                                it after `endAt`. */}
+                            <p className="text-xs text-muted-foreground">
+                                A Google Form (or any external form) participants submit their
+                                project through. Shown publicly from the moment the hackathon
+                                starts, and it stays visible after it ends. Clear this field to
+                                hide it.
                             </p>
                         </div>
 

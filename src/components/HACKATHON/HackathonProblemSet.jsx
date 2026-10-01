@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useSelector } from "react-redux";
-import { FileQuestion, Lock } from "lucide-react";
+import { ExternalLink, FileQuestion, Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetPublicHackathonProblemSetQuery } from "@/features/content/contentApi";
-import { toSafeHref } from "@/lib/hackathon";
+import { deriveEmbeddableUrl, toSafeHref } from "@/lib/hackathon";
 import { hasHackathonStarted } from "@/lib/countdown";
 import { useHackathonPhase } from "@/hooks/use-hackathon-phase";
+import HackathonDocumentFrame from "@/components/HACKATHON/HackathonDocumentFrame";
 
 /**
  * Problem-set panel.
@@ -59,6 +60,20 @@ import { useHackathonPhase } from "@/hooks/use-hackathon-phase";
  *
  * `problemSetAvailable` is treated as advisory only. Forging it in devtools
  * earns a 403 and nothing else — the real gate is the endpoint.
+ *
+ * EMBEDDING, SAME POLICY AS THE RULE BOOK
+ * --------------------------------------
+ * When `deriveEmbeddableUrl` recognises the admin's URL (a Google Doc or a
+ * Drive file) the set is framed inline, and the "open in a new tab" card is
+ * rendered UNDERNEATH it. When it does not, only the card renders. `null` from
+ * `deriveEmbeddableUrl` must never become an `<iframe src>` — most document
+ * hosts send `X-Frame-Options: DENY`, so the frame would be blank and the panel
+ * would look broken. A link card does not.
+ *
+ * The link is kept under the frame deliberately, unlike the rule book: a framed
+ * document is always a compromise (cramped on a phone, awkward to zoom, and
+ * Google's "Open in Drive" is not discoverable), and the problem set is the one
+ * artefact a participant genuinely needs full-screen while working.
  *
  * OUTBOUND LINK RULE: see `src/lib/hackathon.js`. The problem set link is a
  * plain anchor with `rel="noopener noreferrer"`; the login prompt is an
@@ -113,9 +128,9 @@ export default function HackathonProblemSet({
     return (
       <section className="flex flex-col gap-3">
         {header}
-        <div className="flex items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6">
+        <div className="flex min-w-0 items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6">
           <FileQuestion className="mt-0.5 size-6 shrink-0 text-header" />
-          <p className="text-muted-foreground">{notReleasedCopy}</p>
+          <p className="break-words text-muted-foreground">{notReleasedCopy}</p>
         </div>
       </section>
     );
@@ -125,16 +140,20 @@ export default function HackathonProblemSet({
     return (
       <section className="flex flex-col gap-3">
         {header}
-        <div className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
+        <div className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
             <Lock className="mt-0.5 size-6 shrink-0 text-header" />
-            <p className="text-muted-foreground">
+            <p className="break-words text-muted-foreground">
               Sign in with your CPCCU account to view the problem set.
             </p>
           </div>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 rounded-lg bg-header px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-header-hover"
+            /* `min-h-[2.75rem]` (44px) is the touch-target floor — `px-4 py-2
+               text-sm` alone is ~36px. `md:min-h-0` hands the height back to
+               the padding once there is a mouse. `shrink-0` stops the sentence
+               beside it from squeezing the label. */
+            className="inline-flex min-h-[2.75rem] shrink-0 items-center justify-center gap-2 rounded-lg bg-header px-4 py-2 text-center text-sm font-bold text-white transition-colors hover:bg-header-hover md:min-h-0"
           >
             Sign in
           </Link>
@@ -160,9 +179,9 @@ export default function HackathonProblemSet({
     return (
       <section className="flex flex-col gap-3">
         {header}
-        <div className="flex items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6">
+        <div className="flex min-w-0 items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6">
           <FileQuestion className="mt-0.5 size-6 shrink-0 text-header" />
-          <p className="text-muted-foreground">
+          <p className="break-words text-muted-foreground">
             {error?.data?.message ||
               "The problem set is not available right now."}
           </p>
@@ -178,9 +197,9 @@ export default function HackathonProblemSet({
     return (
       <section className="flex flex-col gap-3">
         {header}
-        <div className="flex items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6">
+        <div className="flex min-w-0 items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6">
           <FileQuestion className="mt-0.5 size-6 shrink-0 text-header" />
-          <p className="text-muted-foreground">
+          <p className="break-words text-muted-foreground">
             The problem set is not available right now.
           </p>
         </div>
@@ -188,26 +207,62 @@ export default function HackathonProblemSet({
     );
   }
 
+  /* ⚠️ EMBEDDING DOES NOT WEAKEN EITHER GATE ABOVE.
+     By the time this line runs the visitor is signed in AND the set is released,
+     so the URL is already in the page: it is fetched from a `verifyToken`-
+     protected endpoint, it is never in the server-rendered HTML, and it never
+     touches a shared cache. An `<iframe src>` exposes exactly as much as the
+     `<a href>` this component already rendered — it is the same string in the
+     same DOM, in a different attribute. `/preview` is if anything the SAFER of
+     the two: it cannot drop a visitor into Google's editor.
+     The URL is also rebuilt onto a canonical bare host by
+     `deriveEmbeddableUrl`, so it stays inside the production CSP `frame-src`
+     allowlist in `src/proxy.ts` — which already covers both hosts it can emit,
+     because the rule book embeds the same way. No CSP change is needed. */
+  const embedUrl = deriveEmbeddableUrl(problemSetUrl);
+
+  /* The new-tab affordance. Rendered under BOTH shapes, because a framed
+     document is always a compromise: Google's viewer is cramped on a phone,
+     zoom is awkward, and "Open in Drive" is the normal escape hatch but is not
+     discoverable. Same rule as the rule book — plain anchor with
+     `rel="noopener noreferrer"`, never `next/link` (see `src/lib/hackathon.js`). */
+  const openLink = (
+    <div className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6 md:flex-row md:items-center md:justify-between">
+      <div className="flex min-w-0 items-start gap-3">
+        <FileQuestion className="mt-0.5 size-6 shrink-0 text-header" />
+        <p className="break-words text-muted-foreground">
+          {embedUrl
+            ? "Prefer a full-screen view? Open the problem set in a new tab."
+            : "The problem set is hosted on an external service and cannot be displayed here."}
+        </p>
+      </div>
+      <a
+        href={problemSetUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex min-h-[2.75rem] shrink-0 items-center justify-center gap-2 rounded-lg bg-header px-4 py-2 text-center text-sm font-bold text-white transition-colors hover:bg-header-hover md:min-h-0"
+      >
+        Open problem set
+        <span className="sr-only">(opens in a new tab)</span>
+        <ExternalLink className="size-4" />
+      </a>
+    </div>
+  );
+
+  if (embedUrl) {
+    return (
+      <section className="flex flex-col gap-3">
+        {header}
+        <HackathonDocumentFrame src={embedUrl} title="Problem set" />
+        {openLink}
+      </section>
+    );
+  }
+
   return (
     <section className="flex flex-col gap-3">
       {header}
-      <div className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <FileQuestion className="mt-0.5 size-6 shrink-0 text-header" />
-          <p className="text-muted-foreground">
-            Download the problem set and start working.
-          </p>
-        </div>
-        <a
-          href={problemSetUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-lg bg-header px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-header-hover"
-        >
-          Open problem set
-          <span className="sr-only">(opens in a new tab)</span>
-        </a>
-      </div>
+      {openLink}
     </section>
   );
 }
