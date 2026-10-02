@@ -20,6 +20,9 @@ const routeLabels = {
     // Without this entry the breadcrumb silently falls back to 'Dashboard'
     // (see `routeLabels[pathname] || 'Dashboard'` above).
     '/admin/hackathon': 'Hackathon',
+    // Without this entry the breadcrumb silently falls back to 'Dashboard'
+    // (see `routeLabels[pathname] || 'Dashboard'` above).
+    '/admin/participation': 'Participation',
     '/admin/gallery': 'Gallery',
     '/admin/jobs': 'Job Pipeline',
     '/admin/messages': 'Contact Messages',

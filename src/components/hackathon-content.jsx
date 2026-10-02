@@ -13,6 +13,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { AdminImageUploadField } from '@/components/admin-image-upload-field';
+import {
+    EMPTY_PARTICIPATION_FORM,
+    EventParticipationSettings,
+    participationFromEvent,
+    participationToPayload,
+} from '@/components/admin-event-participation-settings';
 import useAdminContent from '@/hooks/use-admin-content';
 import { showDeleteConfirm, showErrorAlert, showSuccessAlert } from '@/lib/alerts';
 import {
@@ -65,6 +71,13 @@ const emptyForm = {
     problemSetUrl: '',
     registrationUrl: '',
     submissionUrl: '',
+    // ⚠️ THE SIX PARTICIPATION FIELDS ARE IN `emptyForm` FOR THE SAME REASON THE
+    // URL_FIELDS LOOP EXISTS BELOW. This form builds a FULL REPLACEMENT payload —
+    // it does not spread `...editingHackathon` — and the server applies that as
+    // `$set: req.body`. So a field not re-sent here is UNSET on save, with a 200
+    // and no error anywhere. Left out of `emptyForm`, the first save of a hackathon
+    // with in-app participation configured would silently turn participation off.
+    ...EMPTY_PARTICIPATION_FORM,
 };
 
 /** URL fields on the Event document, paired with the label shown in errors. */
@@ -162,6 +175,7 @@ export function HackathonContent() {
             problemSetUrl: hackathon.hackathonProblemSetUrl || '',
             registrationUrl: hackathon.registrationLink || '',
             submissionUrl: hackathon.hackathonSubmissionUrl || '',
+            ...participationFromEvent(hackathon),
         });
         setFormError('');
         setDialogOpen(true);
@@ -258,6 +272,17 @@ export function HackathonContent() {
             // is vestigial — that is what a `$set` save would do.
             status: editingHackathon?.status || 'upcoming',
             hackathonCtaLabel: formData.ctaLabel || 'Register Now',
+            // ⚠️ THE SIX PARTICIPATION FIELDS ARE SPREAD INTO THE PAYLOAD, NOT
+            // SET INDIVIDUALLY. This form builds a full replacement — the same
+            // hazard as the two lines above — so `participationToPayload` is what
+            // keeps a configured switch from being silently unset by an unrelated
+            // save (a title typo fix would otherwise turn in-app registration off).
+            //
+            // It also handles the deadline `''` → `null` conversion. Sending `''`
+            // would cast to `Invalid Date` on the server, and the resolver treats a
+            // non-null unparseable deadline as FAIL CLOSED — so a stray empty
+            // string would quietly close the window instead of opening it.
+            ...participationToPayload(formData),
         };
 
         for (const field of URL_FIELDS) {
@@ -631,7 +656,35 @@ export function HackathonContent() {
                                 onChange={(e) => setFormData((prev) => ({ ...prev, registrationUrl: e.target.value }))}
                                 placeholder="https://..."
                             />
+                            {/* ⚠️ THIS FIELD IS IGNORED WHILE THE IN-APP SWITCH BELOW
+                                IS ON, and saying so here matters more than anywhere
+                                else in the admin. An admin who has a working Google
+                                Form and then ticks "in-app registration" needs to
+                                understand that the form has stopped being used —
+                                otherwise they keep receiving responses and conclude
+                                the site is broken, or worse, they assume members are
+                                registering twice. The switch's own panel repeats
+                                this, because a reader who lands on this field first
+                                will not have seen the panel yet. */}
+                            <p className="text-xs text-muted-foreground">
+                                Used as the fallback when in-app registration is
+                                switched off below. Leave blank if members will
+                                register on this site.
+                            </p>
                         </div>
+
+                        {/* ⚠️ SHARED VERBATIM WITH `events-content.jsx`. These six
+                            fields are not hackathon-specific — the server's
+                            `resolveEventParticipationWindow` reads them from any
+                            event with no type check at all, which is what lets the
+                            same flow serve a workshop. Two editors for one record is
+                            already this file's central trap, so the participation
+                            controls are defined once and rendered in both places
+                            rather than being a fourth copy of the same six fields. */}
+                        <EventParticipationSettings
+                            formData={formData}
+                            onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+                        />
 
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="hackathon-rulebook">Rule book URL</Label>

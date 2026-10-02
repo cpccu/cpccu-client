@@ -220,8 +220,17 @@ export default function Hackathon() {
 
 
 
-        {/* Registration — upcoming only, see HackathonRegistrationCta. */}
+        {/* Registration — upcoming only, see HackathonRegistrationCta.
+            ⚠️ `eventId` IS PASSED THROUGH BECAUSE THE IN-APP FLOW NEEDS IT. The
+            hackathon is an ordinary `Event` document, so its participation window
+            lives at `/participation/events/<that _id>` and its in-app registration
+            and submission pages live at `/event/<that _id>/register` and
+            `/submit`. Without this prop both CTAs would be permanently stuck on
+            their external-form branch and the admin's `submissionEnabled` toggle
+            would have no effect anywhere on this page — a switch that looks live in
+            the admin panel and does nothing. */}
         <HackathonRegistrationCta
+          eventId={hackathon.id}
           phase={hackathon.phase}
           startAt={hackathon.startAt}
           endAt={hackathon.endAt}
@@ -247,6 +256,7 @@ export default function Hackathon() {
             nothing when no form is configured, so an unconfigured hackathon
             pays no layout cost here. */}
         <HackathonSubmissionCta
+          eventId={hackathon.id}
           phase={hackathon.phase}
           startAt={hackathon.startAt}
           endAt={hackathon.endAt}
