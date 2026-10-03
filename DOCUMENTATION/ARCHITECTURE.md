@@ -83,6 +83,9 @@ Nav visibility is data-driven from `data/global/navBar.json`, and some entries a
 | `/contributors` | Contributors page |
 | `/donators` | Donators page |
 | `/event` | Event page |
+| `/event/[eventId]` | Event detail page — the participation surface (window, register CTA, winners gallery; see §20) |
+| `/event/[eventId]/register` | Event registration page (solo or team; see §20) |
+| `/event/[eventId]/submit` | Event submission page (the one submission per registration; see §20) |
 | `/gallery` | Gallery page |
 | `/hackathon` | Hackathon page — countdown, details, registration CTA, rule book, problem set (see §19) |
 | `/history` | Club history |
@@ -114,6 +117,7 @@ Nav visibility is data-driven from `data/global/navBar.json`, and some entries a
 | `/admin/events` | Events |
 | `/admin/gallery` | Gallery |
 | `/admin/hackathon` | Hackathon (visibility toggle, rule book, problem set, CTA label, schedule) |
+| `/admin/participation` | Event participation review (registration roster + submission queue; admin reads/writes, moderator reads) |
 | `/admin/jobs` | Developer profiles / job pipeline |
 | `/admin/alumni` | Alumni |
 | `/admin/contributors` | Contributors |
@@ -185,7 +189,8 @@ flowchart TD
 ```
 Auth, Users, Posts, Projects, PublicContent,
 AdminOverview, AdminMembers, AdminContent, AdminContributors,
-AdminStatistics, AdminCertificates, AdminSystemSettings, AdminRoles
+AdminStatistics, AdminCertificates, AdminSystemSettings, AdminRoles,
+Participation
 ```
 
 > ⚠️ Code quirk: `memberApi.js` provides a `Members` tag, but `Members` is **not** declared in `baseApi.tagTypes`.
@@ -201,6 +206,7 @@ AdminStatistics, AdminCertificates, AdminSystemSettings, AdminRoles
 | `contentApi` | `features/content/contentApi.js` | public content + statistics + hackathon + hackathon problem set |
 | `contactApi` | `features/contact/contactApi.js` | contact form submission |
 | `adminApi` | `features/admin/adminApi.js` | admin overview, members, content, roles, statistics, system settings, certificates, image upload |
+| `participationApi` | `features/participation/participationApi.js` | event participation — public window + winners, member registrations/submissions, member search, admin review lists + review decision (see §20) |
 
 ### 4.5 Direct Fetch (non-RTK Query)
 
@@ -437,10 +443,11 @@ flowchart LR
 | Module | Content source | Notes |
 | --- | --- | --- |
 | Dashboard | `GET /admin/overview` | Live stats + Recharts (area, bar, pie) |
-| Members | `GET/POST/PATCH/DELETE /admin/members` | Approval, status, official role assignment |
+| Members | `GET/POST/PATCH/DELETE /admin/members` | Approval (`memberStatus` — see §20.5), status, official role assignment |
 | Posts | Generic content `posts` | Title, content, cover image, status |
 | Events | Generic content `events` | Date phases, rewards, rules, buttons. Excludes hackathon rows from the public list |
 | Hackathon | Generic content `events` (same endpoint, no new admin route) | Visibility toggle, rule book, problem set, CTA label, Dhaka-time schedule |
+| Participation | `GET /admin/participation/{registrations,submissions}` + `PATCH /admin/participation/submissions/:id` | Registration roster + submission review queue (per event), shortlist/reject with `reviewNote`. Admin reads+writes; moderator reads; the review action is gated on role in the component |
 | Gallery | Generic content `gallery` + `gallery-events` | Image upload, event grouping |
 | Certificates | `GET/POST/PATCH/DELETE /admin/certificates` | Issue, bulk issue, delete |
 | Jobs | `GET /admin/content/profiles` | Developer profile review |
@@ -463,6 +470,8 @@ See [CPCCU_Admin_Panel_Implementation_Documentation.md](./CPCCU_Admin_Panel_Impl
 | `roles.js` | Official role helpers (see §10.3) |
 | `countdown.js` | Pure hackathon countdown arithmetic: `getCountdownPhase`, `getRemainingMs`, `splitDuration`, `getCountdownTarget`, `hasHackathonStarted` (see §19) |
 | `hackathon.js` | Client mirror of the server URL policy (`isSafeHttpUrl`, `toSafeHref`) + `deriveEmbeddableUrl` (see §19) |
+| `participation.js` | Event participation helpers (see §20): the client mirror of the server's window resolver (`resolveWindowAction`, `resolveTeamRules`, `resolveRegistrationTarget`, `resolveSubmissionTarget`), submission state (`isSubmissionEditable`, `describeSubmissionStatus`), form normalizers (`normalizeTeamName`, `normalizeTechnologies`, `parseTechnologies`), `findActiveRegistration`, and `getParticipationErrorMessage` |
+| `participation-routes.js` | `IS_EVENT_ID` — the event-id shape guard shared by the three participation pages |
 | `dhaka-time.js` | Asia/Dhaka conversion and formatting for admin-entered and displayed times (see §19) |
 | `certificates/` | Certificate parsing/sorting/badges/permissions (see §8.4) |
 | `certificates-data.js` | Static demo certificate dataset (`CERTIFICATES`, `CONTEST_NAMES`, `STATS`) |
@@ -564,6 +573,50 @@ Schedule input uses `datetime-local`, which yields a naive wall-clock string. It
 ### 19.5 Timezone handling
 
 `lib/dhaka-time.js` is the only place that converts between the server's UTC ISO strings and Dhaka wall-clock. It is a dedicated module because two existing helpers are both wrong for this feature and were deliberately not reused: `lib/format-date.js` (its docstring claims UTC determinism but it formats a browser-local `Date`), and raw `new Date(datetimeLocalValue).toISOString()`. Both are reported, not fixed — changing either would alter every date on the public site or every historical event's stored instant, which is far outside a hackathon change.
+
+---
+
+## 20. Event Participation
+
+Three member pages, one admin review panel, and a client-side mirror of the server's window resolver whose whole job is to explain *why* an action is unavailable. The backend half (routes, models, indexes, the approval gate) is in [`cpccu-server/docs/ARCHITECTURE.md`](https://github.com/cpccu/cpccu-server/blob/dev/docs/ARCHITECTURE.md) → *Event Participation*; this section is the client half. The RTK Query bindings and their tag scheme are in [API Documentation](./API_DOCUMENTATION.md#13-event-participation-participationapi).
+
+### 20.1 The surfaces
+
+| Route | Page file | Component |
+| --- | --- | --- |
+| `/event/[eventId]` | `src/app/(main)/event/[eventId]/page.jsx` | `components/PARTICIPATION/EventDetail.jsx` — the event page, now carrying the participation section (`EventParticipationSection`), the register CTA and the winners gallery (`EventWinnersGallery`) |
+| `/event/[eventId]/register` | `.../register/page.jsx` | `EventRegistrationRoute.jsx` → `EventRegistrationForm.jsx` — solo or team registration |
+| `/event/[eventId]/submit` | `.../submit/page.jsx` | `EventSubmissionRoute.jsx` → `EventSubmissionForm.jsx` — the one submission per registration |
+
+All three pages validate the `eventId` with `IS_EVENT_ID` (`src/lib/participation-routes.js`) and call `notFound()` on a malformed id. The shared chrome is `ParticipationShell.jsx`; `ParticipationSignInPrompt.jsx` is the signed-out state. `MemberPicker.jsx` is the co-member type-ahead.
+
+### 20.2 The window, resolved twice (on purpose)
+
+`src/lib/participation.js` is the client's counterpart to the server's `resolveEventParticipationWindow`. It would be tempting to trust the server's `open` boolean and skip this layer — correct for security (every write path re-resolves the window server-side, so a forged `open` buys an attacker nothing) but it would leave the UI unable to say *why* an action is unavailable. A participant who arrives an hour after the deadline does not need "closed"; they need "registration closed on 4 March", and that sentence requires the deadline, which requires re-deriving the state from the same two inputs the server uses.
+
+Exports: `resolveWindowAction` (with `ACTION_STATES`), `resolveTeamRules` (min/max team size), `resolveRegistrationTarget` / `resolveSubmissionTarget` (act in-app vs. follow an external URL), `isSubmissionEditable` (only while `status === 'submitted'`), `describeSubmissionStatus`, the form normalizers (`normalizeTeamName`, `normalizeTechnologies`, `parseTechnologies`), `findActiveRegistration` (newest non-withdrawn registration for an event — withdrawn ones are deliberately excluded here rather than at each call site, because forgetting it shows "You are registered" for a registration the member withdrew), and `getParticipationErrorMessage` (see [API Documentation §13.5](./API_DOCUMENTATION.md#135-error-messages--getparticipationerrormessage)).
+
+### 20.3 The registration and submission pages
+
+- **Register** — solo by default (the member's own name, no team name field); adding `memberIds` (student IDs, via `MemberPicker`) makes it a team and requires a name. The form's rules (min/max size, deadline, naming) come from `resolveTeamRules` + `resolveWindowAction`, and the server re-checks all of them.
+- **Submit** — `EventSubmissionRoute` resolves *which registration* the caller holds for the event with `GET /me/registrations` + `findActiveRegistration` before showing the form; a member with no live registration is told so rather than shown a form that would 409. The form disables itself via `isSubmissionEditable` once a decision exists — there is no resubmit affordance, because the backend makes a second submission structurally impossible.
+
+### 20.4 The admin review panel
+
+`/admin/participation` (`src/app/admin/participation/page.jsx`) loads `ParticipationContent` (`src/components/participation-content.jsx`) through `next/dynamic` with `TablePageSkeleton` — matching every other admin page, so the large client component with its three RTK Query hooks stays out of the bundle of every *other* admin route. `ssr: false` is deliberately **not** set (the component reads the Redux store that `ProviderWrapper` hydrates before children paint, and a lone `ssr: false` would make this the only admin page whose shell renders differently on first paint).
+
+The **role gate is in the component, not the page**: `AdminLayout` admits `admin`/`moderator`/`mentor`, and the data is read-available to admins and moderators only. Adding a second gate in the page file would be a second rule that could disagree with the one in `ParticipationContent`. The sidebar entry (`admin-sidebar.jsx`) carries `roles: ['admin', 'moderator']` with the three-endpoint matrix recorded in a comment beside it, and `admin-layout.jsx` adds the breadcrumb label.
+
+### 20.5 The members approval UI (`members-content.jsx`)
+
+The Members admin table gained a **second** status column, and the two columns are two different gates — the UI mirrors decision 11 (`isValid` vs `memberStatus` are independent):
+
+| Column | Accessor | Meaning |
+| --- | --- | --- |
+| **Status** | `status` (derived `isValid ? 'active' : 'pending'`) | Email verification — the *login* gate |
+| **Membership** | `memberStatus` (`pending`/`approved`/`rejected`, styled success/warning/destructive) | The *event-registration* gate |
+
+Approve / Reject dropdown items (and the bulk-approve action) send `updateAdminMember({ id, memberStatus: 'approved' | 'rejected' })` — **only** `memberStatus`, which is also the only field a moderator may send (see [API Documentation §8.2](./API_DOCUMENTATION.md#82-members) and the server's `isMemberStatusUpdate` exception). Approve is offered while `memberStatus === 'pending'`; Reject while it is anything but `'rejected'`.
 
 ---
 

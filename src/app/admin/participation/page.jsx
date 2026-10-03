@@ -1,6 +1,7 @@
 'use client';
 import dynamic from 'next/dynamic';
 import AdminLayout from '@/components/admin-layout';
+import { TablePageSkeleton } from '@/components/page-skeleton';
 
 /**
  * `/admin/participation` — the registration and submission review surface.
@@ -29,7 +30,7 @@ import AdminLayout from '@/components/admin-layout';
  */
 const ParticipationContent = dynamic(
     () => import('@/components/participation-content').then((m) => ({ default: m.ParticipationContent })),
-    { loading: () => <div className="p-6 text-muted-foreground">Loading participation review…</div> }
+    { loading: () => <TablePageSkeleton /> }
 );
 
 export default function ParticipationPage() {
