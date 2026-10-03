@@ -468,7 +468,8 @@ See [CPCCU_Admin_Panel_Implementation_Documentation.md](./CPCCU_Admin_Panel_Impl
 | File | Responsibility |
 | --- | --- |
 | `roles.js` | Official role helpers (see §10.3) |
-| `countdown.js` | Pure hackathon countdown arithmetic: `getCountdownPhase`, `getRemainingMs`, `splitDuration`, `getCountdownTarget`, `hasHackathonStarted` (see §19) |
+| `countdown.js` | Pure hackathon countdown arithmetic: `getCountdownPhase`, `getRemainingMs`, `splitDuration`, `getCountdownTarget`, `hasHackathonStarted` (see §19). Takes `startAt`/`endAt` — the UI vocabulary — not the storage names |
+| `event-schedule.js` | The shared **schedule vocabulary**: `EVENT_SCHEDULE_FIELDS` (the six instants), `FOLLOW_TOGGLE_FIELDS` (the four "same as the event" toggles), `PARTICIPATION_SWITCHES`, plus `readEventSchedule`, `readParticipationWindow`, `describeParticipationWindow`, `formatInstant`, `formatInstantRange` (see §20.6) |
 | `hackathon.js` | Client mirror of the server URL policy (`isSafeHttpUrl`, `toSafeHref`) + `deriveEmbeddableUrl` (see §19) |
 | `participation.js` | Event participation helpers (see §20): the client mirror of the server's window resolver (`resolveWindowAction`, `resolveTeamRules`, `resolveRegistrationTarget`, `resolveSubmissionTarget`), submission state (`isSubmissionEditable`, `describeSubmissionStatus`), form normalizers (`normalizeTeamName`, `normalizeTechnologies`, `parseTechnologies`), `findActiveRegistration`, and `getParticipationErrorMessage` |
 | `participation-routes.js` | `IS_EVENT_ID` — the event-id shape guard shared by the three participation pages |
@@ -539,7 +540,8 @@ flowchart TD
 
 ### 19.1 Data flow
 
-- `GET /content/hackathon` (no auth) is the **only** public read. `toPublicHackathon` (`src/lib/public-content.js`) renames the server's model names to UI names (`location → venue`, `registrationLink → registrationUrl`, `date/endDate → startAt/endAt`) and passes **every** URL through `toSafeHref`.
+- `GET /content/hackathon` (no auth) is the **only** public read. `toPublicHackathon` (`src/lib/public-content.js`) renames the server's model names to UI names (`location → venue`, `registrationLink → registrationUrl`, `eventStartAt/eventEndAt → startAt/endAt`) and passes **every** URL through `toSafeHref`.
+- The same mapper handles events: `toPublicEvent` and `toPublicEventDetail` both read the stored `eventStartAt`/`eventEndAt` and emit **`startAt`/`endAt`**. `startAt`/`endAt` are therefore the single UI vocabulary for an event's own instants, across the events list, the event detail page, the hackathon page and the countdown — even though the wire names differ per endpoint (`startAt`/`endAt` on `/content/hackathon` and `/participation/events/:id`, `eventStartAt`/`eventEndAt` on `/content/events`). `data/upcomingEvent.json` and `src/lib/demo-data.js` hold **raw server-shaped rows** and must use the stored names, because they flow through `toPublicEvent` unchanged.
 - `toPublicHackathon` deliberately **does not** apply `chooseLiveItems`. That primitive is array-shaped (it reads `response.data` and `.map()`s it) and its fallback semantics — "show demo data on error" — are wrong for a page whose entire content is one record. Loading / error / empty are three explicit branches, following `JobPipeline.jsx`.
 - `toPublicEvent` also gained `isHackathon: event.type === 'hackathon'` and routes `btnLink` / `btnLink1` through the same `toSafeHref`. The flag is the one place the client decides "is this row a hackathon?"; `NoticeSection` and `EventLayout` both filter on it. The server already omits hackathons from the events list, so the client filter is a no-op in practice — deliberately, as the forward-compatible shape.
 
@@ -549,7 +551,7 @@ The server resolves `phase` once at request time and ships it. `lib/countdown.js
 
 `useHackathonPhase` is the single hook that owns the clock (1 s interval) and the single source of the phase for the countdown, the CTA and the problem-set panel. It returns `{ now, phase }` where `now` is **`null` before mount**: reading the clock during render would make the first client render differ from the server's HTML (a hydration mismatch), so the server's verdict is used verbatim until the first tick. Components needing a neutral pre-mount state check `now === null`.
 
-`problemSetAvailable` comes from the server and is **advisory**. The client ANDs it with `hasHackathonStarted({ date: startAt })` — deliberately **not** with `phase === 'live' || 'ended'`, because the server's release predicate consults `date` only. A record with a valid start and a missing/inverted end resolves to `phase === 'unannounced'` while the server would still answer `200`; keying off `phase` produced a permanently dead button. The client query is `skip`ped entirely before release, so a signed-in visitor cannot even probe the endpoint.
+`problemSetAvailable` comes from the server and is **advisory**. The client ANDs it with `hasHackathonStarted({ startAt })` — deliberately **not** with `phase === 'live' || 'ended'`, because the server's release predicate consults `eventStartAt` only. A record with a valid start and a missing/inverted end resolves to `phase === 'unannounced'` while the server would still answer `200`; keying off `phase` produced a permanently dead button. The client query is `skip`ped entirely before release, so a signed-in visitor cannot even probe the endpoint.
 
 ### 19.3 The rule book: iframe or link card
 
@@ -592,13 +594,17 @@ All three pages validate the `eventId` with `IS_EVENT_ID` (`src/lib/participatio
 
 ### 20.2 The window, resolved twice (on purpose)
 
-`src/lib/participation.js` is the client's counterpart to the server's `resolveEventParticipationWindow`. It would be tempting to trust the server's `open` boolean and skip this layer — correct for security (every write path re-resolves the window server-side, so a forged `open` buys an attacker nothing) but it would leave the UI unable to say *why* an action is unavailable. A participant who arrives an hour after the deadline does not need "closed"; they need "registration closed on 4 March", and that sentence requires the deadline, which requires re-deriving the state from the same two inputs the server uses.
+`src/lib/participation.js` is the client's counterpart to the server's `resolveEventParticipationWindow`. It would be tempting to trust the server's `open` boolean and skip this layer — correct for security (every write path re-resolves the window server-side, so a forged `open` buys an attacker nothing) but it would leave the UI unable to say *why* an action is unavailable. A participant who arrives an hour after the cutoff does not need "closed"; they need "registration closed on 4 March", and that sentence requires the closing bound, which requires re-deriving the state from the same inputs the server uses.
+
+The window now has **two** bounds, so `resolveWindowAction` distinguishes four states rather than three: `OPEN`, `COMING_SOON` (now is before `opensAt`), `CLOSED` (now is after `closesAt`), and `DISABLED`. `COMING_SOON` was **dead code** before `registrationOpenAt` existed — the resolver had no opening bound to compare against, so it could only ever produce "closed". It is now reachable, and it is what makes "Registration opens on 4 March" true rather than aspirational. The decision must stay `now < opensAt`; an earlier shape tested the *closing* bound against the clock, which produced a "registration opens on <the day it closes>" sentence for every scheduled-but-not-yet-open event.
+
+`readAction` reads `closesAt ?? deadline`. The second name is a **one-release wire alias** the server still emits: `cpccu-server` (Render) and `cpccu-client` (Vercel) deploy on independent schedules, so a half-deployed client must find a cutoff rather than `undefined`. New client code reads `closesAt` and must not emit the word `deadline` — `grep -rn "\.deadline\b" src` is the check.
 
 Exports: `resolveWindowAction` (with `ACTION_STATES`), `resolveTeamRules` (min/max team size), `resolveRegistrationTarget` / `resolveSubmissionTarget` (act in-app vs. follow an external URL), `isSubmissionEditable` (only while `status === 'submitted'`), `describeSubmissionStatus`, the form normalizers (`normalizeTeamName`, `normalizeTechnologies`, `parseTechnologies`), `findActiveRegistration` (newest non-withdrawn registration for an event — withdrawn ones are deliberately excluded here rather than at each call site, because forgetting it shows "You are registered" for a registration the member withdrew), and `getParticipationErrorMessage` (see [API Documentation §13.5](./API_DOCUMENTATION.md#135-error-messages--getparticipationerrormessage)).
 
 ### 20.3 The registration and submission pages
 
-- **Register** — solo by default (the member's own name, no team name field); adding `memberIds` (student IDs, via `MemberPicker`) makes it a team and requires a name. The form's rules (min/max size, deadline, naming) come from `resolveTeamRules` + `resolveWindowAction`, and the server re-checks all of them.
+- **Register** — solo by default (the member's own name, no team name field); adding `memberIds` (student IDs, via `MemberPicker`) makes it a team and requires a name. The form's rules (min/max size, window bounds, naming) come from `resolveTeamRules` + `resolveWindowAction`, and the server re-checks all of them.
 - **Submit** — `EventSubmissionRoute` resolves *which registration* the caller holds for the event with `GET /me/registrations` + `findActiveRegistration` before showing the form; a member with no live registration is told so rather than shown a form that would 409. The form disables itself via `isSubmissionEditable` once a decision exists — there is no resubmit affordance, because the backend makes a second submission structurally impossible.
 
 ### 20.4 The admin review panel
@@ -617,6 +623,40 @@ The Members admin table gained a **second** status column, and the two columns a
 | **Membership** | `memberStatus` (`pending`/`approved`/`rejected`, styled success/warning/destructive) | The *event-registration* gate |
 
 Approve / Reject dropdown items (and the bulk-approve action) send `updateAdminMember({ id, memberStatus: 'approved' | 'rejected' })` — **only** `memberStatus`, which is also the only field a moderator may send (see [API Documentation §8.2](./API_DOCUMENTATION.md#82-members) and the server's `isMemberStatusUpdate` exception). Approve is offered while `memberStatus === 'pending'`; Reject while it is anything but `'rejected'`.
+
+### 20.6 The event schedule form
+
+An event carries **six instants and four toggles**, and they are edited in three places — `events-content.jsx` (the two event instants), `hackathon-content.jsx` (the same two, in the hackathon's full-replacement payload) and `admin-event-participation-settings.jsx` (the four participation instants plus all four toggles). Three editors for one record is the exact trap the codebase already has a scar from, so the vocabulary lives in `src/lib/event-schedule.js` and is consumed declaratively:
+
+| Declaration | Shape | Consumed by |
+| --- | --- | --- |
+| `EVENT_SCHEDULE_FIELDS` | the six instants, each `{ key, label }` | the field render loop, `EMPTY_PARTICIPATION_FORM`, `participationToPayload` |
+| `FOLLOW_TOGGLE_FIELDS` | four `{ toggleField, targetField, anchorField, label }` | the toggle render, and the payload's clear-the-target-when-ticked rule |
+| `PARTICIPATION_SWITCHES` | `registrationEnabled`, `submissionEnabled` | the two `Switch`es |
+
+`EMPTY_PARTICIPATION_FORM`, `participationFromEvent` and `participationToPayload` are all built by **iterating** those declarations rather than by listing keys. A hand-written list of twelve would still contain all twelve today and silently drop the thirteenth tomorrow, and the bug would present as "an admin's follow toggle disappeared on the next unrelated save" — indistinguishable from the admin never having set it. The server applies an admin save as `$set: req.body`, so an omitted field is UNSET with a `200` and no error anywhere.
+
+Three rules the payload obeys:
+
+- **Instants go out as ISO strings or `null`, never `''`.** An empty string casts to `Invalid Date`, and the server's resolver treats an unparseable bound as **fail closed** — so a stray `''` would silently *close* a window rather than open it. `null` is the one value that means "no cutoff" on both sides.
+- **A ticked toggle clears its target instant.** The server overwrites the target from the anchor on every write, so whatever is sitting in the form is stale the moment it is sent. `ScheduleInstantField` clears it when the box is ticked *and* the checkbox is disabled while ticked; `participationToPayload` repeats the clearing because it is the single choke point every editor's payload goes through, which makes the guarantee independent of which control drove the toggle.
+- **`eventStartAt`/`eventEndAt` are read and re-sent by the participation section but never edited there.** They are part of the twelve because omitting one UNSETs it, and because the toggles are defined against them. A second pair of date inputs for the same two keys would re-create the two-editors-one-record trap *and* the two would disagree about the encoding — so the participation section renders only the four window fields.
+
+⚠️ **TIMEZONE, DELIBERATELY INCONSISTENT.** The four window instants are written as Dhaka wall-clock by `ScheduleInstantField`'s defaults. The two event instants in `events-content.jsx` still do `new Date(value).toISOString()`, i.e. they interpret the typed wall-clock in the **admin's browser** timezone — which is wrong, and is documented as a bug in `src/lib/dhaka-time.js`. It is left wrong on purpose: fixing it would re-interpret the stored instant of every historical event, a far larger blast radius than this feature. That is also why `ScheduleInstantField` takes `toInputValue`/`fromInputValue` as **props** rather than hard-coding Dhaka — the generic Events form passes its own browser round trip, and the two are never mixed within a single field.
+
+### 20.7 Wire aliases, and how they get retired
+
+| Name | Status | Rule |
+| --- | --- | --- |
+| `eventStartAt` / `eventEndAt` | canonical storage names | emitted by `/content/events`; mapped to `startAt`/`endAt` by `toPublicEvent`/`toPublicEventDetail` |
+| `startAt` / `endAt` | canonical **UI** names | used by the events list, the event detail page, the hackathon page and every countdown component |
+| `opensAt` / `closesAt` | canonical window names | `resolveWindowAction`'s inputs; ISO string or `null` |
+| `deadline` | **deprecated alias of `closesAt`** | read as `closesAt ?? deadline`, never emitted. Remove once `grep -rn "\.deadline\b" src` is empty in both repos |
+| `date` / `endDate` / `registrationDeadline` / `submissionDeadline` | **retired storage names** | the server still accepts them on write for one release and drops them from the payload; the database migration's `--phase=contract` deletes them |
+
+The client never has to worry about the retired names because the mappers absorb them: raw rows in, `startAt`/`endAt` out. `data/upcomingEvent.json` is the exception that proves the rule — it is a **raw server-shaped fixture** consumed by `toPublicEvent` (from `NoticeSection.jsx` and `EventLayout.jsx`), so it must carry `eventStartAt`/`eventEndAt`. When the API is unreachable and those fixtures are the fallback, keys that do not match the mapper's expectations do not error — the dates simply come out blank.
+
+---
 
 ---
 

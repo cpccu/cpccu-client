@@ -41,7 +41,7 @@ import { isSafeHttpUrl, toSafeHref } from '@/lib/hackathon';
  * THE "CURRENT HACKATHON" RULE IS A MIRROR OF THE SERVER'S
  * ----------------------------------------------------
  * `content.controller.js` resolves the published hackathon as
- * `Event.findOne({ type: 'hackathon', hackathonEnabled: true }).sort({ date: -1 })`.
+ * `Event.findOne({ type: 'hackathon', hackathonEnabled: true }).sort({ eventStartAt: -1 })`.
  * The admin panel must resolve it the same way, or the admin would be editing a
  * record that the public site is not showing. Any change to the server's rule
  * has to be made here in the same commit.
@@ -61,6 +61,11 @@ import { isSafeHttpUrl, toSafeHref } from '@/lib/hackathon';
 const emptyForm = {
     title: '',
     description: '',
+    // ⚠️ `startAt`/`endAt` ARE THIS FORM'S OWN KEYS, NOT THE SCHEMA'S. The document
+    // calls them `eventStartAt`/`eventEndAt`; the schema names are reserved for the
+    // wire payload, where `hackathon-content.jsx` and `events-content.jsx` have to
+    // agree, while these two inputs are private to this dialog and were already
+    // named this way. Both spellings exist on purpose and neither is a leftover.
     startAt: '',
     endAt: '',
     location: '',
@@ -71,13 +76,22 @@ const emptyForm = {
     problemSetUrl: '',
     registrationUrl: '',
     submissionUrl: '',
-    // ⚠️ THE SIX PARTICIPATION FIELDS ARE IN `emptyForm` FOR THE SAME REASON THE
+    // ⚠️ THE PARTICIPATION FIELDS ARE IN `emptyForm` FOR THE SAME REASON THE
     // URL_FIELDS LOOP EXISTS BELOW. This form builds a FULL REPLACEMENT payload —
     // it does not spread `...editingHackathon` — and the server applies that as
     // `$set: req.body`. So a field not re-sent here is UNSET on save, with a 200
     // and no error anywhere. Left out of `emptyForm`, the first save of a hackathon
     // with in-app participation configured would silently turn participation off.
     ...EMPTY_PARTICIPATION_FORM,
+    // ⚠️ AND THE TWO EVENT INSTANTS ARE ALIGNED WITH THE INPUTS ABOVE.
+    // `EMPTY_PARTICIPATION_FORM` supplies `eventStartAt`/`eventEndAt` too, because a
+    // payload that omits one is UNSET by the server's `$set`. But the keys the
+    // participation section round-trips and the keys this form's own inputs write are
+    // the SAME record, so an admin who moved the schedule and saved without opening
+    // the Participation tab would otherwise send the untouched empty pair and blank
+    // the schedule. They are written last, so the spread above can never win.
+    eventStartAt: '',
+    eventEndAt: '',
 };
 
 /** URL fields on the Event document, paired with the label shown in errors. */
@@ -136,12 +150,12 @@ export function HackathonContent() {
     );
 
     // ⚠️ MIRROR OF `currentHackathonQuery` ON THE SERVER. Enabled first, then
-    // the latest `date` wins. Never filter on the dates here: the hackathon is
-    // meant to stay published after it ends until an admin turns it off.
+    // the latest `eventStartAt` wins. Never filter on the dates here: the hackathon
+    // is meant to stay published after it ends until an admin turns it off.
     const currentHackathon = useMemo(() => {
         return hackathons
             .filter((hackathon) => hackathon.hackathonEnabled)
-            .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))[0] || null;
+            .sort((a, b) => new Date(b.eventStartAt || 0) - new Date(a.eventStartAt || 0))[0] || null;
     }, [hackathons]);
 
     const enabledCount = useMemo(
@@ -158,15 +172,25 @@ export function HackathonContent() {
 
     const openEdit = (hackathon) => {
         setEditingHackathon(hackathon);
+
+        // ⚠️ READ ONCE, USED TWICE. The Dhaka wall-clock this dialog edits is
+        // computed here and then written to BOTH the inputs this form owns
+        // (`startAt`/`endAt`) and the schema keys the participation section
+        // round-trips (`eventStartAt`/`eventEndAt`). They are one schedule, and two
+        // independently-derived copies of it is how an admin ends up saving a start
+        // time that disagrees with the start time the follow toggles are anchored to.
+        const startAt = toDhakaInputValue(hackathon.eventStartAt);
+        const endAt = toDhakaInputValue(hackathon.eventEndAt);
+
         setFormData({
             title: hackathon.title || '',
             description: hackathon.description || '',
-            // Rendered through the Dhaka formatter, NOT `date.slice(0, 16)`:
-            // a UTC slice would show the stored instant six hours off from the
-            // wall-clock the admin originally typed, and re-saving it would
+            // Rendered through the Dhaka formatter, NOT a `.slice(0, 16)` UTC
+            // slice: the latter would show the stored instant six hours off from
+            // the wall-clock the admin originally typed, and re-saving it would
             // silently shift the event.
-            startAt: toDhakaInputValue(hackathon.date),
-            endAt: toDhakaInputValue(hackathon.endDate),
+            startAt,
+            endAt,
             location: hackathon.location || '',
             organizer: hackathon.organizer || 'CPCCU',
             image: hackathon.image || '',
@@ -176,6 +200,13 @@ export function HackathonContent() {
             registrationUrl: hackathon.registrationLink || '',
             submissionUrl: hackathon.hackathonSubmissionUrl || '',
             ...participationFromEvent(hackathon),
+            // Overrides the two instants the spread above just read, with the same
+            // wall-clock the inputs above were given. The spread's values would be
+            // correct on their own, but making the input's value authoritative means
+            // this dialog has ONE schedule in it rather than two that agree only as
+            // long as nothing is edited.
+            eventStartAt: startAt,
+            eventEndAt: endAt,
         });
         setFormError('');
         setDialogOpen(true);
@@ -204,8 +235,8 @@ export function HackathonContent() {
             return;
         }
 
-        // `date` and `endDate` are `required: true` on the Event schema, so the
-        // server would reject this with a 400 anyway. Blocking here gives the
+        // ⚠️ `eventStartAt` and `eventEndAt` are `required: true` on the Event schema, so
+        // the server would reject this with a 400 anyway. Blocking here gives the
         // admin the error next to the field instead of in a SweetAlert.
         if (!formData.startAt || !formData.endAt) {
             setFormError('Start and end times are required — a hackathon cannot be scheduled without them.');
@@ -244,8 +275,6 @@ export function HackathonContent() {
             type: 'hackathon',
             title: formData.title.trim(),
             description: formData.description,
-            date: startIso,
-            endDate: endIso,
             location: formData.location,
             organizer: formData.organizer,
             image: formData.image,
@@ -266,23 +295,33 @@ export function HackathonContent() {
             //
             // It is NOT what the public page displays. The public payload does
             // not carry `status` at all (see `toPublicHackathon`): the server
-            // derives `phase` from `date`/`endDate`, and a hand-set free-text
-            // `status` can permanently disagree with it. Do not wire it into
-            // any public component, and do not delete it on the assumption it
+            // derives `phase` from `eventStartAt`/`eventEndAt`, and a hand-set
+            // free-text `status` can permanently disagree with it. Do not wire it
+            // into any public component, and do not delete it on the assumption it
             // is vestigial — that is what a `$set` save would do.
             status: editingHackathon?.status || 'upcoming',
             hackathonCtaLabel: formData.ctaLabel || 'Register Now',
-            // ⚠️ THE SIX PARTICIPATION FIELDS ARE SPREAD INTO THE PAYLOAD, NOT
-            // SET INDIVIDUALLY. This form builds a full replacement — the same
-            // hazard as the two lines above — so `participationToPayload` is what
-            // keeps a configured switch from being silently unset by an unrelated
-            // save (a title typo fix would otherwise turn in-app registration off).
+            // ⚠️ THE TWELVE SCHEDULE FIELDS ARE SPREAD INTO THE PAYLOAD, NOT SET
+            // INDIVIDUALLY. This form builds a full replacement — the same hazard as
+            // the two lines above — so `participationToPayload` is what keeps a
+            // configured switch, a window instant and a follow toggle from being
+            // silently unset by an unrelated save (a title typo fix would otherwise
+            // turn in-app registration off).
             //
-            // It also handles the deadline `''` → `null` conversion. Sending `''`
-            // would cast to `Invalid Date` on the server, and the resolver treats a
-            // non-null unparseable deadline as FAIL CLOSED — so a stray empty
-            // string would quietly close the window instead of opening it.
+            // It also handles the `''` → `null` conversion. Sending `''` would cast
+            // to `Invalid Date` on the server, and the resolver treats a non-null
+            // unparseable instant as FAIL CLOSED — so a stray empty string would
+            // quietly close a window instead of opening it.
             ...participationToPayload(formData),
+            // ⚠️ AND THESE TWO COME *AFTER* THE SPREAD, because that spread also
+            // carries `eventStartAt`/`eventEndAt` and this form's copies of them are
+            // Dhaka WALL-CLOCK strings (`2026-10-01T09:30`), not instants. Written
+            // before the spread they would be overwritten by those, and Mongoose
+            // would cast a zone-less string in the SERVER's timezone. The validated
+            // instants derived from this dialog's own inputs win, so the schedule a
+            // participant sees is the schedule an admin typed.
+            eventStartAt: startIso,
+            eventEndAt: endIso,
         };
 
         for (const field of URL_FIELDS) {
@@ -480,8 +519,8 @@ export function HackathonContent() {
                                         <div className="flex items-center gap-2">
                                             <CalendarDays className="size-3.5 shrink-0" />
                                             <span>
-                                                {formatDhakaDateTime(hackathon.date)} →{' '}
-                                                {formatDhakaDateTime(hackathon.endDate)}
+                                                {formatDhakaDateTime(hackathon.eventStartAt)} →{' '}
+                                                {formatDhakaDateTime(hackathon.eventEndAt)}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -673,14 +712,14 @@ export function HackathonContent() {
                             </p>
                         </div>
 
-                        {/* ⚠️ SHARED VERBATIM WITH `events-content.jsx`. These six
+                        {/* ⚠️ SHARED VERBATIM WITH `events-content.jsx`. These twelve schedule
                             fields are not hackathon-specific — the server's
-                            `resolveEventParticipationWindow` reads them from any
-                            event with no type check at all, which is what lets the
-                            same flow serve a workshop. Two editors for one record is
-                            already this file's central trap, so the participation
-                            controls are defined once and rendered in both places
-                            rather than being a fourth copy of the same six fields. */}
+                            `resolveEventParticipationWindow` reads them from any event
+                            with no type check at all, which is what lets the same flow
+                            serve a workshop. Two editors for one record is already this
+                            file's central trap, so the participation controls are
+                            defined once and rendered in both places rather than being a
+                            fourth copy of the same fields. */}
                         <EventParticipationSettings
                             formData={formData}
                             onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}

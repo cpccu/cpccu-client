@@ -175,8 +175,8 @@ Events are managed at `/admin/events` and shown publicly with the same `UpComing
 Important event fields:
 - `eventHeadLine1`: public card headline
 - `description`: public card body text
-- `date`: event start time
-- `endDate`: event end time
+- `eventStartAt`: event start time
+- `eventEndAt`: event end time
 - `eventHeadLine2`: reward heading
 - `reward`: reward/prize details
 - `eventHeadLine3`: rules heading
@@ -185,14 +185,16 @@ Important event fields:
 - `btnText1`, `btnLink1`: second public card button
 - `order`: page display order
 
-The public card still computes the three phases from `date` and `endDate`:
+The public card still computes the three phases from `eventStartAt` and `eventEndAt` (mapped to `startAt`/`endAt` by `toPublicEvent`, which is what the card actually reads):
 - `remaining`
 - `running`
 - `ended`
 
 The public events list **excludes `type: 'hackathon'` rows**. A hackathon is published only on `/hackathon` (see [Hackathon Management](#hackathon-management)), which renders a server-derived lifecycle phase rather than the hand-set `status` this card reads. The admin Events page is intentionally **not** filtered — an admin must still be able to see that a hackathon exists.
 
-⚠️ The server now validates all eight admin-writable event URL fields (`registrationLink`, `btnLink`, `btnLink1`, `contestLink`, `meetLink`, `vjudgeGroupLink`, and the two hackathon URLs) as absolute `http(s)` URLs, and rejects a hackathon whose `endDate` is not strictly after its `date`.
+⚠️ The server now validates all eight admin-writable event URL fields (`registrationLink`, `btnLink`, `btnLink1`, `contestLink`, `meetLink`, `vjudgeGroupLink`, and the two hackathon URLs) as absolute `http(s)` URLs, and rejects a hackathon whose `eventEndAt` is not strictly after its `eventStartAt`.
+
+⚠️ **THE SAVE IS A FULL REPLACEMENT IN PRACTICE.** `updateAdminContent` applies `$set: req.body`, so any field absent from the payload is UNSET — with a `200` and no error anywhere. The Events form therefore sends all twelve schedule fields explicitly, with every boolean as a literal `false` rather than omitted. See [ARCHITECTURE.md §20.6](./ARCHITECTURE.md#206-the-event-schedule-form).
 
 ## Hackathon Management
 
@@ -207,14 +209,20 @@ Fields managed:
 - `hackathonProblemSetUrl` — the problem set URL. **Never returned to anonymous callers**; served only by the gated `GET /content/hackathon/problem-set`.
 - `hackathonCtaLabel` — the registration CTA label (default `Register Now`).
 - `title`, `description`, `image`, `location`, `organizer` — the event details shown on the page.
-- `date` / `endDate` — the live window, entered as `datetime-local` and interpreted as **Dhaka time (UTC+6, no DST since 2009)** via `src/lib/dhaka-time.js`, so the stored instant does not depend on the admin's device timezone. The generic Events form still uses `new Date(value).toISOString()` and is deliberately left alone: changing it would rewrite the stored instant of every historical event.
+- `eventStartAt` / `eventEndAt` — the live window, entered as `datetime-local` and interpreted as **Dhaka time (UTC+6, no DST since 2009)** via `src/lib/dhaka-time.js`, so the stored instant does not depend on the admin's device timezone. The generic Events form still uses `new Date(value).toISOString()` and is deliberately left alone: changing it would rewrite the stored instant of every historical event.
+- The four participation instants (`registrationOpenAt`, `registrationCloseAt`, `submissionOpenAt`, `submissionCloseAt`) and their two switches, edited in the shared **Participation** section below. This form is a **full-replacement payload**: it must carry all twelve schedule fields, because `$set` cannot distinguish "not sent" from "cleared".
 
 **Server-side guards on `events` writes** (all return `400` with a per-field error the form can render next to the input):
 
 - All eight admin-writable URL fields must be absolute `http:`/`https:` URLs of at most 2048 characters with no embedded credentials. Empty means "cleared" and is accepted.
-- A hackathon's `endDate` must be **strictly after** its `date`. A zero-width or inverted window is rejected. On edit this is checked against the merged post-update state, because the endpoint is a `$set` and any field may be omitted.
+- A hackathon's `eventEndAt` must be **strictly after** its `eventStartAt`. A zero-width or inverted window is rejected. On edit this is checked against the merged post-update state, because the endpoint is a `$set` and any field may be omitted.
+- `registrationCloseAt` must be strictly after `registrationOpenAt`, and `submissionCloseAt` strictly after `submissionOpenAt`. An **absent** bound is not an error — "no cutoff on that side" is a legitimate configuration and is what every document written before `registrationOpenAt` existed resolves to.
 
-The panel's "current hackathon" lookup mirrors the server's rule (`type: 'hackathon'`, `hackathonEnabled: true`, latest `date` first). If those diverge, an admin would be editing a record the public site is not showing — so change both in the same commit.
+**The four "same as the event" toggles.** `registrationOpenFollowsEventStart`, `registrationCloseFollowsEventStart`, `submissionOpenFollowsEventStart` and `submissionCloseFollowsEventEnd` copy the event's own instant into the matching bound. They are resolved by the **server, at write time**, from the merged state — the client only sends the boolean, and the disabled input beside it is cleared when the box is ticked because its value would be stale the moment it arrived.
+
+Ticking **both** registration toggles copies `eventStartAt` into both bounds and is refused with a `400` on `registrationCloseAt`: a window that opens and closes at the same instant can never open, and it would report `open: false` forever — which reads exactly like "registration is switched off". The hint text under each toggle says which instant it copies from.
+
+The panel's "current hackathon" lookup mirrors the server's rule (`type: 'hackathon'`, `hackathonEnabled: true`, latest `eventStartAt` first). If those diverge, an admin would be editing a record the public site is not showing — so change both in the same commit.
 
 ## Gallery Management
 

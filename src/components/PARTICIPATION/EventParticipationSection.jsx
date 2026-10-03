@@ -3,7 +3,14 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useSelector } from "react-redux";
-import { AlertTriangle, CalendarDays, MapPin, Send, UserRound } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarDays,
+  MapPin,
+  Send,
+  UploadCloud,
+  UserRound,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ParticipationSignInPrompt from "@/components/PARTICIPATION/ParticipationSignInPrompt";
 import {
@@ -16,7 +23,8 @@ import {
   resolveRegistrationTarget,
   resolveWindowAction,
 } from "@/lib/participation";
-import { DHAKA_TIME_ZONE_LABEL, formatDhakaDateTime } from "@/lib/dhaka-time";
+import { describeParticipationWindow } from "@/lib/event-schedule";
+import { DHAKA_TIME_ZONE_LABEL } from "@/lib/dhaka-time";
 
 /**
  * THE PART OF THE EVENT DETAIL PAGE THAT IS ABOUT PARTICIPATION.
@@ -128,6 +136,8 @@ export default function EventParticipationSection({ eventId, event }) {
   // here would change what a member sees in a way that helps nobody.
   const registrationState = resolveWindowAction(window, 'registration');
   const submissionState = resolveWindowAction(window, 'submission');
+  const registrationWindow = describeParticipationWindow(registrationState);
+  const submissionWindow = describeParticipationWindow(submissionState);
 
   const participationEnabled =
     registrationState.enabled || submissionState.enabled;
@@ -158,41 +168,67 @@ export default function EventParticipationSection({ eventId, event }) {
 
       {/* ── The schedule ────────────────────────────────────────────────────
           Rendered above the call to action because a member deciding whether to
-          register needs the dates before the form, not after it. */}
+          register needs the dates before the form, not after it.
+
+          ⚠️ ONE TILE PER BOUND, AND ONLY FOR A WINDOW THAT IS CONFIGURED. The
+          event's OWN start and end are deliberately NOT repeated here —
+          `EventDetail`'s hero already renders the range, and two tiles saying
+          "Starts 24 Oct" and "24 Oct 2026, 09:30" is the duplication that made
+          this section unreadable before. What is NOT duplicated anywhere is the
+          participation schedule: registration and submission open and close at
+          different instants, and a member needs both before deciding.
+
+          A window with no bound on one side renders only the other tile. "No
+          cutoff" is a real configuration — the server treats an absent bound as
+          "open until an admin turns it off" — and inventing a placeholder row
+          for it would tell the member something the organisers did not. */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {event.startAt ? (
+        {registrationWindow.enabled && registrationWindow.opensCopy ? (
           <FactTile
             Icon={CalendarDays}
-            label="Starts"
-            value={formatDhakaDateTime(event.startAt)}
+            label="Registration opens"
+            value={registrationWindow.opensCopy}
           />
         ) : null}
-        {event.endAt ? (
+        {registrationWindow.enabled && registrationWindow.closesCopy ? (
           <FactTile
             Icon={CalendarDays}
-            label="Ends"
-            value={formatDhakaDateTime(event.endAt)}
+            label="Registration closes"
+            value={registrationWindow.closesCopy}
+          />
+        ) : null}
+        {submissionWindow.enabled && submissionWindow.opensCopy ? (
+          <FactTile
+            Icon={UploadCloud}
+            label="Submissions open"
+            value={submissionWindow.opensCopy}
+          />
+        ) : null}
+        {submissionWindow.enabled && submissionWindow.closesCopy ? (
+          <FactTile
+            Icon={UploadCloud}
+            label="Submissions close"
+            value={submissionWindow.closesCopy}
           />
         ) : null}
         {event.location ? (
           <FactTile Icon={MapPin} label="Venue" value={event.location} />
         ) : null}
         {event.organizer ? (
-          <FactTile
-            Icon={UserRound}
-            label="Organiser"
-            value={event.organizer}
-          />
+          <FactTile Icon={UserRound} label="Organiser" value={event.organizer} />
         ) : null}
       </div>
 
-      {/* ⚠️ EVERY TIMESTAMP IS EXPLICIT ABOUT ITS ZONE. The server sends UTC ISO
-          strings and the page renders them in Dhaka time, so a visitor in another
-          timezone would otherwise have to guess which wall-clock they are looking
-          at. This mirrors the line on `/hackathon`. */}
-      <p className="text-sm text-muted-foreground">
-        All times shown in {DHAKA_TIME_ZONE_LABEL}.
-      </p>
+      {event.location ||
+      event.organizer ||
+      registrationWindow.opensCopy ||
+      registrationWindow.closesCopy ||
+      submissionWindow.opensCopy ||
+      submissionWindow.closesCopy ? (
+        <p className="text-sm text-muted-foreground">
+          All times shown in {DHAKA_TIME_ZONE_LABEL}.
+        </p>
+      ) : null}
 
       {/* ── Signed out ───────────────────────────────────────────────────────
           The prompt is rendered only when there is something to do. Signing in to
@@ -224,6 +260,7 @@ export default function EventParticipationSection({ eventId, event }) {
           eventId={eventId}
           window={window}
           registrationState={registrationState}
+          registrationWindow={registrationWindow}
           externalUrl={event.registrationUrl}
         />
       ) : null}
@@ -358,7 +395,13 @@ function RegisteredPanel({
  * is shut. Redirecting to a Google Form instead would claim that registration
  * happens somewhere it demonstrably does not.
  */
-function RegistrationCallToAction({ eventId, window, registrationState, externalUrl }) {
+function RegistrationCallToAction({
+  eventId,
+  window,
+  registrationState,
+  registrationWindow,
+  externalUrl,
+}) {
   // ⚠️ THE DECISION IS NOT MADE HERE. `resolveRegistrationTarget` in
   // `@/lib/participation.js` owns it, and it needs BOTH the window and the
   // external URL — which is exactly why this component receives the window as a
@@ -407,9 +450,8 @@ function RegistrationCallToAction({ eventId, window, registrationState, external
           <p className="break-words text-white/85">
             {registrationState.open
               ? 'Register yourself, or add your teammates and enter as a team.'
-              : registrationState.deadline
-                ? `Registration opens on ${formatDhakaDateTime(registrationState.deadline)}.`
-                : 'The organisers have not opened registration yet.'}
+              : registrationWindow?.unavailableCopy ??
+                'The organisers have not opened registration yet.'}
           </p>
         </div>
         <Link

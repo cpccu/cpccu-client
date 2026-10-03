@@ -39,7 +39,7 @@ import { resolveWindowAction } from "@/lib/participation";
  *
  * ⚠️ THE PHASE GATE BELOW STILL APPLIES TO BOTH BRANCHES, and it is unchanged:
  * the button is offered only while the hackathon is `upcoming`. The in-app window
- * has its own, independent `registrationDeadline`, so an admin can close in-app
+ * has its own, independent `registrationCloseAt`, so an admin can close in-app
  * registration before the hackathon starts; this gate is the coarser of the two
  * and the registration page is the finer one. Both are shown, neither is inferred
  * from the other.

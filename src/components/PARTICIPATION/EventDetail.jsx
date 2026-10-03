@@ -8,7 +8,17 @@ import { useGetPublicEventQuery } from "@/features/content/contentApi";
 import { toPublicEventDetail } from "@/lib/public-content";
 import { useGetEventParticipationWindowQuery } from "@/features/participation/participationApi";
 import { resolveSubmissionTarget, resolveWindowAction } from "@/lib/participation";
-import { DHAKA_TIME_ZONE_LABEL, formatDhakaDateTime } from "@/lib/dhaka-time";
+import {
+  describeParticipationWindow,
+  formatInstant,
+  formatInstantRange,
+} from "@/lib/event-schedule";
+// `formatDhakaDateTime` is deliberately NOT imported here: every instant on this
+// page now goes through `@/lib/event-schedule`, which is the single place that
+// decides how a schedule instant is spoken (and what to say when it is unset).
+// Re-introducing the raw formatter is how two sentences on one page end up using
+// two different fallbacks for the same missing date.
+import { DHAKA_TIME_ZONE_LABEL } from "@/lib/dhaka-time";
 import EventParticipationSection from "@/components/PARTICIPATION/EventParticipationSection";
 import EventWinnersGallery from "@/components/PARTICIPATION/EventWinnersGallery";
 
@@ -81,6 +91,17 @@ export default function EventDetail({ eventId }) {
   );
 
   const submissionState = resolveWindowAction(window, 'submission');
+
+  // ⚠️ THE "COMING SOON" SENTENCE NAMES THE OPENING INSTANT, AND IT HAS TO BE
+  // BUILT FROM `opensAt` RATHER THAN THE CLOSING ONE. That was the bug: the state
+  // is decided by when the window OPENS, and the first version of this page quoted
+  // the closing instant under the words "open on", so a window that opens next week
+  // announced that it opened the day it shut. `describeParticipationWindow` is the
+  // shared place that knows which instant explains a state.
+  const submissionWindow = describeParticipationWindow(submissionState);
+  const submissionOpensCopy = submissionWindow.opensAt
+    ? `Submissions open on ${formatInstant(submissionWindow.opensAt)}.`
+    : null;
 
   // ⚠️ THE PARTICIPATION SECTION BELOW OWNS THE REGISTER CTA, AND THIS PAGE
   // ONLY OWNS THE SUBMISSION ONE. The Register button lives inside
@@ -198,13 +219,17 @@ export default function EventDetail({ eventId }) {
               <p className="text-sm text-muted-foreground">
                 All times shown in {DHAKA_TIME_ZONE_LABEL}.
               </p>
-              {event.startAt ? (
+              {event.startAt || event.endAt ? (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
-                  {formatDhakaDateTime(event.startAt)}
-                  {event.endAt
-                    ? ` — ${formatDhakaDateTime(event.endAt)}`
-                    : null}
+                  {/* ⚠️ THE SCHEDULE IS RENDERED HERE AND NOWHERE ELSE ON THE PAGE.
+                      `EventParticipationSection` used to repeat Starts / Ends /
+                      Venue / Organiser and its own timezone line directly below, so
+                      the same instant appeared twice in one viewport with two
+                      different timezones claims. The hero is the one place for the
+                      event's own facts; the section below is for the two participation
+                      windows, which the hero knows nothing about. */}
+                  {formatInstantRange(event.startAt, event.endAt)}
                 </p>
               ) : null}
               {event.location ? (
@@ -290,13 +315,16 @@ export default function EventDetail({ eventId }) {
                     REGISTRATION CTA. The three sentences answer three different
                     questions: can I submit now, has it not opened yet, or is it too
                     late — in which case the link still goes somewhere useful, because
-                    a member whose deadline has passed most wants to confirm what
-                    they filed. */}
+                    a member whose window has closed most wants to confirm what they
+                    filed. The "coming soon" sentence names `opensAt`, never the
+                    closing instant: the state is decided by when the window OPENS, so
+                    the instant that explains it has to be that one. */}
                 <p className="break-words text-muted-foreground">
                   {submissionState.open
                     ? 'Finished building? Submit your project through this site.'
                     : submissionState.state === 'coming-soon'
-                      ? `Submissions open on ${formatDhakaDateTime(submissionState.deadline)}.`
+                      ? submissionOpensCopy ??
+                        'Submissions have not opened yet.'
                       : 'Finished building? You can still review what you submitted.'}
                 </p>
               </div>

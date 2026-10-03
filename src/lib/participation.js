@@ -15,10 +15,17 @@
  * the UI unable to say WHY an action is unavailable, and "why" is the whole value
  * of showing a closed window at all.
  *
- * A participant who arrives one hour after the deadline does not need "closed".
- * They need "registration closed on 4 March". That sentence requires the
- * deadline, and the deadline requires re-deriving the state from the same two
- * inputs the server used. That is what `resolveWindowAction` does.
+ * A participant who arrives one hour after registration closes does not need
+ * "closed". They need "registration closed on 4 March". That sentence requires
+ * the CLOSING INSTANT, and the closing instant requires re-deriving the state
+ * from the same two inputs the server used. That is what `resolveWindowAction`
+ * does.
+ *
+ * ⚠️ A WINDOW HAS TWO INSTANTS NOW, NOT ONE. `opensAt` and `closesAt` replaced a
+ * single `deadline`, because "registration shuts at kickoff" and "registration
+ * opens next week" cannot both be described by one field. `deadline` survives on
+ * the wire for one release as an alias of `closesAt` and is read in exactly one
+ * place (`readAction`); nothing else in the client may name it.
  *
  * ---------------------------------------------------------------------------
  * ⚠️ THE MIRROR RULE, AND WHY IT IS NOT A PARITY PROBLEM
@@ -83,25 +90,37 @@ export const ACTION_STATES = {
 
 /**
  * The window sub-object shape the server sends for one action:
- *   `{ enabled: boolean, deadline: string | null, open: boolean }`
+ *   `{ enabled, opensAt, closesAt, open }`
  *
- * `deadline` is `null` BOTH when no deadline is configured AND when the stored
- * value could not be parsed — the server's resolver fails closed in that second
- * case but cannot express it, because a `Date` that will not parse is reported as
- * "no deadline" rather than as an error. So `deadline === null` does NOT mean
- * "no deadline". Only `open === false` tells you the action is unavailable, and
- * when it is, the honest reason may be either.
+ * ⚠️ `opensAt` AND `closesAt` EXIST, AND `deadline` IS THEIR DEPRECATED ALIAS.
+ * A window is not a single cutoff — registration that opens next week and closes
+ * at kickoff is the ordinary case, so one instant could not describe it. The
+ * server still emits `deadline` (meaning `closesAt`) for one release; it is read
+ * here as a fallback so a payload carrying only the old name still resolves, and
+ * it is named NOWHERE ELSE IN THE CLIENT. Delete the `??` once the alias is gone
+ * from the wire.
  *
- * That ambiguity is why `resolveWindowAction` treats a `null` deadline as
- * "admin switched it off" rather than inventing a date. Guessing a date is worse
- * than omitting one.
+ * Either instant is `null` BOTH when none is configured AND when the stored value
+ * could not be parsed — the server's resolver fails closed in the second case but
+ * cannot express it, because a `Date` that will not parse is reported as "no
+ * cutoff" rather than as an error. So `opensAt === null` does NOT mean "not
+ * configured yet". Only `open === false` tells you the action is unavailable,
+ * and when it is, the honest reason may be either.
+ *
+ * That ambiguity is why `resolveWindowAction` treats a `null` instant as
+ * "nothing to tell the member" rather than inventing a date. Guessing a date is
+ * worse than omitting one.
  */
 const readAction = (window, action) => {
   const source = window?.[action];
+  // `?? deadline` on the CLOSE side only — `opensAt` is new with the rename and
+  // never had an alias, so there is nothing older to fall back to.
+  const closesAt = source?.closesAt ?? source?.deadline;
 
   return {
     enabled: source?.enabled === true,
-    deadline: typeof source?.deadline === 'string' ? source.deadline : null,
+    opensAt: typeof source?.opensAt === 'string' ? source.opensAt : null,
+    closesAt: typeof closesAt === 'string' ? closesAt : null,
     // Trusted, because the server computed it from the same stored event every
     // write path re-reads. See the header comment on why the client mirrors it.
     open: source?.open === true,
@@ -121,7 +140,8 @@ const readAction = (window, action) => {
  *   state: string,        // one of ACTION_STATES
  *   open: boolean,
  *   enabled: boolean,
- *   deadline: string|null,
+ *   opensAt: string|null,
+ *   closesAt: string|null,
  *   reason: string|null,  // null unless the action is unavailable
  * }}
  *
@@ -135,40 +155,54 @@ const readAction = (window, action) => {
  * `src/hooks/use-hackathon-phase.js`.
  */
 export const resolveWindowAction = (window, action, now) => {
-  const { enabled, deadline, open } = readAction(window, action);
+  const { enabled, opensAt, closesAt, open } = readAction(window, action);
   const label = action === 'registration' ? 'Registration' : 'Submission';
 
   if (open) {
-    return { state: ACTION_STATES.OPEN, open: true, enabled, deadline, reason: null };
+    return { state: ACTION_STATES.OPEN, open: true, enabled, opensAt, closesAt, reason: null };
   }
 
   // Not switched on by an admin. Distinguished from every other closed state
   // because there is nothing for a participant to do about it and nothing to wait
-  // for — saying "closed" would invent a deadline nobody set.
+  // for — saying "closed" would invent a cutoff nobody set.
   if (!enabled) {
     return {
       state: ACTION_STATES.DISABLED,
       open: false,
       enabled: false,
-      deadline,
+      opensAt,
+      closesAt,
       reason: null,
     };
   }
 
-  // Switched on but not open: either the deadline has passed, or the stored
-  // deadline was unparseable (in which case the server reports `deadline: null`
-  // and this is the only honest answer available).
+  // Switched on but not open: either the window has not opened yet, or it has
+  // already closed. The two are separated by the OPENING instant, and the test
+  // for "not yet" is `now < opensAt` — the server's own rule. It used to be
+  // "the close instant is still in the future", which is the same question asked
+  // about the wrong instant: a window that opens in three weeks and closes in
+  // four would have been reported as `closed`, and the page would have told a
+  // member registration had ended three weeks before it began. That sentence is
+  // exactly the class of lie `ACTION_STATES.COMING_SOON` exists to prevent.
   const at = typeof now === 'number' ? now : Date.now();
-  const isUpcoming = Boolean(deadline) && new Date(deadline).getTime() > at;
+  const notYetOpen =
+    Boolean(opensAt) && new Date(opensAt).getTime() > at;
 
+  // A null opening instant with `open === false` is the fail-closed case: the
+  // stored `registrationOpenAt` could not be parsed, so the server reported it as
+  // unset and the action is unavailable. There is no honest "coming soon" to
+  // report, hence the `null` reason and the `CLOSED` fallback.
   return {
-    state: isUpcoming ? ACTION_STATES.COMING_SOON : ACTION_STATES.CLOSED,
+    state: notYetOpen ? ACTION_STATES.COMING_SOON : ACTION_STATES.CLOSED,
     open: false,
     enabled: true,
-    deadline,
-    reason: deadline
-      ? `${label} is not open. It ${isUpcoming ? 'opens' : 'closed'} on the date shown on this page.`
-      : null,
+    opensAt,
+    closesAt,
+    reason: notYetOpen
+      ? `${label} has not opened yet.`
+      : closesAt
+        ? `${label} closed on the date shown on this page.`
+        : null,
   };
 };
 

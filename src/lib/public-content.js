@@ -81,8 +81,14 @@ export const toPublicEvent = (event) => ({
   btnLink: toSafeHref(event.btnLink || event.registrationLink || event.contestLink || event.meetLink || ""),
   btnText1: event.btnText1 || (event.contestLink ? "Contest Link" : ""),
   btnLink1: toSafeHref(event.btnLink1 || event.contestLink || ""),
-  date: event.date,
-  endDate: event.endDate,
+  // ⚠️ `eventStartAt`/`eventEndAt` → `startAt`/`endAt`. The schema is being renamed
+  // to say what each field is (the window instants got the same treatment, and
+  // `date` was ambiguous next to `registrationCloseAt`/`submissionCloseAt`), and
+  // this mapper is exactly where the old names are allowed to stop existing. A
+  // component can only read `startAt`, so renaming here is what keeps the schema
+  // name out of every one of them — the same convention as `location` → `venue`.
+  startAt: event.eventStartAt || null,
+  endAt: event.eventEndAt || null,
   // ⚠️ `participationEnabled` IS READ FROM THE UNPROJECTED LIST PAYLOAD, which is
   // what makes this mapper's job possible without a second request.
   //
@@ -148,7 +154,7 @@ export const toPublicEvent = (event) => ({
  * the correct outcome for a bad value.
  *
  * Field renames are deliberate — the server names are model names
- * (`location`, `registrationLink`, `date`) and leaking them into components
+ * (`location`, `registrationLink`) and leaking them into components
  * would couple the UI to the schema. This is the same convention as every
  * other `toPublicX` in this file (doc.md §8.4 / §10.5).
  *
@@ -250,11 +256,9 @@ export const toPublicEventDetail = (event) => ({
   organizer: event.organizer || '',
   type: event.type || '',
 
-  // `date`/`endDate` → `startAt`/`endAt`, the SAME rename `toPublicHackathon`
-  // uses, so a component that handles both record types reads the same field
-  // names for the same concept.
-  startAt: event.date || null,
-  endAt: event.endDate || null,
+  // `eventStartAt`/`eventEndAt` → `startAt`/`endAt`, the SAME rename
+  // `toPublicHackathon` already used for the hackathon's wire keys, so a component
+  // that handles both record types reads the same field names for the same concept.
 
   // The three headline / sub-headline slots are ADMIN-AUTHORED display text that
   // may be blank. They are carried verbatim — with a fallback to the event title

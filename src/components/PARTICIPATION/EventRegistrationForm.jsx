@@ -142,8 +142,8 @@ export default function EventRegistrationForm({
       <ClosedNotice
         title="Registration is closed"
         detail={
-          registration.deadline
-            ? `Registration for ${eventTitle} closed on ${formatDhakaDateTime(registration.deadline)}.`
+          registration.closesAt
+            ? `Registration for ${eventTitle} closed on ${formatDhakaDateTime(registration.closesAt)}.`
             : `Registration for ${eventTitle} is not open.`
         }
       />

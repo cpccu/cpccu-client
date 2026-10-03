@@ -36,8 +36,8 @@ import { resolveWindowAction } from "@/lib/participation";
  * set is the competition itself; releasing it early would leak the questions to
  * teams that have not started. A submission form is the opposite: it is the route
  * by which a team hands its work in, and a team that cannot find it simply cannot
- * take part. The in-app window has its own `submissionDeadline`, which is where a
- * hard cutoff lives when the club wants one.
+ * take part. The in-app window has its own `submissionOpenAt`/`submissionCloseAt`, which is
+ * where a hard cutoff lives when the club wants one.
  *
  * ⚠️ WHY THE PHASE COMES FROM `useHackathonPhase`, NOT THE RAW PROP. Same reason
  * as the registration CTA and the countdown: the server resolves phase once, at
@@ -52,7 +52,7 @@ import { resolveWindowAction } from "@/lib/participation";
  * hide the form the moment the clock runs out, but a hackathon's submission window
  * almost never ends at the closing ceremony: teams get a day or two to finish, and
  * an admin who has published the form is saying "this is still open". The in-app
- * path honours `submissionDeadline`, so it can express the hard cutoff the
+ * path honours `submissionCloseAt`, so it can express the hard cutoff the
  * external form cannot.
  *
  * ⚠️ WHEN THE WINDOW IS SHUT AND THE MODE IS IN-APP, THE LINK STILL POINTS
