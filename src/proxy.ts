@@ -8,7 +8,30 @@ function setSecurityHeaders(response: NextResponse, req: NextRequest) {
     response.headers.set('Content-Security-Policy', [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
+      // ⚠️ `https://fonts.googleapis.com` MUST be listed here or the Inria Sans
+      // stylesheet in `src/app/layout.jsx` is BLOCKED. It was missing while
+      // `connect-src` and `font-src` below BOTH already permitted the host —
+      // which is the confusing shape of the bug: two of three directives allowed
+      // it, so it read like a browser or network fault rather than a policy one.
+      // Every browser logged
+      //
+      //   Loading the stylesheet 'https://fonts.googleapis.com/css2?family=…'
+      //   violates the following Content Security Policy directive:
+      //   "style-src 'self' 'unsafe-inline'"
+      //
+      // and the whole site silently rendered in a fallback font.
+      //
+      // `style-src` governs the `<link rel="stylesheet">` itself; `font-src`
+      // governs the font FILES that stylesheet then pulls down from
+      // fonts.gstatic.com. Both are required and neither substitutes for the
+      // other, which is why fixing `font-src` alone does not work. `font-src`
+      // additionally needs `data:` because Next.js inlines some font preloads.
+      //
+      // Verify in a PRODUCTION build only — this whole block is production-gated,
+      // so `next dev` cannot reproduce the failure:
+      //   npm run build && npm run start
+      //   curl -sI http://localhost:3000/ | grep -i content-security-policy
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https:",
       // ⚠️ Without an explicit `frame-src`, the `default-src 'self'` above
       // governs <iframe> targets, so a frame pointing at drive.google.com is
