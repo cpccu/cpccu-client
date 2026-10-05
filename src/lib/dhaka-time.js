@@ -93,7 +93,7 @@ export const getDhakaParts = (value) => {
  * expects: `YYYY-MM-DDTHH:mm`.
  *
  * Rendering the admin's existing value through this (rather than
- * `event.date.slice(0, 16)`, which is a UTC slice) is what makes the edit form
+ * `eventStartAt.slice(0, 16)`, which is a UTC slice) is what makes the edit form
  * show the Dhaka time the admin originally typed, rather than six hours off.
  */
 export const toDhakaInputValue = (value) => {

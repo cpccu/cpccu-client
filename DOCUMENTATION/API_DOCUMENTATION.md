@@ -268,7 +268,7 @@ Defined in `src/features/participation/participationApi.js` (injected into `base
 
 | Endpoint | Method | Purpose | Tag provided |
 | :--- | :--- | :--- | :--- |
-| `/participation/events/:eventId` | `GET` | The participation window for the event page (open/closed state, deadlines, team-size bounds) | `Participation: window:<eventId>` |
+| `/participation/events/:eventId` | `GET` | The participation window for the event page — `registration` and `submission`, each `{ enabled, opensAt, closesAt, deadline, open }`, plus `team` size bounds. `opensAt`/`closesAt` are ISO strings or `null`; `deadline` is a **deprecated alias of `closesAt`** and should not be read by new code | `Participation: window:<eventId>` |
 | `/participation/events/:eventId/winners` | `GET` | The published shortlist. Projection is deliberately tiny — `{ title, liveUrl, technologies, registrationName, kind }`, no `_id`, nothing enumerable. An empty array with a 200 is a **normal** state (every un-reviewed event looks like this) | `Participation: winners:<eventId>` |
 
 ### 13.2 Member

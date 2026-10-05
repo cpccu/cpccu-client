@@ -26,7 +26,10 @@ const UpComingEventCard = ({ data, clName }) => {
 
       {/* Content Section */}
       <section className="h-full md:col-span-3 lg:col-span-3 xl:col-span-5 mxl:col-span-5 mmmxl:col-span-4 flex flex-col items-start gap-4">
-        <TimeBox date={data?.date} endDate={data?.endDate} />
+        {/* `startAt`/`endAt` are the mapper's names — `toPublicEvent` reads the
+            document's `eventStartAt`/`eventEndAt` and renames them, so no schema
+            field reaches this component. */}
+        <TimeBox startAt={data?.startAt} endAt={data?.endAt} />
         <h1 className="text-2xl lg:text-3xl xl:text-4xl  font-semibold lg:line-clamp-none">
           {`"`}
           {data?.eventHeadLine1}
@@ -193,10 +196,12 @@ const UpComingEventCard = ({ data, clName }) => {
 
 export default UpComingEventCard;
 
-function TimeBox({ date, endDate }) {
+function TimeBox({ startAt, endAt }) {
   const getEventStatus = () => {
-    const startTime = new Date(date).getTime();
-    const endTime = new Date(endDate || date).getTime();
+    const startTime = new Date(startAt).getTime();
+    // A missing end falls back to the start, so a single-instant record counts
+    // as already ended rather than ticking a counter against an unknown window.
+    const endTime = new Date(endAt || startAt).getTime();
     const now = Date.now();
 
     if (!Number.isFinite(startTime) || !Number.isFinite(endTime)) {
@@ -238,7 +243,7 @@ function TimeBox({ date, endDate }) {
     const timer = setInterval(update, 1000);
 
     return () => clearInterval(timer);
-  }, [date, endDate]);
+  }, [startAt, endAt]);
 
   if (!status) {
     return (

@@ -660,7 +660,7 @@ A hackathon is an **ordinary `Event` document with `type: 'hackathon'`**, carryi
 - **A toggle that actually gates.** Because the hackathon is removed from the events list entirely, there is no state in which a disabled hackathon's title, venue, image or registration link still leaks to anonymous callers through `/content/events`. Treating the toggle as a master switch over every read path is what previously let a disabled hackathon keep flowing.
 - **`phase` is authoritative, so `status` was removed from the public payload** rather than exposed as a convenience alias. It is never derived from the dates and never reconciled, so an admin-set "upcoming" on an ended hackathon would contradict the countdown in the same response indefinitely.
 - **One predicate, not two.** The advisory `problemSetAvailable` flag and the endpoint's 200/403 both call the same `isProblemSetReleased()`. Recomputing it locally is how the UI once advertised a button the endpoint would refuse — a permanently dead button on a page that looked live.
-- **Gating on the start time only.** Participants often start reviewing the set after the closing ceremony, so `endDate` is deliberately not consulted. A missing or unparseable `date` fails **closed**.
+- **Gating on the start time only.** Participants often start reviewing the set after the closing ceremony, so `eventEndAt` is deliberately not consulted. A missing or unparseable `eventStartAt` fails **closed**.
 
 ### Consequences
 

@@ -55,7 +55,7 @@ export function useHackathonPhase({ startAt, endAt, serverPhase } = {}) {
   const phase =
     now === null
       ? serverPhase
-      : getCountdownPhase({ date: startAt, endDate: endAt, now });
+      : getCountdownPhase({ startAt, endAt, now });
 
   return { now, phase };
 }

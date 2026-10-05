@@ -36,7 +36,7 @@ import HackathonDocumentFrame from "@/components/HACKATHON/HackathonDocumentFram
  * ⚠️ `isReleased` IS `problemSetAvailable && hasHackathonStarted(startAt)` — IT
  * IS NOT `phase === 'live' || phase === 'ended'`. Those are different rules.
  * The server's gate is "a valid start instant that has passed" and it never
- * consults `endDate`; `phase` DOES consult `endDate`, so a record with a valid
+ * consults `endAt`; `phase` DOES consult `endAt`, so a record with a valid
  * start but a missing or inverted end resolves to `phase === 'unannounced'`
  * while the server would still answer 200. Keying off `phase` made the client
  * show "will be available when the hackathon starts" forever and never issue
@@ -100,7 +100,7 @@ export default function HackathonProblemSet({
   const isReleased =
     now === null
       ? Boolean(problemSetAvailable) && (activePhase === "live" || activePhase === "ended")
-      : Boolean(problemSetAvailable) && hasHackathonStarted({ date: startAt, now });
+      : Boolean(problemSetAvailable) && hasHackathonStarted({ startAt, now });
 
   // The copy differs by REASON, not by symmetry. Telling an unannounced visitor
   // "the problem set will be available when the hackathon starts" is a promise

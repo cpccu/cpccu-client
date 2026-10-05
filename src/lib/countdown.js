@@ -51,6 +51,15 @@ const toEpochMs = (value) => {
 /**
  * Resolves the lifecycle phase of a scheduled window.
  *
+ * ⚠️ `startAt`/`endAt` ARE THE PUBLIC NAMES, NOT THE SCHEMA NAMES. The Event
+ * document stores `eventStartAt`/`eventEndAt`; `toPublicEvent` and
+ * `toPublicEventDetail` rename them on the way in, exactly as they rename
+ * `location` to `venue`. `GET /content/hackathon` already sent `startAt`/`endAt`
+ * on the wire, so one spelling covers both record types and `getCountdownTarget`
+ * below has always taken the same two names this function takes now. Do not
+ * "align" these back to the schema — that would put a second vocabulary in the
+ * countdown, which is the one place both record types meet.
+ *
  *   now <  start            -> 'upcoming'
  *   start <= now <= end     -> 'live'     (boundaries inclusive)
  *   now >  end              -> 'ended'
@@ -60,20 +69,20 @@ const toEpochMs = (value) => {
  * renders title/description/venue upstream, but shows no counter and never
  * releases the problem set — there is no trustworthy window to measure.
  */
-export const getCountdownPhase = ({ date, endDate, now = Date.now() } = {}) => {
+export const getCountdownPhase = ({ startAt, endAt, now = Date.now() } = {}) => {
   // BRANCH 1: an absent or unparseable start means the schedule is not
   // publishable. `unannounced` is chosen over a guess, because a wrong
   // "upcoming" phase would show a countdown to a moment that does not exist.
-  const start = toEpochMs(date);
+  const start = toEpochMs(startAt);
 
   if (start === null) {
     return 'unannounced';
   }
 
-  const end = toEpochMs(endDate);
+  const end = toEpochMs(endAt);
 
   // BRANCH 2: an unparseable end, or an end that is not strictly after the
-  // start, is a data error rather than a lifecycle state. `endDate` is
+  // start, is a data error rather than a lifecycle state. `endAt` is
   // `required: true` in the schema, but documents edited directly in Mongo
   // can still violate it, and an inverted window has no meaningful middle.
   if (end === null || end <= start) {
@@ -99,7 +108,7 @@ export const getCountdownPhase = ({ date, endDate, now = Date.now() } = {}) => {
  * THE CLIENT MIRROR OF THE SERVER'S `isProblemSetReleased` GATE.
  *
  * The server releases the problem set URL when, and only when, the START
- * instant is valid and in the past — it deliberately ignores `endDate` so that
+ * instant is valid and in the past — it deliberately ignores `endAt` so that
  * participants can still read the set after the closing ceremony. This helper
  * is deliberately the SAME predicate and NOT `phase === 'live' || 'ended'`:
  * deriving it from `phase` made the client disagree with the server for a
@@ -115,8 +124,8 @@ export const getCountdownPhase = ({ date, endDate, now = Date.now() } = {}) => {
  * it is this file's stated job of mirroring the server (see the module
  * docstring), and any change to the server's gate must be made here too.
  */
-export const hasHackathonStarted = ({ date, now = Date.now() } = {}) => {
-  const start = toEpochMs(date);
+export const hasHackathonStarted = ({ startAt, now = Date.now() } = {}) => {
+  const start = toEpochMs(startAt);
 
   if (start === null) {
     return false;
