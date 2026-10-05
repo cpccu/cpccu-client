@@ -93,7 +93,7 @@ function EventLayoutContent({ eventsResponse, clName }) {
   // Derived from the FILTERED list on purpose: the label ("Upcoming" vs
   // "Recent") describes what the carousel is actually showing, so it must not
   // be decided by a hackathon row that is about to be filtered out.
-  const firstEventStart = events[0]?.date ? new Date(events[0].date).getTime() : 0;
+  const firstEventStart = events[0]?.startAt ? new Date(events[0].startAt).getTime() : 0;
   const sectionLabel = firstEventStart && firstEventStart > Date.now() ? "Upcoming Event" : "Recent Event";
 
   const goLeft = () => {

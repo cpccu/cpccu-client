@@ -21,6 +21,11 @@ const statusStyles = {
     inactive: 'bg-muted text-muted-foreground border-border',
     pending: 'bg-warning/15 text-warning-foreground border-warning/30',
 };
+const memberStatusStyles = {
+    approved: 'bg-success/15 text-success border-success/30',
+    pending: 'bg-warning/15 text-warning-foreground border-warning/30',
+    rejected: 'bg-destructive/15 text-destructive border-destructive/30',
+};
 const roleStyles = {
     admin: 'bg-primary/15 text-primary border-primary/30',
     moderator: 'bg-chart-2/15 text-chart-2 border-chart-2/30',
@@ -79,6 +84,7 @@ export function MembersContent() {
                 role: member.roles?.role || 'member',
                 cpccuPosition: member.roles?.positionName || 'Member',
                 status: member.isValid ? 'active' : 'pending',
+                memberStatus: member.memberStatus || 'pending',
                 Section: member.section || '',
                 joinedAt: member.createdAt || new Date().toISOString(),
                 phone: member.phone || '',
@@ -229,8 +235,12 @@ export function MembersContent() {
         }
     };
     const handleApprove = async (member) => {
-        await updateAdminMember({ id: member.id, isValid: true });
+        await updateAdminMember({ id: member.id, memberStatus: 'approved' });
         showSuccessAlert('Approved', `${member.name}'s membership has been approved.`);
+    };
+    const handleReject = async (member) => {
+        await updateAdminMember({ id: member.id, memberStatus: 'rejected' });
+        showSuccessAlert('Rejected', `${member.name}'s membership has been rejected.`);
     };
     const toggleSelected = (id) => {
         setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -241,7 +251,7 @@ export function MembersContent() {
         setSelectedIds(allSelected ? selectedIds.filter((id) => !filteredIds.includes(id)) : [...new Set([...selectedIds, ...filteredIds])]);
     };
     const handleBulkApprove = async () => {
-        await Promise.all(selectedIds.map((id) => updateAdminMember({ id, isValid: true })));
+        await Promise.all(selectedIds.map((id) => updateAdminMember({ id, memberStatus: 'approved' })));
         setSelectedIds([]);
         showSuccessAlert('Approved', 'Selected members have been approved.');
     };
@@ -312,6 +322,18 @@ export function MembersContent() {
             cell: (member) => <Badge variant="outline" className={`capitalize ${statusStyles[member.status] || ''}`}>{member.status}</Badge>,
         },
         {
+            key: 'memberStatus',
+            header: 'Membership',
+            accessor: 'memberStatus',
+            cell: (member) => (
+                <Badge variant="outline" className={`capitalize ${memberStatusStyles[member.memberStatus] || ''}`}>
+                    {member.memberStatus}
+                </Badge>
+            ),
+            cellClassName: 'hidden md:table-cell',
+            className: 'hidden md:table-cell',
+        },
+        {
             key: 'joinedAt',
             header: 'Joined',
             accessor: (member) => formatDate(member.joinedAt),
@@ -337,9 +359,14 @@ export function MembersContent() {
                 <DropdownMenuItem onClick={() => window.open(`/profile/${member.uniID || member.id}`, '_blank')}>
                   <ExternalLink className="mr-2 size-4"/> Open Profile
                 </DropdownMenuItem>
-                {member.status === 'pending' && (<DropdownMenuItem onClick={() => handleApprove(member)}>
+                {member.memberStatus === 'pending' && (<DropdownMenuItem onClick={() => handleApprove(member)}>
                     <UserCheck className="mr-2 size-4"/> Approve
                   </DropdownMenuItem>)}
+                {member.memberStatus !== 'rejected' && (
+                    <DropdownMenuItem onClick={() => handleReject(member)} className="text-destructive">
+                        <UserX className="mr-2 size-4"/> Reject
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleDelete(member)} className="text-destructive">
                   <Trash2 className="mr-2 size-4"/> Remove
