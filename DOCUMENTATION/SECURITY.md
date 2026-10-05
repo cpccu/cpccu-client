@@ -35,6 +35,20 @@ See [ADR-015](./ADR.md#adr-015--backend-enforced-email-verification) and the bac
 >
 > `X-Frame-Options: DENY` / `frame-ancestors 'none'` are unrelated and must not be relaxed: they govern whether **our** pages may be framed by someone else, not what we may frame.
 
+### 3.1 The backend CSRF guard and this client
+
+The backend mounts a CSRF guard (`src/middlewares/csrfGuard.middleware.js`, `app.js:35`) on **every** request, after `cors()` and before body parsing: `Sec-Fetch-Site` is checked on every method (only `same-origin` / `same-site` / `none` pass), and `Origin` is checked on mutating methods plus the two state-changing GET prefixes (`/auth/logout`, `/auth/reset-link/`), against the same `ALLOWED_ORIGINS` list `cors()` uses (`src/utils/corsOrigins.js`, exact-match).
+
+What this means for the frontend:
+
+- **The client does nothing, and must invent nothing.** There is still **no CSRF token** anywhere in the system — the guard is header-based. RTK Query already sends `credentials: 'include'` and the `Authorization: Bearer` header; a legitimate call from this origin passes both checks by construction. Do not add a token field to requests — no backend middleware validates one.
+- **The auth cookie is still `SameSite=None`**, forced by the topology (frontend on Vercel, API on Render — different origins, so `Lax` would drop the cookie on every authenticated call). That is exactly why the guard exists: a cross-site form or `fetch()` forged from a third-party page carries `Sec-Fetch-Site: cross-site` and is refused with a `403` before it reaches a handler.
+- **The allow-list is load-bearing for this client.** The production origins (`cpccu.club`, `www.cpccu.club`, `cpccu.pro.bd`, `www.cpccu.pro.bd`, `cpccu-client.vercel.app`, `cpccu-client-nextjs.onrender.com`) are on the backend's list. Serving the frontend from a **new** origin without adding it to the backend's `ALLOWED_ORIGINS` (the `CORS_ORIGIN` env var or the list itself) breaks every mutating call with a `403` — and `cors()` would refuse it earlier anyway.
+- **The client calls one of the two state-changing GETs** — `GET /auth/logout` (`authApi.logout`). It passes the guard because the request is same-site from the browser's perspective and carries an allowed `Origin`.
+- **Residual gap, unchanged:** browsers older than **Chrome 76 / Firefox 90 / Safari 16.4** send neither header, so against those the guard is inert and the original cross-site exposure stands. The only remaining answer is a synchroniser token, which is not implemented. Full detail: backend [SECURITY.md §4.1](https://github.com/cpccu/cpccu-server/blob/dev/docs/SECURITY.md#41-csrf-guard-srcmiddlewarescsrfguardmiddlewarejs).
+
+> ℹ️ This is the mitigation for the cross-site-form finding formerly recorded as HIGH in the backend's known-debt list. It is a header check, not a token — see the residual gap above before assuming the issue is closed.
+
 ## 4. Hackathon surface (frontend view)
 
 The frontend **never** enforces the hackathon's access rules — the backend does, and the client only decides what to *offer*. Two things are worth stating precisely because they are easy to read backwards:
@@ -56,7 +70,7 @@ The backend exposes `GET /auth/refresh-token`, but this app never calls it. If y
 
 ### No frontend tests — INFO
 
-There are no automated frontend tests and **no test runner** in this repo — no framework, no config, no setup file, no `test` script. Do not claim frontend unit tests exist. Security-sensitive changes are verified by `npm run build` and, for anything crossing the HTTP boundary, by the backend suite (`npm test` in `cpccu-server`).
+There are no automated frontend tests and **no test runner** in this repo — no framework, no config, no setup file, no `test` script. Do not claim frontend unit tests exist. **`npm run build` is the only automated verification** this repo has, and security-sensitive changes are additionally verified by the backend suite (`npm test` in `cpccu-server`), which does cover the CSRF guard, the participation routes and the member-authorisation matrix.
 
 > ⚠️ `next build` is **not** a type-safety result. There is no `tsconfig.json` in this repo — `jsconfig.json` provides path aliases for editor resolution only — so the build performs no project-wide type check and its "Running TypeScript" step is a no-op. It is a module-resolution and render check. The pure helpers in `src/lib/countdown.js` were written without React, timers or hidden state specifically so they can be verified by inspection, which is the only option available here.
 

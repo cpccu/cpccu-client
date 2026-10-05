@@ -38,6 +38,21 @@ const adminContentInvalidates = (result, error, { resource } = {}) => [
     ? [
         { type: "PublicContent", id: "hackathon" },
         { type: "PublicContent", id: "hackathon-problem-set" },
+        // ⚠️ AN EVENTS WRITE NOW CHANGES PARTICIPATION STATE, so the participation
+        // caches have to be evicted too. This is the third consumer of the six
+        // participation fields and it was added last, which means it is the one at
+        // risk of being forgotten: an admin switching "in-app registration" on
+        // presses Save, sees a success toast, and the very next click still shows
+        // the closed window — because `GET /participation/events/:eventId` is
+        // cached under its own tag and nothing invalidated it.
+        //
+        // `'Participation'` (no id) evicts EVERY participation entry, which is
+        // broader than strictly necessary — a single event's window would do. That
+        // is the right trade here: an admin events write is rare, the extra
+        // refetches are two small anonymous GETs, and the alternative is a flat
+        // tag design that has to be reasoned about per endpoint. A per-event write
+        // (the review mutation) uses precise ids and is unaffected.
+        "Participation",
       ]
     : []),
   "AdminOverview",

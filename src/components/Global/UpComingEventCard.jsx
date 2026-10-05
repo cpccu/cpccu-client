@@ -26,7 +26,10 @@ const UpComingEventCard = ({ data, clName }) => {
 
       {/* Content Section */}
       <section className="h-full md:col-span-3 lg:col-span-3 xl:col-span-5 mxl:col-span-5 mmmxl:col-span-4 flex flex-col items-start gap-4">
-        <TimeBox date={data?.date} endDate={data?.endDate} />
+        {/* `startAt`/`endAt` are the mapper's names — `toPublicEvent` reads the
+            document's `eventStartAt`/`eventEndAt` and renames them, so no schema
+            field reaches this component. */}
+        <TimeBox startAt={data?.startAt} endAt={data?.endAt} />
         <h1 className="text-2xl lg:text-3xl xl:text-4xl  font-semibold lg:line-clamp-none">
           {`"`}
           {data?.eventHeadLine1}
@@ -65,29 +68,69 @@ const UpComingEventCard = ({ data, clName }) => {
         </p>
 
         {/*
-          ⚠️ KNOWN DEFECT, DELIBERATELY NOT FIXED HERE — read before "fixing" it.
+          ⚠️ THE PRIMARY BUTTON CHOOSES ITS DESTINATION FROM `participationEnabled`,
+          AND THAT IS THE ONE DECISION THIS CARD MAKES ABOUT PARTICIPATION.
 
-          `next/link` is the WRONG component for this href. The house rule for
-          admin-supplied, outbound links is a PLAIN ANCHOR
-          (`<a target="_blank" rel="noopener noreferrer">`, see the EXTERNAL
-          LINK RULE block in `src/lib/hackathon.js:11-33`): `next/link`
-          client-navigates, so an external target is pulled through our own
-          router instead of handed to the browser, and a non-http scheme can
-          break the router outright.
+          Two shapes, and the reason they differ is a backwards-compatibility
+          requirement rather than a design preference:
 
-          Why it is still here: this predates the hackathon feature and is
-          unrelated to it. Swapping the component changes client-navigation
-          behaviour for EVERY existing event link on `/event` and the homepage
-          carousel, which is a behaviour change that deserves its own review and
-          its own verification — not a drive-by edit inside a security fix. It
-          is also currently a *latent* bug rather than a live one, because the
-          href now arrives already filtered: `toPublicEvent` runs it through
-          `toSafeHref`, so by the time it reaches this line only http/https
-          URLs can be present, and `rel="noopener noreferrer"` is already set.
+            participationEnabled → an INTERNAL `next/link` to `/event/[id]`, where
+              the registration call to action lives and where the "in-app or
+              external form" decision is made ONCE, by `resolveRegistrationTarget`.
 
-          Logged as follow-up. Do not copy this pattern into new code.
+            otherwise             → the admin's external `btnLink`, exactly as
+              before this feature existed.
+
+          A card that always linked to the detail page would be tidier, and it
+          would also add a click to every event that still runs on a Google Form —
+          the majority of them, since participation is off by default and has to be
+          switched on per event. A card that always linked OUT would be the
+          opposite failure: an event whose admin has switched it onto the in-app
+          flow would keep advertising a stale external form on every list and on
+          the homepage carousel, which is the exact contradiction the mode flag
+          exists to prevent.
+
+          `participationEnabled` is a MODE, not a gate. This card never renders
+          "registration is open" from it — see the note on the field in
+          `toPublicEvent`. The button says "View details & register" precisely
+          because it cannot know whether the window is open.
         */}
-        {data?.btnLink ? (
+        {data?.participationEnabled && data?.id ? (
+          <Link href={`/event/${data.id}`} className="inline-flex">
+            <button className="bg-black/30 text-white font-bold uppercase px-5 py-2 
+          hover:text-gray-600 hover:bg-white border-[3px] border-white trans">
+              View details &amp; register
+            </button>
+          </Link>
+        ) : data?.btnLink ? (
+          /*
+            ⚠️ KNOWN DEFECT, DELIBERATELY NOT FIXED HERE — read before "fixing" it.
+
+            `next/link` is the WRONG component for this href. The house rule for
+            admin-supplied, outbound links is a PLAIN ANCHOR
+            (`<a target="_blank" rel="noopener noreferrer">`, see the
+            EXTERNAL LINK RULE block in `src/lib/hackathon.js:11-33`):
+            `next/link` client-navigates, so an external target is pulled through
+            our own router instead of handed to the browser, and a non-http scheme
+            can break the router outright.
+
+            Why it is still here: this predates the hackathon feature and is
+            unrelated to it. Swapping the component changes client-navigation
+            behaviour for EVERY existing event link on `/event` and the homepage
+            carousel, which is a behaviour change that deserves its own review and
+            its own verification — not a drive-by edit inside a security fix. It
+            is also currently a *latent* bug rather than a live one, because the
+            href now arrives already filtered: `toPublicEvent` runs it through
+            `toSafeHref`, so by the time it reaches this line only http/https
+            URLs can be present, and `rel="noopener noreferrer"` is already set.
+
+            ⚠️ IT IS ALSO NOW THE MINORITY BRANCH. Since `participationEnabled`
+            routes to the detail page instead, this anchor is reached only by
+            events with no in-app participation configured — so fixing it later
+            has a smaller blast radius than it had before, not a larger one.
+
+            Logged as follow-up. Do not copy this pattern into new code.
+          */
           <Link href={data?.btnLink} target="_blank" rel="noopener noreferrer">
             <button
               className="bg-black/30 text-white font-bold uppercase px-5 py-2 
@@ -95,6 +138,19 @@ const UpComingEventCard = ({ data, clName }) => {
             >
               {data?.btnText}
             </button>
+          </Link>
+        ) : null}
+
+        {/* Always reachable, whether or not the primary button goes anywhere
+            useful. An event with no links at all still has a detail page, and a
+            card that renders no way into it is a dead end. `next/link` is
+            correct: this is an internal route. */}
+        {data?.id ? (
+          <Link
+            href={`/event/${data.id}`}
+            className="text-sm font-semibold text-white/85 underline underline-offset-4 hover:text-white"
+          >
+            View details
           </Link>
         ) : null}
 
@@ -140,10 +196,12 @@ const UpComingEventCard = ({ data, clName }) => {
 
 export default UpComingEventCard;
 
-function TimeBox({ date, endDate }) {
+function TimeBox({ startAt, endAt }) {
   const getEventStatus = () => {
-    const startTime = new Date(date).getTime();
-    const endTime = new Date(endDate || date).getTime();
+    const startTime = new Date(startAt).getTime();
+    // A missing end falls back to the start, so a single-instant record counts
+    // as already ended rather than ticking a counter against an unknown window.
+    const endTime = new Date(endAt || startAt).getTime();
     const now = Date.now();
 
     if (!Number.isFinite(startTime) || !Number.isFinite(endTime)) {
@@ -185,7 +243,7 @@ function TimeBox({ date, endDate }) {
     const timer = setInterval(update, 1000);
 
     return () => clearInterval(timer);
-  }, [date, endDate]);
+  }, [startAt, endAt]);
 
   if (!status) {
     return (

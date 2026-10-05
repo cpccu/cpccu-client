@@ -23,6 +23,26 @@ export const contentApi = baseApi.injectEndpoints({
       query: () => "/content/hackathon",
       providesTags: [{ type: "PublicContent", id: "hackathon" }],
     }),
+    // ONE event, for the detail page at `/event/[eventId]`.
+    //
+    // ⚠️ THE TAG ID IS `event:<eventId>`, NOT `events`. This is the one place the
+    // two genuinely must not collide: `getPublicContent('events')` serves the whole
+    // LIST and is used by `/event` and the homepage carousel, while this serves one
+    // record. Sharing an id would mean an admin editing any event evicts the list
+    // — which is correct — but ALSO that an admin editing one event evicts every
+    // DETAIL page cache entry, and, worse, that a detail fetch could evict the list
+    // the carousel is mid-render on. Per-id entries keep the blast radius to the
+    // event that actually changed.
+    //
+    // ⚠️ IT 404s FOR A HACKATHON, and the client must treat that as "this event
+    // does not exist" rather than "something broke" — the hackathon is published
+    // on exactly one surface, its own phase-aware page at `/hackathon`.
+    getPublicEvent: builder.query({
+      query: (eventId) => `/content/events/${eventId}`,
+      providesTags: (result, error, eventId) => [
+        { type: "PublicContent", id: `event:${eventId}` },
+      ],
+    }),
     // The problem set URL is behind `verifyToken` AND the start time, and is
     // never included in the payload above. This query is therefore skipped
     // entirely before the hackathon starts (see HackathonProblemSet.jsx), so
@@ -36,6 +56,7 @@ export const contentApi = baseApi.injectEndpoints({
 
 export const {
   useGetPublicContentQuery,
+  useGetPublicEventQuery,
   useGetPublicStatisticsQuery,
   useGetPublicHackathonQuery,
   useGetPublicHackathonProblemSetQuery,

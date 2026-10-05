@@ -21,7 +21,7 @@ Defined in `src/services/baseApi.js`.
   ```
   Auth, Users, Posts, Projects, PublicContent, AdminOverview, AdminMembers,
   AdminContent, AdminContributors, AdminStatistics, AdminCertificates,
-  AdminSystemSettings, AdminRoles
+  AdminSystemSettings, AdminRoles, Participation
   ```
 
 > ⚠️ `memberApi.js` provides a `Members` tag for `fetchMemberById`, but `Members` is **not** registered in `baseApi.tagTypes`.
@@ -259,3 +259,64 @@ The rule generalises: **whenever an admin write changes data that is served over
 - **System settings mutations** invalidate `AdminSystemSettings`.
 - **Admin role mutations** invalidate `AdminRoles`.
 - **Project mutations** invalidate `Projects`.
+
+## 13. Event Participation (`participationApi`)
+
+Defined in `src/features/participation/participationApi.js` (injected into `baseApi`). All routes are JSON — there is **no `FormData`** on this surface (the server has no multer on this router). Responses are `ApiResponse` (`{ statusCode, data, message, success }`); failures are `{ status, message, errors }` with **no machine-readable error codes** — messages are written for participants and rendered verbatim via `getParticipationErrorMessage` (`src/lib/participation.js`).
+
+### 13.1 Public (anonymous)
+
+| Endpoint | Method | Purpose | Tag provided |
+| :--- | :--- | :--- | :--- |
+| `/participation/events/:eventId` | `GET` | The participation window for the event page — `registration` and `submission`, each `{ enabled, opensAt, closesAt, deadline, open }`, plus `team` size bounds. `opensAt`/`closesAt` are ISO strings or `null`; `deadline` is a **deprecated alias of `closesAt`** and should not be read by new code | `Participation: window:<eventId>` |
+| `/participation/events/:eventId/winners` | `GET` | The published shortlist. Projection is deliberately tiny — `{ title, liveUrl, technologies, registrationName, kind }`, no `_id`, nothing enumerable. An empty array with a 200 is a **normal** state (every un-reviewed event looks like this) | `Participation: winners:<eventId>` |
+
+### 13.2 Member
+
+| Endpoint | Method | Purpose | Notes |
+| :--- | :--- | :--- | :--- |
+| `/participation/me/registrations` | `GET` | My registrations, newest first, **including withdrawn**; each row carries its `submission` inline | Optional `eventId` query filter — **not validated server-side** (a malformed value is silently ignored, 200 with the full list). Tag: `Participation: mine` |
+| `/participation/registrations/:registrationId` | `GET` | One registration with its submission; readable by **any** member of the registration | Tags: `mine`, `reg:<registrationId>` |
+| `/participation/events/:eventId/registrations` | `POST` | Create a registration — body `{ name?, memberIds? }` and nothing else. `memberIds` absent/empty → **solo** (`name` ignored, named after the member); non-empty → team (`name` required). `memberIds` are `uniID` values, resolved case-insensitively; every one must belong to an **approved** member or the whole request 400s naming them | Invalidates `mine`. ⚠️ the 201 body's `members` have empty `fullName`/`uniID`/`avatar` (no populate on the create path) — re-fetch via `getRegistration` to render names |
+| `/participation/registrations/:registrationId` | `PATCH` | Update (owner only) — `memberIds` has **three shapes that are three different requests**: omitted = keep the team, `[]` = drop everyone but me, `[a, b]` = replace the roster. A solo cannot be renamed (400); a team grown from a solo must be named in the same request | Invalidates `mine`, `reg:<id>` |
+| `/participation/registrations/:registrationId` | `DELETE` | Withdraw (owner only) — a **tombstone**, not a delete (`status: 'withdrawn'`); withdrawing frees the member to register again. A registration **with a submission cannot be withdrawn** (409 "Contact an administrator") — the UI must not offer the button in that state | Invalidates `mine`, `reg:<id>` |
+| `/participation/registrations/:registrationId/submission` | `GET` | The one submission — **404 is the normal first-visit answer** ("No submission has been filed"), not a failure | Tags: `submission:<registrationId>`, `reg:<registrationId>` |
+| `/participation/registrations/:registrationId/submission` | `POST` | File a submission — body `{ title, description?, repoUrl?, liveUrl?, technologies? }`. **Exactly one submission per registration, ever** (unique `registrationId` index): a second POST is a permanent 409, there is no member-facing replace or resubmit. `repoUrl`/`liveUrl` go through the server's URL policy; no file upload, no video field — a demo video is a link in `liveUrl` | Invalidates `mine`, `submission:<id>`, `reg:<id>` |
+| `/participation/registrations/:registrationId/submission` | `PATCH` | Edit the submission — **only while `status === 'submitted'`** (shortlisted/rejected is a 409). A PATCH with no recognised field is a 400, so an unchanged form must not be submitted | Invalidates `mine`, `submission:<id>`, `reg:<id>` |
+| `/participation/member-search` | `GET` | The co-member picker — `?q=` (≥ 2 chars). Matches `uniID`, `email` **and** `fullName`; returns only `{ _id, fullName, uniID, avatar }` (email is searchable but deliberately not returned) | Driven by `skipToken` (RTK Query 2.12 has no `lazyQuery`): the component holds the term in state starting at `skipToken`, so no request fires until there is a real value, and **debounces 300 ms** — the endpoint's per-user ceiling (60 per 15 min) is sized for a type-ahead, not per-keystroke requests |
+
+### 13.3 Admin review
+
+| Endpoint | Method | Purpose | Notes |
+| :--- | :--- | :--- | :--- |
+| `/admin/participation/registrations` | `GET` | Registration roster for one event | **`eventId` query is required** (400 without it). `status` defaults to `'registered'`; `'all'` disables the filter. Under-`teamMinSize` rows are **returned**, not filtered out — this is the review surface. Admin + moderator (any GET); mentor 403. Tag: `admin:<eventId>:registrations` |
+| `/admin/participation/submissions` | `GET` | Submission review queue for one event | Same auth and `eventId` requirement, but `status` defaults to `'submitted'` (each list defaults to "the things waiting on me"). Tag: `admin:<eventId>:submissions` |
+| `/admin/participation/submissions/:id` | `PATCH` | Shortlist or reject — **admin only** (a moderator reads both lists but 403s here, so review actions are gated on role, not on reaching the page) | Body honours **only `status`** (`submitted\|shortlisted\|rejected`) **and `reviewNote`** (≤500 chars); every other key is silently dropped, and `reviewedBy`/`reviewedAt` are set server-side from the acting admin and the clock. `shortlisted → submitted` is a **409** — shortlisting publishes the entry on the public gallery, so it is not quietly undoable. The path param is `:id` (not `:submissionId`) |
+
+### 13.4 The tag-id scheme and invalidation rules
+
+All tags are under the `Participation` type with **composite ids**, because the screens read several endpoints at once and a flat tag would evict unrelated data on every write:
+
+```
+window:<eventId>        public window (contains NO participant data)
+winners:<eventId>       public shortlist
+mine                    the member's own registrations
+reg:<registrationId>    one registration with its submission
+submission:<regId>      the submission alone
+admin:<eventId>:<kind>  admin review lists (kind = registrations | submissions)
+```
+
+- **`window:` is invalidated by no member write** — intentional, not an oversight: the window is derived from the `Event` document, which only an admin changes, so a member registering cannot make it more or less open.
+- **`reviewParticipationSubmission` is the only mutation that invalidates `winners:`** (plus `admin:<eventId>:submissions`, `admin:<eventId>:registrations`, `mine`) — shortlisting is the only action in the feature that changes what an anonymous visitor sees. It derives the event id from **`result?.data?.eventId ?? arg?.eventId`** (the response, not the request arg): `arg.eventId` is an extra field passed purely for the failure-case fallback, and a caller that forgets it produces a mutation that *succeeds and invalidates nothing*.
+- Member mutations invalidate `mine` plus the precise `reg:`/`submission:` entries keyed by ids the caller already holds.
+
+### 13.5 Error messages — `getParticipationErrorMessage`
+
+`src/lib/participation.js` extracts the message from an RTK Query rejection. The server has no error codes, so the message is rendered **verbatim** (the wording is the contract — re-deriving it client-side would drift). The one substitution is the generic `500`:
+
+```js
+const isInternalFailure =
+  message !== undefined && error?.data?.errors === undefined;
+```
+
+The global error handler has **two** 500 branches: one wraps a deliberate `ApiError` and always sends `{ status, message, errors }` (with a message written for a human); the catch-all sends `{ status, message }` where `message` is the raw Mongoose/driver error. Keying on the **presence of the `errors` key** — not on the status code — distinguishes them exactly: a 500 *with* `errors` is a participant-facing explanation and is shown; a 500 *without* one is an internal detail (collection name, schema path, CastError) and the `fallback` is shown instead. Do not collapse this distinction into a status-code check — it hides every deliberate 500's explanation.

@@ -16,6 +16,14 @@ import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
 import useAdminContent from '@/hooks/use-admin-content';
 import { AdminImageUploadField } from '@/components/admin-image-upload-field';
+import { ScheduleInstantField } from '@/components/event-schedule';
+import { EVENT_SCHEDULE_FIELDS } from '@/lib/event-schedule';
+import {
+    EMPTY_PARTICIPATION_FORM,
+    EventParticipationSettings,
+    participationFromEvent,
+    participationToPayload,
+} from '@/components/admin-event-participation-settings';
 const statusStyles = {
     upcoming: 'bg-primary/15 text-primary border-primary/30',
     ongoing: 'bg-success/15 text-success border-success/30',
@@ -42,8 +50,8 @@ export function EventsContent() {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        date: '',
-        endDate: '',
+        eventStartAt: '',
+        eventEndAt: '',
         location: '',
         type: 'workshop',
         status: 'upcoming',
@@ -61,16 +69,44 @@ export function EventsContent() {
         btnLink1: '',
         order: 0,
         image: '',
+        // ⚠️ THE PARTICIPATION FIELDS ARE IN `formData` AND IN THE PAYLOAD, NOT
+        // ONLY IN THE EDITOR. The server applies an admin save as `$set:
+        // req.body`, so any field absent from the payload is UNSET — with a 200
+        // and no error anywhere. Leaving these out of `handleSave` would mean the
+        // moment an admin ticked "in-app registration" and pressed Save, the
+        // switch silently snapped back off and nobody could tell why.
+        //
+        // That now covers all TWELVE schedule fields, including the two event
+        // instants this form edits itself: they are declared in
+        // `EMPTY_PARTICIPATION_FORM` too, because a payload that omits one is
+        // UNSET, and `$set` does not distinguish "not sent" from "set to null".
+        ...EMPTY_PARTICIPATION_FORM,
     });
+    // ⚠️ THIS FORM KEEPS THE BROWSER-TIMEZONE DATE ROUND TRIP, AND IT IS THE ONE
+    // ADMIN SURFACE THAT DOES. `event.eventStartAt.slice(0, 16)` on the way in
+    // and `new Date(value).toISOString()` on the way out interpret the typed
+    // wall-clock in the ADMIN'S BROWSER timezone: correct for a Dhaka admin,
+    // silently wrong — shifted by the browser's UTC offset — for one abroad. It is
+    // a documented bug (`src/lib/dhaka-time.js`) and it is left as it is, because
+    // the form covers the entire historical event archive and switching it to
+    // Dhaka wall-clock would re-interpret the stored instant of every event that
+    // already exists.
+    //
+    // So these two helpers are passed EXPLICITLY to `ScheduleInstantField` rather
+    // than letting its Dhaka defaults apply. Nothing about that choice is visible
+    // in a diff of this file, which is exactly why it is stated in both places:
+    // inheriting Dhaka here would have quietly shifted every event by six hours
+    // the first time someone reused the shared field, with no error anywhere.
+    const toBrowserInputValue = (value) =>
+        typeof value === 'string' ? value.slice(0, 16) : '';
+    const fromBrowserInputValue = (value) =>
+        value ? new Date(value).toISOString() : null;
     // ⚠️ THE HACKATHON IS NOT EDITED HERE. `/admin/events` and
     // `/admin/hackathon` are two editors for the SAME record with DIFFERENT
     // date rules, which is a trap rather than a convenience:
     //
-    //   this form  — `event.date.slice(0, 16)` (a UTC slice) on the way in and
-    //                 `new Date(value).toISOString()` on the way out, which
-    //                 interprets the typed wall-clock in the ADMIN'S BROWSER
-    //                 timezone. Correct for a Dhaka admin, silently wrong —
-    //                 shifted by the browser's UTC offset — for one abroad.
+    //   this form  — a UTC slice in, `new Date(value).toISOString()` out (see
+    //                 above), i.e. the admin's browser timezone.
     //   that form  — `toDhakaInputValue` / `utcIsoFromDhakaInput`, i.e. Dhaka
     //                 wall-clock pinned to UTC+6 regardless of where the admin
     //                 is.
@@ -81,11 +117,6 @@ export function EventsContent() {
     // the single editor, which is also the premise the master toggle rests on —
     // a toggle that lives on one page and whose dates are edited on another is
     // not a coherent control surface.
-    //
-    // ⚠️ `events-content.jsx`'s own date/timezone handling is DELIBERATELY NOT
-    // CHANGED. It is used for every other event in the system, and rewriting it
-    // would re-interpret the stored instant of the whole historical event
-    // archive. `src/lib/dhaka-time.js` documents that same blast radius.
     const HACKATHON_PATH = '/admin/hackathon';
 
     // Counted over ALL events (including hackathons) so the stat tiles keep
@@ -105,8 +136,8 @@ export function EventsContent() {
         setFormData({
             title: '',
             description: '',
-            date: '',
-            endDate: '',
+            eventStartAt: '',
+            eventEndAt: '',
             location: '',
             type: 'workshop',
             status: 'upcoming',
@@ -124,6 +155,7 @@ export function EventsContent() {
             btnLink1: '',
             order: events.length,
             image: '',
+            ...EMPTY_PARTICIPATION_FORM,
         });
         setDialogOpen(true);
     };
@@ -132,8 +164,14 @@ export function EventsContent() {
         setFormData({
             title: event.title,
             description: event.description,
-            date: event.date ? event.date.slice(0, 16) : '',
-            endDate: event.endDate ? event.endDate.slice(0, 16) : '',
+            // ⚠️ THE READ PATH IS THE UTC SLICE, ON PURPOSE — see the note on
+        // `toBrowserInputValue`. A `Date` serialised by Mongoose arrives as
+        // `2026-10-01T03:30:00.000Z`; `slice(0, 16)` is the wall-clock the browser
+        // understood when the admin typed it, which is what re-saving must show.
+        // Routing it through the Dhaka formatter instead would shift every existing
+        // event by six hours the first time an admin opened and saved it.
+        eventStartAt: event.eventStartAt ? toBrowserInputValue(event.eventStartAt) : '',
+        eventEndAt: event.eventEndAt ? toBrowserInputValue(event.eventEndAt) : '',
             location: event.location,
             type: event.type,
             status: event.status,
@@ -151,6 +189,7 @@ export function EventsContent() {
             btnLink1: event.btnLink1 || event.contestLink || '',
             order: Number(event.order) || 0,
             image: event.image || '',
+            ...participationFromEvent(event),
         });
         setDialogOpen(true);
     };
@@ -159,8 +198,6 @@ export function EventsContent() {
             const updatedEvent = {
                 ...editingEvent,
                 ...formData,
-                date: new Date(formData.date || Date.now()).toISOString(),
-                endDate: new Date(formData.endDate || formData.date || Date.now()).toISOString(),
                 eventHeadLine1: formData.eventHeadLine1 || formData.title,
                 eventHeadLine2: formData.eventHeadLine2 || 'Reward',
                 eventHeadLine3: formData.eventHeadLine3 || 'Rules',
@@ -175,6 +212,21 @@ export function EventsContent() {
                 btnLink1: formData.btnLink1 || '',
                 order: Number(formData.order) || 0,
                 image: formData.image || '',
+                ...participationToPayload(formData),
+                // ⚠️ AFTER THE SPREAD, AND THAT ORDER IS LOAD-BEARING.
+                // `participationToPayload` carries all twelve schedule fields,
+                // `eventStartAt` and `eventEndAt` included, and it emits them as
+                // they sit in `formData` — which for this form is the BROWSER
+                // wall-clock string `2026-10-01T09:30`, not an instant. Putting
+                // these two lines before the spread would let that wall-clock
+                // overwrite the ISO below and Mongoose would cast it in the
+                // server's own timezone, shifting every save by the server's UTC
+                // offset. They go last, they carry the `|| Date.now()` fallback
+                // this form has always had, and the `eventEndAt` fallback still
+                // reads the start so a half-filled form can never be saved
+                // inverted.
+                eventStartAt: fromBrowserInputValue(formData.eventStartAt) || new Date().toISOString(),
+                eventEndAt: fromBrowserInputValue(formData.eventEndAt) || fromBrowserInputValue(formData.eventStartAt) || new Date().toISOString(),
             };
             await updateItem(editingEvent.id, updatedEvent);
             showSuccessAlert('Event Updated', `"${formData.title}" has been updated.`);
@@ -183,8 +235,6 @@ export function EventsContent() {
             const newEvent = {
                 title: formData.title,
                 description: formData.description,
-                date: new Date(formData.date || Date.now()).toISOString(),
-                endDate: new Date(formData.endDate || formData.date || Date.now()).toISOString(),
                 location: formData.location,
                 type: formData.type,
                 status: formData.status,
@@ -203,6 +253,13 @@ export function EventsContent() {
                 btnLink1: formData.btnLink1 || '',
                 order: Number(formData.order) || 0,
                 image: formData.image || '',
+                ...participationToPayload(formData),
+                // ⚠️ AFTER THE SPREAD — same reason as the update branch above, and
+                // the same two lines, because the two branches have to stay in step
+                // or a create and an edit would save different shapes of the same
+                // record.
+                eventStartAt: fromBrowserInputValue(formData.eventStartAt) || new Date().toISOString(),
+                eventEndAt: fromBrowserInputValue(formData.eventEndAt) || fromBrowserInputValue(formData.eventStartAt) || new Date().toISOString(),
             };
             await createItem(newEvent);
             showSuccessAlert('Event Created', `"${formData.title}" has been created.`);
@@ -317,6 +374,31 @@ export function EventsContent() {
                       <Badge variant="outline" className="text-xs">
                         {typeLabels[event.type]}
                       </Badge>
+                      {/* ⚠️ READ FROM THE RAW DOCUMENT, NOT THROUGH `toPublicEvent`.
+                          This grid deliberately bypasses that mapper — see the note
+                          below — but it still needs to show the admin whether
+                          participation is live, because otherwise the switch in the
+                          edit dialog is invisible from the list and an admin who has
+                          configured forty events has no way to see which are open.
+
+                          The badge says only that the feature is ON, never that
+                          registration is currently OPEN. `registrationEnabled` is
+                          date-independent: an event switched on six months ago and
+                          long finished still reports `true`. Conflating "enabled"
+                          with "open" here would repeat the free-text `status`
+                          problem the public pages went to such lengths to avoid —
+                          the admin list would show "Registration open" beside a
+                          completed event. */}
+                      {event.registrationEnabled === true ? (
+                        <Badge variant="outline" className="border-header/30 bg-header/10 text-xs text-header">
+                          Registration in-app
+                        </Badge>
+                      ) : null}
+                      {event.submissionEnabled === true ? (
+                        <Badge variant="outline" className="border-header/30 bg-header/10 text-xs text-header">
+                          Submissions in-app
+                        </Badge>
+                      ) : null}
                     </div>
                     <CardTitle className="text-base leading-snug">{event.title}</CardTitle>
                   </div>
@@ -354,7 +436,7 @@ export function EventsContent() {
                   <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <CalendarDays className="size-3.5 shrink-0"/>
-                      <span>{formatDate(event.date, 'MMM dd, yyyy h:mm a')}</span>
+                      <span>{formatDate(event.eventStartAt, 'MMM dd, yyyy h:mm a')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin className="size-3.5 shrink-0"/>
@@ -396,10 +478,17 @@ export function EventsContent() {
             <DialogDescription>{editingEvent ? 'Update event details.' : 'Fill in the details for a new event.'}</DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            {/* ⚠️ FOUR TABS, NOT THREE, AND THE NEW ONE IS LAST ON PURPOSE.
+                The participation fields are the only ones here that are OFF by
+                default and invisible until configured, so burying them at the end
+                keeps the common case — an admin editing a description — exactly as
+                short as it was, instead of pushing the description field below the
+                fold for every event that will never take registrations. */}
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="rules">Rules</TabsTrigger>
               <TabsTrigger value="links">Buttons & Rewards</TabsTrigger>
+              <TabsTrigger value="participation">Participation</TabsTrigger>
             </TabsList>
             <TabsContent value="basic" className="flex flex-col gap-4 pt-4">
               <div className="flex flex-col gap-2">
@@ -414,15 +503,26 @@ export function EventsContent() {
                 <Label htmlFor="event-desc">Description</Label>
                 <Textarea id="event-desc" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} placeholder="Event description..." rows={3}/>
               </div>
+              {/* ⚠️ THE TWO REQUIRED INSTANTS ARE RENDERED FROM THE SHARED
+                  DECLARATION, WITH THIS FORM'S OWN (BROWSER-TIMEZONE) CONVERTERS.
+                  That is the whole reason `ScheduleInstantField` takes them as props:
+                  `EVENT_SCHEDULE_FIELDS` already knows both are required, so the
+                  labels and the required mark cannot drift from the contract, while
+                  the converters keep this form's documented, deliberately-wrong
+                  encoding intact. */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="event-start">Start Date/Time</Label>
-                  <Input id="event-start" type="datetime-local" value={formData.date} onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}/>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="event-end">End Date/Time</Label>
-                  <Input id="event-end" type="datetime-local" value={formData.endDate} onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}/>
-                </div>
+                {EVENT_SCHEDULE_FIELDS.filter((field) => field.required).map((field) => (
+                  <ScheduleInstantField
+                    key={field.key}
+                    id={`event-${field.key}`}
+                    label={field.label}
+                    required={field.required}
+                    value={formData[field.key]}
+                    onChange={(value) => setFormData(prev => ({ ...prev, [field.key]: value }))}
+                    toInputValue={toBrowserInputValue}
+                    fromInputValue={fromBrowserInputValue}
+                  />
+                ))}
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="event-loc">Location</Label>
@@ -514,6 +614,19 @@ export function EventsContent() {
                   <Input id="event-button-link-2" value={formData.btnLink1} onChange={(e) => setFormData(prev => ({ ...prev, btnLink1: e.target.value }))} placeholder="https://..."/>
                 </div>
               </div>
+            </TabsContent>
+            {/* ⚠️ SHARED WITH `hackathon-content.jsx`, AND IT MUST STAY SHARED.
+                These twelve fields are not hackathon-specific — the server's
+                resolver reads them from any event with no type check — and two
+                editors for one record is already the documented trap above. A third
+                copy would be a third place for them to drift, and a drifted switch
+                is silent: the server `$set`s the body, so a form that omits a field
+                unsets it with a 200 and no error. */}
+            <TabsContent value="participation" className="pt-4">
+              <EventParticipationSettings
+                formData={formData}
+                onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+              />
             </TabsContent>
           </Tabs>
           <DialogFooter className="pt-4">

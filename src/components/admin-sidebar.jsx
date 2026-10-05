@@ -1,7 +1,7 @@
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, FileText, Users, Calendar, Image as ImageIcon, Briefcase, Settings, LogOut, ChevronDown, Code2, UserCog, Wrench, Mail, Award, GitPullRequest, Heart, BarChart3, Home, UserRoundCog, GraduationCap, ScrollText, Trophy, } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Calendar, Image as ImageIcon, Briefcase, Settings, LogOut, ChevronDown, Code2, UserCog, Wrench, Mail, Award, GitPullRequest, Heart, BarChart3, Home, UserRoundCog, GraduationCap, ScrollText, Trophy, ClipboardCheck, } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from '@/components/ui/dropdown-menu';
@@ -23,6 +23,25 @@ const navItems = [
     // already publish the underlying record, or grant write access to a role
     // the events route rejects.
     { title: 'Hackathon', href: '/admin/hackathon', icon: Trophy, roles: ['admin', 'moderator'] },
+    // ⚠️ THE ROLE LIST IS NOT THE SAME AS EVENTS' AND THAT IS DELIBERATE.
+    //
+    // `/admin/participation` issues three new endpoints, and their permissions
+    // are NOT those of `/admin/content/events`:
+    //
+    //   GET  /admin/participation/registrations   admin + moderator  (mentor 403)
+    //   GET  /admin/participation/submissions     admin + moderator  (mentor 403)
+    //   PATCH /admin/participation/submissions/:id   ADMIN ONLY     (moderator 403)
+    //
+    // So the entry is `['admin', 'moderator']` — the same list as Events, but
+    // arrived at from the participation route's own matrix rather than inherited
+    // from it. And it is NOT `['admin']`, because that would hide the read-only
+    // view from moderators who genuinely have it.
+    //
+    // ⚠️ WITHIN THE PAGE, writing is gated to `role === 'admin'` alone. The
+    // sidebar gate is about REACHING the page; the button gate is about what the
+    // page will let you do, and they are different questions. Conflating them is
+    // how a moderator ends up clicking Shortlist and eating a 403.
+    { title: 'Participation', href: '/admin/participation', icon: ClipboardCheck, roles: ['admin', 'moderator'] },
     { title: 'Gallery', href: '/admin/gallery', icon: ImageIcon, roles: ['admin', 'moderator'] },
     { title: 'Certificates', href: '/admin/certificates', icon: Award, roles: ['admin', 'mentor'] },
     { title: 'Contributors', href: '/admin/contributors', icon: GitPullRequest, roles: ['admin'] },
