@@ -16,7 +16,7 @@ The official web portal for the Competitive Programming Camp at City University.
 - **Member Management**: Public member directory (`/member`) with profiles, skill tracking, academic details, and admin-managed member records.
 - **Authentication**: Login, registration with email OTP verification, password reset, and persistent session hydration. Email verification is **enforced by the backend** — an unverified account cannot log in (the login page reopens the OTP popup automatically).
 - **Profile System**: Dynamic public profiles at `/profile/[id]` with Hero, About, Skills, Projects, Certificates, Contributions, Contact, and Quick Stats sections, plus owner-only edit mode.
-- **Certificate System**: Public certificate verification portal at `/certificate` with search by certificate ID / recipient name / student ID, certificate statistics, recent certificates, and per-certificate detail pages (`/certificate/[certificateId]`).
+- **Certificate System**: Public certificate verification portal at `/certificate` with search by certificate ID / recipient name / student ID, certificate statistics, recent certificates, per-certificate detail pages (`/certificate/[certificateId]`), and a "My certificates" section for signed-in members. Certificates render in one of five templates (`classic`, `modern`, `tech`, `elegant`, `vibrant`) mirrored from the server registry, and a member can download **his own participation certificate** as a PDF generated in the browser that opens without a password and is locked against editing.
 - **Dynamic Content**: Blog posts, event pages, galleries, contributors, donators, and public site content managed via the admin panel.
 - **Job Pipeline**: Public developer profile showcase with an approval workflow. Members can request to display their profile in the job pipeline.
 - **Bootcamp Leaderboard**: Live leaderboard integration for bootcamp participants.
@@ -37,7 +37,7 @@ The official web portal for the Competitive Programming Camp at City University.
 - **Alumni Management**: Alumni profile CRUD with fallback to static JSON.
 - **Event Management**: Event creation with date phases (remaining, running, ended), reward rules, and button links.
 - **Gallery Management**: Image upload and gallery organization, including gallery-event groupings.
-- **Certificates**: Certificate issue, bulk issue, update, delete, and public verification.
+- **Certificates**: Certificate issue, bulk issue, update, delete, and public verification. Certificates are issued from one of five templates; the issue dialog can link a certificate to an event, bulk issue can apply an event + template to a whole sheet, and the **Event Rankings → Certificates** section records an event's placings and generates the certificates behind them (re-submitting updates the existing ones instead of duplicating). The per-row **Download** of a participation certificate is **admin-only** — it goes through the member download endpoint, which 403s a moderator or a mentor — while the print view of a non-participation certificate stays available to every admin-panel role.
 - **Statistics**: Live public statistics derived automatically from real site data (read-only — no manual counters).
 - **System Settings**: Site metadata, maintenance mode, and appearance configuration.
 - **Audit Logs**: Read-only log viewer for admin create/update/delete actions.
@@ -52,7 +52,7 @@ The official web portal for the Competitive Programming Camp at City University.
 - **Profile Editing**: Users can update their profile info, upload and crop avatar images, manage skills, and manage projects.
 - **Projects CRUD**: Users can create, update, and delete personal projects displayed on their profile.
 - **Job Pipeline Request**: Users can request to appear in the public job pipeline; requests require admin approval.
-- **Certificates are fetched dynamically**: The Certificates section queries the certificate API using the member's student ID — certificates are **not** stored in the user profile.
+- **Certificates are fetched dynamically**: certificates are **not** stored in the user profile. The member's **own** profile reads `GET /certificates/me` (the list the server scopes to the caller, each row carrying a `canDownload` flag); another member's profile reads the public certificate search by student ID and is a read-only view with **no** download button. A participation certificate on the member's own profile can be downloaded as a PDF that opens without a password and cannot be edited; winners' certificates are verified online instead (see below).
 
 ### UI & UX
 
@@ -88,6 +88,7 @@ The official web portal for the Competitive Programming Camp at City University.
 | Panels | react-resizable-panels |
 | Counters | react-countup |
 | Spreadsheet Export | xlsx |
+| Certificate PDF | html2canvas + @cantoo/pdf-lib (rendered and encrypted in the browser) |
 | Security | `src/proxy.ts` (Next.js 16 proxy/middleware) on the frontend; helmet on the backend |
 | Package Manager | npm / Bun |
 
@@ -138,7 +139,8 @@ cpccu-client/
 │   │   ├── PROFILE/         # Profile page components (ProfileHero, AboutSection,
 │   │   │                     #   SkillsSection, ProjectsSection, CertificatesSection,
 │   │   │                     #   ContributionsSection, ContactSection, QuickStats, etc.)
-│   │   ├── CERTIFICATE/     # Certificate portal components (verify-form, stats, badges, ...)
+│   │   ├── CERTIFICATE/     # Certificate portal components (verify-form, stats, badges,
+│   │   │                     #   card, my-certificates, download button, templates/)
 │   │   ├── ui/              # shadcn/ui-style components (Radix UI primitives)
 │   │   ├── Global/          # Header, NavBar, Footer, GoToTop, Pagination, SideProfile
 │   │   └── [other domains]  # ABOUT, ADMIN, ALERT, BLOG, CONTACT, CONTRIBUTORS,
@@ -185,6 +187,7 @@ cpccu-client/
     Create a `.env` file in the root directory (see `.env.sample`):
     ```env
     NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
+    NEXT_PUBLIC_SITE_URL=https://www.cpccu.club   # optional
     ```
 
 ### Running the Project
@@ -210,6 +213,7 @@ cpccu-client/
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `NEXT_PUBLIC_API_BASE_URL` | Yes (prod) | Base URL of the CPCCU backend API. Defaults to `http://localhost:5000/api/v1`. |
+| `NEXT_PUBLIC_SITE_URL` | No | Origin printed on certificates as their verification link. The browser prefers `window.location.origin` when rendering, so this only decides the server-rendered fallback (final fallback `https://cpccu.vercel.app`). |
 
 > The bootcamp leaderboard page reads `GOOGLE_SHEETS_API_KEY` and `BOOTCAMP_SHEET_ID`, but these are **backend** (`cpccu-server`) environment variables — the frontend only needs `NEXT_PUBLIC_API_BASE_URL`.
 
@@ -268,6 +272,9 @@ https://i.ibb.co.com/Nm3q6c0/Artboard-1.png
 - Security headers are applied via `src/proxy.ts` (Next.js 16 proxy) on the frontend and `helmet` middleware on the backend.
 - `src/components/Layout/Profile1.jsx` and the legacy `PROFILE` components it imports (`ProfileCard`, `ProfileDetails`, `ProfileID`, `ProfileBlog`, `Profile_Blog_Modal`) are **unused** — the active profile is `src/components/Layout/Profile.jsx`. `src/components/ADMIN/AdminPanel.jsx` is also unused (the dashboard is `src/components/dashboard-content.jsx`).
 - The visitor counter and bootcamp leaderboard use direct `fetch` calls instead of RTK Query.
+- **Certificate PDFs are generated on the client**: the download button asks the server for the credentials, renders the certificate off-screen at a fixed 1123×794 px, rasterises it with html2canvas and writes an A4-landscape PDF with `@cantoo/pdf-lib` (`html2canvas` and `pdf-lib` are only imported inside the click handler, so they stay out of the initial bundle). The PDF is encrypted with the two passwords the server returns: the **user password is empty** — the file opens with no prompt, and the member is never shown a password — and the **owner password** is the site's own `CERTIFICATE_PDF_PASSWORD` secret, which is what locks editing, copying and annotating. Because the PDF is assembled in the browser, the owner password necessarily reaches the client, so the guarantee is "**opens freely, is marked non-editable, and cannot be unlocked without the password**", not "the member can never obtain it".
+- The five certificate templates live in `src/components/CERTIFICATE/templates/`. Their keys (`classic`, `modern`, `tech`, `elegant`, `vibrant`) and palettes **mirror the server registry** — a key the client does not know falls back to `classic`, and adding a template means touching both repos. Templates deliberately use plain hex/rgb colors, system font stacks and no CSS filters/variables/`color-mix()` so the rasterised PDF matches the on-screen document.
+- The public verification card renders the real certificate document (scaled down), so a verify link shows the same artwork the recipient holds. Whether the download button appears is **the server's decision**: the card looks the certificate up in `GET /certificates/me` — the list the server scopes to the signed-in member — and offers the download only when that list carries it with `canDownload: true`.
 
 ## 📄 License
 

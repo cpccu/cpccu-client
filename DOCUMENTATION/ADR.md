@@ -75,12 +75,14 @@ Certificates are **not stored inside the User model/profile document**. The cert
 
 ```mermaid
 flowchart LR
-    A[User Profile] -->|Student ID uniID| B[Certificate API - GET /certificates/verify?recipientId=]
+    A[User Profile] -->|own profile| B[Certificate API - GET /certificates/me]
+    A -->|another member| E[Certificate API - GET /certificates/verify?recipientId=]
     B --> C[Certificate Database]
+    E --> C
     C --> D[CertificatesSection renders badges]
 ```
 
-Implementation: `src/components/Layout/Profile.jsx` calls `useLazyVerifyCertificateQuery({ recipientId: user.uniID })` and maps the response with `getCertificatesFromResponse` (`src/lib/certificates/parser.js`).
+Implementation: `src/components/Layout/Profile.jsx` calls `useGetMyCertificatesQuery()` for the **own** profile and `useLazyVerifyCertificateQuery({ recipientId: user.uniID })` for **another member's** profile, and maps the response with `getCertificatesFromResponse` (`src/lib/certificates/parser.js`).
 
 ### Why
 
@@ -89,6 +91,7 @@ Implementation: `src/components/Layout/Profile.jsx` calls `useLazyVerifyCertific
 - **Automatic synchronization** — any issue/edit/delete in the admin certificate module is reflected instantly on profiles.
 - **Lower maintenance** — no sync jobs or dual-writes.
 - **Certificates appear automatically** after issuance — no per-user profile update required.
+- **The download button follows the server's own answer** — only `GET /certificates/me` carries the `canDownload` flag, so the own profile can offer a download and another member's profile (a public, read-only view) cannot.
 
 ### Consequences
 
@@ -105,7 +108,7 @@ Implementation: `src/components/Layout/Profile.jsx` calls `useLazyVerifyCertific
 
 **Future considerations**
 
-- Download/share permission checks (stubs in `src/lib/certificates/permissions.js`) will gate client actions when implemented.
+- The download check is implemented and **server-driven**: `canDownloadCertificate` reads the `canDownload` flag the server stamps on `GET /certificates/me`. Share/edit/delete remain stubs.
 
 ---
 
@@ -121,7 +124,7 @@ Certificates are issued to students by their university student ID, while users 
 
 ### Decision
 
-The profile uses the member's **student ID (`uniID`)** — not the MongoDB `_id` — as `recipientId` when querying certificates (`GET /certificates/verify?recipientId=<uniID>`).
+The profile uses the member's **student ID (`uniID`)** — not the MongoDB `_id` — as `recipientId` when querying certificates (`GET /certificates/verify?recipientId=<uniID>`). ⚠️ This lookup is the **public, read-only** view of another member's certificates; the member's own list comes from `GET /certificates/me`, which the server scopes to the caller. The student-id lookup is never used to decide who may download anything.
 
 ### Why
 
@@ -142,6 +145,7 @@ The profile uses the member's **student ID (`uniID`)** — not the MongoDB `_id`
 
 - The `uniID` must be identical in both the user record and the certificate record — typos silently produce an empty certificate section.
 - Changing a student ID (rare) requires updating both systems.
+- ⚠️ The student id is **self-asserted and mutable**, so it can never stand in for an ownership check. It identifies a certificate record; it does not prove who holds it.
 
 **Future considerations**
 
@@ -716,15 +720,15 @@ Two obvious CSP options both fail:
 
 ## ADR-012 — Future Decisions (Planned, Not Implemented)
 
-> The following are **Planned** directions. None of them are implemented in the current codebase — treat them as proposals, not facts.
+> The following are **Planned** directions. None of them are implemented in the current codebase — treat them as proposals, not facts. **Exception: item 2 is implemented**; it stays in place so the numbering does not shift.
 
 ### 1. Notification System
 
 **Planned.** Notification *preference toggles* already exist in the admin System Settings (`system-settings-content.jsx`: `emailNewPost`, `emailProfileSubmission`, `browserNotifications`), but there is **no notification delivery engine** (no in-app inbox, no push/email sending) on the frontend.
 
-### 2. Certificate PDF Download
+### 2. Certificate PDF Download — IMPLEMENTED
 
-**Planned.** `src/lib/certificates/permissions.js` contains `canDownloadCertificate` / `canShareCertificate` / `canEditCertificate` / `canDeleteCertificate` **stubs that always return `false`**; the Download button in `CertificatesSection` is disabled with a "Coming Soon" tooltip.
+**Implemented.** A member downloads their own participation certificate as a PDF rendered in the browser (`DownloadCertificateButton` → `GET /certificates/:certificateId/download` → html2canvas + pdf-lib). The **button's visibility is the server's decision**: `canDownloadCertificate` (`src/lib/certificates/permissions.js`) reads the `canDownload` flag that `GET /certificates/me` stamps on each of the caller's own certificates — the client makes no ownership comparison of its own. See ARCHITECTURE.md §8.4 for the export flow.
 
 ### 3. Share Certificates
 

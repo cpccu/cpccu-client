@@ -187,10 +187,10 @@ flowchart TD
 **Tag types** (cache invalidation):
 
 ```
-Auth, Users, Posts, Projects, PublicContent,
+Auth, Users, Posts, Projects, PublicContent, Participation,
 AdminOverview, AdminMembers, AdminContent, AdminContributors,
-AdminStatistics, AdminCertificates, AdminSystemSettings, AdminRoles,
-Participation
+AdminStatistics, AdminCertificates, AdminEventRankings,
+CertificateTemplates, MyCertificates, AdminSystemSettings, AdminRoles
 ```
 
 > ⚠️ Code quirk: `memberApi.js` provides a `Members` tag, but `Members` is **not** declared in `baseApi.tagTypes`.
@@ -202,10 +202,10 @@ Participation
 | `authApi` | `features/auth/authApi.js` | login, register, send-otp, otp-verify, current user, logout, password reset |
 | `userApi` | `features/users/userApi.js` | user CRUD, image upload, job pipeline request/remove, password change, account deletion, projects CRUD |
 | `memberApi` | `features/members/memberApi.js` | public member directory |
-| `certificateApi` | `features/certificate/certificateApi.js` | certificate verify/search, stats, recent + public verify |
+| `certificateApi` | `features/certificate/certificateApi.js` | certificate verify/search, stats, recent, templates, own certificates, download credentials + public verify |
 | `contentApi` | `features/content/contentApi.js` | public content + statistics + hackathon + hackathon problem set |
 | `contactApi` | `features/contact/contactApi.js` | contact form submission |
-| `adminApi` | `features/admin/adminApi.js` | admin overview, members, content, roles, statistics, system settings, certificates, image upload |
+| `adminApi` | `features/admin/adminApi.js` | admin overview, members, content, roles, statistics, system settings, certificates (+ templates, bulk issue, event rankings), image upload |
 | `participationApi` | `features/participation/participationApi.js` | event participation — public window + winners, member registrations/submissions, member search, admin review lists + review decision (see §20) |
 
 ### 4.5 Direct Fetch (non-RTK Query)
@@ -315,37 +315,99 @@ Visitors can view all sections; owner-only controls (edit, image upload, project
 | `GET /certificates/verify?certificateId=&recipientName=&recipientId=` | `certificateApi.verifyCertificate` | No (public — backend attaches no auth requirement; a token is sent only if one exists) |
 | `GET /certificates/stats` | `certificateApi.getCertificateStats` | No (public) |
 | `GET /certificates/recent` | `certificateApi.getRecentCertificates` | No (public) |
+| `GET /certificates/templates` | `certificateApi.getCertificateTemplates` | No (public) |
+| `GET /certificates/me` | `certificateApi.getMyCertificates` | Yes (`verifyToken`; scoped to the caller) |
+| `GET /certificates/:certificateId/download` | `certificateApi.downloadCertificateCredentials` | Yes (`verifyToken`; 403 for a non-owner — an **admin** may download any certificate — or a non-participation certificate) |
 | `GET /verify/:certificateId` | `publicApi.verifyCertificatePublic` | No |
+| `GET /admin/certificate-templates` | `adminApi.getAdminCertificateTemplates` | Yes (admin) |
+| `POST /admin/certificates/bulk` | `adminApi.bulkIssueAdminCertificates` | Yes (admin) |
+| `GET /admin/events/:eventId/rankings` | `adminApi.getAdminEventRankings` | Yes (admin) |
+| `POST /admin/events/:eventId/rankings` | `adminApi.submitAdminEventRankings` | Yes (admin) |
 
-Search behavior: `certificateId` exact match; `recipientName` partial case-insensitive; `recipientId` case-insensitive. Name/ID searches can return multiple certificates.
+Search behavior: `certificateId` exact match; `recipientName` anchored to the **prefix** of the name, case-insensitive, and rejected under **3 characters** (400 — the verify form enforces the same minimum per mode, so a name search needs 3 characters while a certificate id and a student id need 2); `recipientId` anchored to the whole value, case-insensitive. Name/ID searches can return multiple certificates.
+
+Tags: `CertificateTemplates`, `MyCertificates`, `AdminCertificates`, `AdminEventRankings` — a bulk issue or a rankings submit invalidates `AdminCertificates`, `AdminOverview` and `MyCertificates`, because the member's own list is read on a different screen from the one that wrote the record.
+
+`downloadCertificateCredentials` is a `queryFn`, not a plain `query`: the endpoint returns JSON credentials (`certificate`, `template`, `pdf: { userPassword, ownerPassword }`, `fileName`) rather than a file, and the `queryFn` unwraps the `data.data` envelope once so the button receives the payload directly.
 
 ### 8.3 How the Profile Integrates with Certificates
 
 ```mermaid
 flowchart LR
-    A[Profile page loads] --> B{Member has uniID?}
-    B -- Yes --> C[useLazyVerifyCertificateQuery recipientId=uniID]
-    C --> D[GET /certificates/verify?recipientId=...]
+    A[Profile page loads] --> B{Own profile?}
+    B -- Yes --> C[useGetMyCertificatesQuery]
+    C --> D[GET /certificates/me]
     D --> E[getCertificatesFromResponse]
     E --> F[CertificatesSection renders badges]
-    B -- No --> G[CertificatesSection empty state]
+    B -- No --> H{Member has uniID?}
+    H -- Yes --> I[useLazyVerifyCertificateQuery recipientId=uniID]
+    I --> J[GET /certificates/verify?recipientId=...]
+    J --> E
+    H -- No --> G[CertificatesSection empty state]
 ```
 
 Key facts:
 
 - Certificates are **NOT stored in the user profile**.
-- They are **fetched dynamically** from the certificate system using the member's **student ID** (`uniID`).
+- The **own** profile reads `GET /certificates/me` — the one list the server scopes to the caller. **Another member's** profile reads the public search by the member's **student ID** (`uniID`).
 - The existing certificate system (backend `Certificate` collection) is the **single source of truth**.
 - The profile only displays them; admins issue/verify certificates through `/admin/certificates`.
+- A participation certificate on the member's **own** profile carries a real download button (`DownloadCertificateButton`); it replaces the old disabled "Download PDF (coming soon)" stub. Placing certificates have no member-facing PDF.
+- Another member's profile is a **read-only public view**: the public search carries no `canDownload` flag, so it renders **no** download button at all.
 
-### 8.4 Utilities (`src/lib/certificates/`)
+### 8.4 Templates and the client-rendered PDF
+
+Five templates are mirrored from the server registry (`cpccu-server/src/utils/certificateTemplates.js`) in `src/components/CERTIFICATE/templates/template-registry.js`: `classic`, `modern`, `tech`, `elegant`, `vibrant`. **The keys and the palette must match the server exactly** — the key is stored on the record and validated against the server's enum, and the palette is what the browser paints with. An unknown key falls back to `classic` rather than rendering nothing.
+
+| Piece | File | Responsibility |
+| --- | --- | --- |
+| Shared layout | `templates/certificate-frame.jsx` | Fixed 1123×794 canvas constants, colour blend helpers (`blendHex`, `withAlpha` — html2canvas cannot parse `oklch()`/`color-mix()`/CSS variables), `resolveCertificateView`, heading/name/body/detail/signature/QR/verification pieces |
+| One template each | `templates/certificate-{classic,modern,tech,elegant,vibrant}.jsx` | The artwork; plain hex/rgb, system font stacks, no filters |
+| Dispatcher | `templates/certificate-document.jsx` | `CertificateDocument` (the fixed 1123×794 export node) and `CertificatePreview` (responsive `transform: scale()` wrapper for display) |
+| PDF pipeline | `src/lib/certificate-pdf.js` | html2canvas (3×) → PNG → pdf-lib A4-landscape page (842×595) → encrypted bytes → `<a download>` |
+| Download button | `components/CERTIFICATE/download-certificate-button.jsx` | Fetches the credentials, renders the document in an off-screen portal, downloads, then confirms the download |
+
+```mermaid
+sequenceDiagram
+    participant M as Member
+    participant B as DownloadCertificateButton
+    participant S as Server
+    participant D as Off-screen document
+    M->>B: Click "Download PDF"
+    B->>S: GET /certificates/:id/download
+    S-->>B: { certificate, template, pdf: { userPassword, ownerPassword }, fileName }
+    B->>D: render CertificateDocument in a portal at left:-10000px
+    B->>D: wait 2 frames + document.fonts.ready
+    D->>B: html2canvas(node, { scale: 3, width: 1123, height: 794 })
+    B->>M: encrypted PDF (opens with no password) + success toast
+```
+
+Three constraints worth knowing before touching this area:
+
+- **The export node must stay exactly 1123×794.** html2canvas is called with a fixed frame, so a node already shrunk by its parent would rasterise at the wrong scale. Display scaling happens in `CertificatePreview`, which never wraps the node it exports.
+- **`html2canvas` and `@cantoo/pdf-lib` are only ever imported inside the click handler** (`await import(...)`). A top-level import pulls both into the initial bundle and breaks the server-rendering pass.
+- **The owner password comes from the server, and it is not a secret from the member.** The user password is empty — the file opens with no prompt and the member is never shown a password — and the owner password (the site's `CERTIFICATE_PDF_PASSWORD` secret) is what locks editing, copying and annotating. Because the PDF is assembled in the browser, that secret necessarily travels to the client, so the guarantee is "**opens freely, is marked non-editable, and cannot be unlocked without the password**" — not "the member can never obtain the password". The client refuses to emit a file when the owner password is missing, rather than shipping an editable certificate.
+
+Ownership gate: **the server decides, and the client asks it.** The download button is rendered only for a certificate the server itself put in the signed-in member's own list with `canDownload: true` — the flag `GET /certificates/me` stamps on each of its rows. `canDownloadCertificate` (`src/lib/certificates/permissions.js`) reads that flag and nothing else, and the server re-checks ownership and the certificate type on every `/certificates/:id/download` request. The client deliberately makes **no** ownership comparison of its own: a student id is self-asserted and mutable, so a client-side `uniID` match could be talked into believing a member owns somebody else's certificate. The public verification card (`CertificateCard`) renders a certificate that came from an anonymous endpoint and therefore has no flag at all — it looks the certificate up in the same `/me` list to decide.
+
+### 8.5 Admin issuing flow
+
+`/admin/certificates` (`certificates-content.jsx`) offers three ways to issue:
+
+1. **Issue Certificate** — a single record; the dialog can link an Event (which fills the contest name/type) and pick a template.
+2. **Bulk Issue** — one XLSX upload, one `POST /admin/certificates/bulk` request for the whole batch. The response reports `{ created, skipped }` per row instead of failing the batch; the dialog shows the skipped count and reasons. With an event selected the sheet's contest columns are ignored and the event's title/type win.
+3. **Event Rankings → Certificates** — the placings of one event, submitted as `POST /admin/events/:eventId/rankings`. A rank maps to a certificate type by default (1 → winner, 2 → runner-up, 3 → 2nd-runner-up, 4+ → participation) with an admin override, and re-submitting updates the certificate behind an existing rank instead of duplicating it. Generating before the event has ended is allowed, but the section says so.
+
+The per-row **Download** action is role-gated. A participation row downloads the member's encrypted PDF through the **member** endpoint (`GET /certificates/:certificateId/download`), which lets an **admin** download anybody's certificate but 403s a moderator or a mentor — so the entry is hidden for a non-admin and the page says in plain text that the download is admin-only. A non-participation row's Download is a different thing: it opens the public certificate page for printing, and that stays available to every admin-panel role.
+
+### 8.6 Utilities (`src/lib/certificates/`)
 
 | File | Responsibility |
 | --- | --- |
 | `parser.js` | `getCertificatesFromResponse` — safely extracts an array from any response shape |
 | `sorting.js` | `sortCertificatesNewest`, `sortCertificatesOldest`, `sortByIssueDate` |
 | `badges.js` | Badge labels/colors/icons by certificate type (`winner`, `runner-up`, `participation`, ...) |
-| `permissions.js` | Stubs preparing download/share/edit/delete capability checks (all return `false`) |
+| `permissions.js` | `canDownloadCertificate` (implemented: reads the server's `canDownload` flag from `GET /certificates/me` — it makes no ownership comparison of its own); share/edit/delete are still stubs returning `false` |
 | `index.js` | Re-exports |
 
 ## 9. Job Pipeline
@@ -449,12 +511,12 @@ flowchart LR
 | Hackathon | Generic content `events` (same endpoint, no new admin route) | Visibility toggle, rule book, problem set, CTA label, Dhaka-time schedule |
 | Participation | `GET /admin/participation/{registrations,submissions}` + `PATCH /admin/participation/submissions/:id` | Registration roster + submission review queue (per event), shortlist/reject with `reviewNote`. Admin reads+writes; moderator reads; the review action is gated on role in the component |
 | Gallery | Generic content `gallery` + `gallery-events` | Image upload, event grouping |
-| Certificates | `GET/POST/PATCH/DELETE /admin/certificates` | Issue, bulk issue, delete |
+| Certificates | `GET/POST/PATCH/DELETE /admin/certificates` | Issue, bulk issue, delete. The per-row **Download** of a participation certificate is admin-only (the member endpoint 403s a moderator or a mentor) |
 | Jobs | `GET /admin/content/profiles` | Developer profile review |
 | Alumni | Generic content `alumni` | Alumni records with job history |
 | Contributors | `GET/PATCH /admin/contributors` (GitHub Contents API) | GitHub-synced records — read-only GitHub fields, edit `batch`/`linkedin`; role fixed as Contributor |
 | Donators | Generic content `donators` | Donator recognition |
-| Committees | Generic content `committees` | Running/previous committees |
+| Committees | Generic content `committees` | Committee members grouped by the committee serial (`committeeKey`); the committee list comes from `GET /certificates/signatories`, and an executive position requires a linked user account |
 | Statistics | `GET /admin/statistics` | Live stats aggregated from real data sources |
 | Audit Logs | Generic content `audit-logs` (read-only) | Admin action log |
 | Messages | Generic content `messages` | Contact message triage |
@@ -509,6 +571,7 @@ See [CPCCU_Admin_Panel_Implementation_Documentation.md](./CPCCU_Admin_Panel_Impl
 | Variable | Required | Used in |
 | --- | --- | --- |
 | `NEXT_PUBLIC_API_BASE_URL` | Yes (prod) | `baseApi.js`, `certificateApi.js`, `certificate-metadata.js`, `VisitorCounter.jsx`, `BootcampLeaderboard.jsx` |
+| `NEXT_PUBLIC_SITE_URL` | No | Only `components/CERTIFICATE/templates/certificate-frame.jsx`, for the verification link printed on a server-rendered certificate. The browser prefers `window.location.origin`, and the final fallback is `https://cpccu.vercel.app`. |
 
 ⚠️ **`NEXT_PUBLIC_*` is inlined at build time**, so a set-but-wrong value silently wins in production and the `|| 'http://localhost:5000/api/v1'` fallback in `baseApi.js:4` never gets a chance to apply. The current `.env` deliberately leaves it unset and `.env.sample` carries it commented. If you do set it, set it for the build, not for the server.
 

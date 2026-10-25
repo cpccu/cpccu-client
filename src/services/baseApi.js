@@ -41,7 +41,7 @@ export const baseApi = createApi({
   // tag would let a registration write evict the public window and trigger a
   // refetch of a page the member never asked to reload. The full id scheme is
   // documented in `features/participation/participationApi.js`.
-  tagTypes: ['Auth', 'Users', 'Posts', 'Projects', 'PublicContent', 'Participation', 'AdminOverview', 'AdminMembers', 'AdminContent', 'AdminContributors', 'AdminStatistics', 'AdminCertificates', 'AdminSystemSettings', 'AdminRoles'],
+  tagTypes: ['Auth', 'Users', 'Posts', 'Projects', 'PublicContent', 'Participation', 'AdminOverview', 'AdminMembers', 'AdminContent', 'AdminContributors', 'AdminStatistics', 'AdminCertificates', 'AdminEventRankings', 'CertificateTemplates', 'MyCertificates', 'AdminSystemSettings', 'AdminRoles'],
   endpoints: () => ({})
 });
 

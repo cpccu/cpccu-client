@@ -61,7 +61,7 @@ There is **no dedicated `/admin/roles` page**. Role management UI (role dropdown
 | `/admin/events` | Event, contest, link, and reward management |
 | `/admin/gallery` | Gallery and featured media management |
 | `/admin/hackathon` | Hackathon publication toggle, rule book, problem set, CTA label, schedule |
-| `/admin/certificates` | Certificate issue, bulk issue, view, and export |
+| `/admin/certificates` | Certificate issue, bulk issue, event rankings → certificates, view, and export |
 | `/admin/contributors` | Website contributor records |
 | `/admin/donators` | Donator recognition records |
 | `/admin/jobs` | Developer profile/job pipeline management |
@@ -97,9 +97,13 @@ Specialized admin endpoints (not generic content):
 - `PATCH /api/v1/admin/members/:id` — update member
 - `DELETE /api/v1/admin/members/:id` — delete member
 - `GET /api/v1/admin/certificates` — certificate list
-- `POST /api/v1/admin/certificates` — create certificate
-- `PATCH /api/v1/admin/certificates/:id` — update certificate
+- `POST /api/v1/admin/certificates` — create certificate (may link an `eventId`, a `templateKey`, a `rank`)
+- `PATCH /api/v1/admin/certificates/:id` — update certificate (may link an `eventId`, a `templateKey`, a `rank`)
 - `DELETE /api/v1/admin/certificates/:id` — delete certificate
+- `GET /api/v1/admin/certificate-templates` — the five certificate templates + the default key
+- `POST /api/v1/admin/certificates/bulk` — issue a whole uploaded sheet in one request; answers `{ created, skipped }`
+- `GET /api/v1/admin/events/:eventId/rankings` — an event's recorded placings
+- `POST /api/v1/admin/events/:eventId/rankings` — record placings and generate/update the certificates behind them
 - `GET /api/v1/admin/statistics` — live site statistics (computed from the real data sources; **read-only** — there is no `PATCH /admin/statistics`)
 - `GET /api/v1/admin/system-settings` — system settings
 - `PATCH /api/v1/admin/system-settings` — update system settings
@@ -138,17 +142,74 @@ Admin writes to `events` invalidate both hackathon cache entries as well as the 
 
 Committee management is available at `/admin/committees`.
 
-Each committee member stores:
-- Name
-- Email
-- Phone
-- Position
-- Image URL
-- Committee type: `running` or `previous`
-- Term, such as `Running Committee` or `Founding Committee 2022-2024`
-- Sort order
+### The panel is organised BY COMMITTEE
 
-The public `/committee` page groups previous committee members by `term`.
+The admin panel shows one section per committee, NEWEST FIRST, and the LAST
+committee of the registry is badged **Current**. Each section lists that
+committee's members (avatar, name, email, position, linked account, order) and
+has its own "Add member" action, which opens the add dialog pre-set to that
+committee. A committee with no members shows an empty state. The search box
+filters the MEMBERS across every committee — the sections themselves always
+stay visible.
+
+The grouping is `groupCommitteeMembers(members, canonicalCommittees, { order:
+'desc' })` from `src/lib/committee.js`: every canonical committee appears as a
+group even when it has no members, and the members of a group are ordered by
+`order`. The `order` option only flips the OUTPUT order — the current
+committee is still identified by the LAST entry of the canonical registry list,
+so it is unaffected by the display order. The public committee page
+(`src/components/Layout/AboutLayout/Committee.jsx`) keeps the default
+ascending order, which reads as a chronological history.
+
+### A committee member IS a registered user
+
+The admin does not type a member's name, email, phone or picture. The admin
+PICKS the account from the site's registered members
+(`useGetAdminMembersQuery()`, searchable by name, email or uniID) and the
+server DERIVES the identity from that account. The admin panel therefore sends
+exactly four fields on a create or update:
+
+- `userId` — the linked account's id (required for a create, and for an
+  executive)
+- `position` — free text, required
+- `committeeKey` — the committee serial, or empty to clear it
+- `order` — a whole number of 0 or more
+
+`name`, `fullName`, `email`, `phone`, `avatar`, `img`, `term` and `group` are
+NOT sent: the server drops them and derives them instead.
+
+A member with no linked account shows a **Link account** button in its row;
+picking an account PATCHes the member with that `userId` and its existing
+position, keeping its committee and order. A linked member gets **Reassign
+account** from the row menu, which opens the account picker alone.
+
+### Committee serials
+
+The committee serials come from the server's registry, served by
+`GET /api/v1/certificates/signatories` — the client never repeats the list.
+The admin panel reads it with `useGetCertificateSignatoriesQuery()` and offers
+every committee in the "Committee" select; the public `/committee` page uses
+the same list to order the committees chronologically.
+
+### Executives must have a user account
+
+The executive positions (President, Vice President, General Secretary,
+Treasurer, Joint Secretary, Organizing Secretary, Club Manager, Assistant Club
+Manager, Joint Treasurer, Media Executive, Joint Media Executive, Creative
+Executive, Joint Creative Executive, Content Writer, Contest & Events
+Operations Team, Web Developer, Social Media Manager, Event Organizer,
+Contest Support Lead) require a linked user account: when one of those
+positions is selected, the account picker is highlighted, the panel shows "A
+committee executive must be linked to a user account." and the Save button
+stays disabled until an account is picked. Every other position may be saved
+without a linked account. The positions live in `src/lib/committee.js`
+(`isExecutivePosition`, `COMMITTEE_POSITIONS`); no executive NAME is
+hardcoded in the client — the executives are entered by an admin.
+
+The public `/committee` page groups members by `committeeKey` (falling back to
+`term` for legacy members) and shows the LAST committee of the registry as the
+"Current Committee"; every other committee is listed under "Previous
+Committees", including committees that have no members yet.
 
 ## Alumni Management
 

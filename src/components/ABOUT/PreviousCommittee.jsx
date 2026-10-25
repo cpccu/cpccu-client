@@ -44,11 +44,17 @@ export default function PreviousCommittee({ data = PreviousCommitteeData }) {
               >
                 <div className="flex items-center gap-6">
                   <div className="w-30 h-25 rounded-2xl bg-header/20 flex items-center justify-center">
-                    <span className="text-header font-bold text-lg">{yearData.year.split("-")[0]}</span>
+                    <span className="text-header font-bold text-lg">
+                      {yearData.startYear || String(yearData.year || "").split("-")[0]}
+                    </span>
                   </div>
                   <div className="text-left">
                     <p className="text-2xl font-bold text-gray-900">{yearData.year}</p>
-                    <p className="text-base text-gray-500">{yearData.members.length} members</p>
+                    <p className="text-base text-gray-500">
+                      {yearData.members?.length
+                        ? `${yearData.members.length} members`
+                        : "No members listed"}
+                    </p>
                   </div>
                 </div>
                 <FaChevronDown
@@ -62,52 +68,58 @@ export default function PreviousCommittee({ data = PreviousCommitteeData }) {
               {/* Members Grid - Expandable */}
               {expandedYear === yearData.year && (
                 <div className="bg-gray-50 px-8 py-12 border-t border-gray-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                    {yearData.members.map((member, memberIndex) => (
-                      <div
-                        key={memberIndex}
-                        className="bg-white rounded-2xl shadow-md hover:shadow-xl border border-gray-100 hover:border-header/30 transition-all duration-500 overflow-hidden group"
-                      >
-                        {/* Top accent bar */}
-                        <div className="h-2 w-full bg-gradient-to-r from-header to-blue-400" />
+                  {yearData.members?.length ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                      {yearData.members.map((member, memberIndex) => (
+                        <div
+                          key={memberIndex}
+                          className="bg-white rounded-2xl shadow-md hover:shadow-xl border border-gray-100 hover:border-header/30 transition-all duration-500 overflow-hidden group"
+                        >
+                          {/* Top accent bar */}
+                          <div className="h-2 w-full bg-gradient-to-r from-header to-blue-400" />
 
-                        <div className="p-8 flex flex-col items-center gap-6 text-center">
-                          {/* Avatar */}
-                          <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-header/10 group-hover:ring-header/40 transition-all duration-500 shadow-inner">
-                            <img
-                              src={member?.avatar}
-                              alt={member?.fullName}
-                              className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-                              onError={(e) => {
-                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                  member?.fullName
-                                )}&background=3b60c9&color=fff&size=256`;
-                              }}
-                            />
-                          </div>
-
-                          {/* Info */}
-                          <div className="space-y-2">
-                            <h3 className="font-extrabold text-gray-900 text-xl capitalize group-hover:text-header transition-colors duration-300">
-                              {member?.fullName}
-                            </h3>
-                            <div className="inline-block bg-header/10 text-header text-sm font-bold px-4 py-1.5 rounded-full border border-header/20">
-                              {member?.position}
+                          <div className="p-8 flex flex-col items-center gap-6 text-center">
+                            {/* Avatar */}
+                            <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-header/10 group-hover:ring-header/40 transition-all duration-500 shadow-inner">
+                              <img
+                                src={member?.avatar}
+                                alt={member?.fullName}
+                                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                                onError={(e) => {
+                                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    member?.fullName
+                                  )}&background=3b60c9&color=fff&size=256`;
+                                }}
+                              />
                             </div>
-                          </div>
 
-                          {/* Email */}
-                          <a
-                            href={`mailto:${member?.email}`}
-                            className="text-sm font-medium text-gray-500 hover:text-header transition-colors duration-300 flex items-center gap-2 group/email"
-                            title={member?.email}
-                          >
-                            <span className="truncate max-w-[200px]">{member?.email}</span>
-                          </a>
+                            {/* Info */}
+                            <div className="space-y-2">
+                              <h3 className="font-extrabold text-gray-900 text-xl capitalize group-hover:text-header transition-colors duration-300">
+                                {member?.fullName}
+                              </h3>
+                              <div className="inline-block bg-header/10 text-header text-sm font-bold px-4 py-1.5 rounded-full border border-header/20">
+                                {member?.position}
+                              </div>
+                            </div>
+
+                            {/* Email */}
+                            <a
+                              href={`mailto:${member?.email}`}
+                              className="text-sm font-medium text-gray-500 hover:text-header transition-colors duration-300 flex items-center gap-2 group/email"
+                              title={member?.email}
+                            >
+                              <span className="truncate max-w-[200px]">{member?.email}</span>
+                            </a>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-500">
+                      No members are listed for this committee yet.
+                    </p>
+                  )}
                 </div>
               )}
             </div>

@@ -6,24 +6,36 @@ import { CertificateCard } from "./certificate-card";
 import { useLazyVerifyCertificateQuery } from "@/features/certificate/certificateApi";
 import { getCertificatesFromResponse } from "@/lib/certificates";
 
+/**
+ * The public verification search modes.
+ *
+ * ⚠️ THE MINIMUM LENGTH IS PER MODE. The server anchors a name search to the
+ * prefix of the name and rejects a name under 3 characters with a 400, so the
+ * name mode needs 3. A certificate id is an exact lookup and a student id is
+ * anchored to the whole value — neither has a server-side minimum, so both
+ * keep the 2-character floor.
+ */
 const SEARCH_TYPES = [
   {
     value: "id",
     label: "Certificate ID",
     Icon: Hash,
     placeholder: "e.g. CPCCU-2026-001",
+    minLength: 2,
   },
   {
     value: "name",
     label: "Recipient Name",
     Icon: User,
     placeholder: "e.g. Arif Hossain",
+    minLength: 3,
   },
   {
     value: "studentId",
     label: "Student ID",
     Icon: IdCard,
     placeholder: "e.g. CSE-2021-101",
+    minLength: 2,
   },
 ];
 
@@ -75,8 +87,10 @@ export function VerifyForm({ initialCertificateId }) {
   const handleSearch = async (e) => {
     e.preventDefault();
 
-    if (!query.trim() || query.trim().length < 2) {
-      setError("Please enter at least 2 characters to search.");
+    if (!query.trim() || query.trim().length < currentType.minLength) {
+      setError(
+        `Please enter at least ${currentType.minLength} characters to search by ${currentType.label.toLowerCase()}.`
+      );
       return;
     }
 

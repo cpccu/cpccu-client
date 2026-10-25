@@ -5,6 +5,13 @@ import Link from "next/link";
 import cn from "@/lib/cn.js";
 
 const UpComingEventCard = ({ data, clName }) => {
+  // The Event schema defaults `image` to `''`, and the public projection passes
+  // it through unchanged, so `data.img` is often an empty string. React warns
+  // on `src=""`, and a broken image leaves the picture section blank, so the
+  // image is only rendered when there is a usable URL and a placeholder holds
+  // the slot otherwise.
+  const imageUrl = typeof data?.img === "string" ? data.img.trim() : "";
+
   return (
     <main
       className={cn(
@@ -14,11 +21,17 @@ const UpComingEventCard = ({ data, clName }) => {
     >
       {/* Picture Section */}
       <section className="md:col-span-3 lg:col-span-4 xl:col-span-3 mxl:col-span-3 mmmxl:col-span-3 overflow-hidden">
-        <img
-          className="h-auto max-h-[28rem] min-h-[14rem] w-full object-cover"
-          src={data?.img}
-          alt={data?.alt}
-        />
+        {imageUrl ? (
+          <img
+            className="h-auto max-h-[28rem] min-h-[14rem] w-full object-cover"
+            src={imageUrl}
+            alt={data?.alt}
+          />
+        ) : (
+          <div className="flex h-auto max-h-[28rem] min-h-[14rem] w-full items-center justify-center bg-black/30 text-sm font-bold uppercase tracking-wider text-white/60">
+            No image
+          </div>
+        )}
 
         <div className="h-[4%] bg-black/50"></div>
       </section>

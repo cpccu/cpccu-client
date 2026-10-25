@@ -16,7 +16,7 @@ import {
   useUpdateProjectMutation,
   useDeleteProjectMutation,
 } from "@/features/users/userApi";
-import { useLazyVerifyCertificateQuery } from "@/features/certificate/certificateApi";
+import { useLazyVerifyCertificateQuery, useGetMyCertificatesQuery } from "@/features/certificate/certificateApi";
 import { setCredentials, clearCredentials } from "@/features/auth/authSlice";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -123,6 +123,18 @@ export default function Profile({ user, isOwnProfile }) {
   const [requestJobPipelineProfile, { isLoading: isRequestingJobPipeline, isSuccess: isJobPipelineSuccess, isError: isJobPipelineError, error: jobPipelineError, reset: resetJobPipeline }] = useRequestJobPipelineProfileMutation();
   const [removeJobPipelineProfile, { isLoading: isRemovingJobPipeline }] = useRemoveJobPipelineProfileMutation();
   const [fetchCertificates, { data: certResponse }] = useLazyVerifyCertificateQuery();
+  // ⚠️ THE OWN PROFILE READS `/certificates/me`, NOT THE PUBLIC SEARCH. Only
+  // that endpoint is scoped to the caller, and only it carries the server's
+  // `canDownload` flag — so it, not the client, decides what may be
+  // downloaded. Another member's profile stays on the public search, which
+  // carries no flag and therefore offers no download at all.
+  const {
+    data: myCertificatesResponse,
+    isLoading: isMyCertificatesLoading,
+    isUninitialized: isMyCertificatesUninitialized,
+  } = useGetMyCertificatesQuery(undefined, {
+    skip: !isOwnProfile || !token,
+  });
   const { data: currentUserResponse } = useFetchUsersQuery(undefined, {
     skip: !isOwnProfile || !token,
     refetchOnFocus: true,
@@ -277,7 +289,10 @@ export default function Profile({ user, isOwnProfile }) {
     }
   }, [editMode, autoResizeTextarea]);
 
+  // The public search only runs for ANOTHER member's profile — it is the
+  // read-only view. The own profile is served by `/certificates/me` below.
   useEffect(() => {
+    if (isOwnProfile) return;
     const studentId = user?.uniID;
     if (!studentId) return;
     setCertificatesList([]);
@@ -285,21 +300,28 @@ export default function Profile({ user, isOwnProfile }) {
     fetchCertificates({ recipientId: studentId }).finally(() =>
       setCertificatesLoading(false),
     );
-  }, [user?.uniID, fetchCertificates]);
+  }, [user?.uniID, isOwnProfile, fetchCertificates]);
 
   useEffect(() => {
+    if (isOwnProfile) {
+      // "Uninitialized" means the request has not started yet, so the section
+      // is still on its way — showing the empty state for that one frame
+      // would claim the member has no certificates.
+      if (isMyCertificatesLoading || isMyCertificatesUninitialized) {
+        // Clear the previous profile's rows so the skeleton is not skipped.
+        setCertificatesList((prev) => (prev.length ? [] : prev));
+        setCertificatesLoading(true);
+        return;
+      }
+      setCertificatesLoading(false);
+      setCertificatesList(getCertificatesFromResponse(myCertificatesResponse));
+      return;
+    }
     if (certResponse?.data) {
       setCertificatesLoading(false);
       setCertificatesList(getCertificatesFromResponse(certResponse));
     }
-  }, [certResponse]);
-
-  useEffect(() => {
-    if (certResponse?.data) {
-      setCertificatesLoading(false);
-      setCertificatesList(getCertificatesFromResponse(certResponse));
-    }
-  }, [certResponse]);
+  }, [certResponse, myCertificatesResponse, isMyCertificatesLoading, isMyCertificatesUninitialized, isOwnProfile]);
 
   useEffect(() => {
     if (isUpdateSuccess || isUpdateError || isImageSuccess || isImageError || isJobPipelineSuccess || isJobPipelineError) {
@@ -751,6 +773,23 @@ export default function Profile({ user, isOwnProfile }) {
       achievementBadge: cert.certificateType
         ? ({ winner: '1st Place', 'runner-up': '2nd Place', '2nd-runner-up': '3rd Place', participation: 'Participant' }[cert.certificateType] || 'Certified')
         : 'Certified',
+      // Raw certificate fields, carried through so the PDF renderer can draw
+      // the full document from the profile card without a second fetch.
+      recipientName: cert.recipientName || "",
+      recipientId: cert.recipientId || "",
+      contestName: cert.contestName || "",
+      contestType: cert.contestType || "",
+      issueDate: cert.issueDate || "",
+      description: cert.description || "",
+      batch: cert.batch || "",
+      rank: cert.rank ?? null,
+      templateKey: cert.templateKey || "",
+      eventId: cert.eventId || "",
+      // ⚠️ THE SERVER'S FLAG, CARRIED THROUGH UNCHANGED. It is `true` only
+      // for a certificate `/certificates/me` handed this member, and it is
+      // absent on every certificate that came from the public search — which
+      // is why another member's profile shows no download button at all.
+      canDownload: Boolean(cert.canDownload),
     })),
     projects: memberProjects,
   }), [profile, user, certificatesList, projectsList, isOwnProfile, contributorMatch]);
@@ -817,7 +856,6 @@ export default function Profile({ user, isOwnProfile }) {
               <CertificatesSection
                 certificates={memberProfile.certificates}
                 isLoading={certificatesLoading && certificatesList.length === 0}
-                isOwner={isOwnProfile}
               />
             </div>
             <div className="order-6 lg:col-span-3">
@@ -1229,7 +1267,6 @@ export default function Profile({ user, isOwnProfile }) {
               <CertificatesSection
                 certificates={memberProfile.certificates}
                 isLoading={certificatesLoading && certificatesList.length === 0}
-                isOwner={isOwnProfile}
               />
             </div>
 

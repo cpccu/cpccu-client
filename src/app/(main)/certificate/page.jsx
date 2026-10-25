@@ -9,6 +9,7 @@ import {
 import { VerifyForm } from "@/components/CERTIFICATE/verify-form";
 import { CertificateStats } from "@/components/CERTIFICATE/certificate-stats";
 import { RecentCertificates } from "@/components/CERTIFICATE/recent-certificates";
+import { MyCertificates } from "@/components/CERTIFICATE/my-certificates";
 import Link from "next/link";
 
 export default function CertificatePage({ initialCertificateId }) {
@@ -93,6 +94,10 @@ export default function CertificatePage({ initialCertificateId }) {
               <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-6 md:p-8 shadow-xl shadow-primary/5">
                 <VerifyForm initialCertificateId={initialCertificateId} />
               </div>
+
+              {/* Signed-in members see their own certificates and can
+                  download their participation PDFs. */}
+              <MyCertificates />
 
               {/* How it works */}
               <div className="rounded-2xl border border-border/60 bg-card/50 p-6 md:p-8 space-y-5">

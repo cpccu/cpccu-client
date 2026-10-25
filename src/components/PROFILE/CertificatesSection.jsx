@@ -4,12 +4,12 @@ import Link from "next/link";
 import {
   Award,
   BadgeCheck,
-  Download,
   ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState, SectionCard } from "./SectionCard";
 import { getAchievementBadgeStyle } from "@/lib/certificates";
+import { DownloadCertificateButton } from "@/components/CERTIFICATE/download-certificate-button";
 
 function CertificateCardSkeleton() {
   return (
@@ -35,7 +35,7 @@ function CertificateCardSkeleton() {
   );
 }
 
-export function CertificatesSection({ certificates, isLoading, isOwner }) {
+export function CertificatesSection({ certificates, isLoading }) {
   const showLoading = isLoading && certificates.length === 0;
 
   return (
@@ -102,23 +102,18 @@ export function CertificatesSection({ certificates, isLoading, isOwner }) {
                     <span className="sr-only">: {cert.title}</span>
                   </Link>
 
-                  <span className="group/btn relative inline-flex">
-                    <button
-                      type="button"
-                      disabled
-                      aria-label="Download PDF (coming soon)"
-                      className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-border/40 bg-muted/20 px-3 py-1.5 text-xs font-bold text-muted-foreground/40 transition-all duration-200 hover:border-border/60 hover:bg-muted/40 hover:text-muted-foreground/60"
-                    >
-                      <Download className="size-3" aria-hidden="true" />
-                      Download PDF
-                    </button>
-                    <span
-                      role="tooltip"
-                      className="pointer-events-none absolute -top-8 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-[11px] font-medium text-background opacity-0 shadow-sm transition-opacity duration-200 group-hover/btn:opacity-100 max-sm:hidden"
-                    >
-                      Coming Soon
-                    </span>
-                  </span>
+                  {/* ⚠️ THE SERVER'S FLAG IS THE ONLY GATE. `canDownload` comes
+                      from `GET /certificates/me` on the member's own profile;
+                      another member's profile is a public view and carries no
+                      flag at all, so a visitor never gets a download button. */}
+                  {cert.canDownload === true ? (
+                    <DownloadCertificateButton
+                      certificate={cert}
+                      variant="outline"
+                      size="sm"
+                      className="h-auto rounded-lg px-3 py-1.5 text-xs font-bold"
+                    />
+                  ) : null}
                 </div>
               </div>
             </li>

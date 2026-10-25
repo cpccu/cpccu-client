@@ -188,6 +188,43 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["AdminCertificates", "AdminOverview"],
     }),
+    getAdminCertificateTemplates: builder.query({
+      query: () => "/admin/certificate-templates",
+      providesTags: ["CertificateTemplates"],
+    }),
+    bulkIssueAdminCertificates: builder.mutation({
+      query: (body) => ({
+        url: "/admin/certificates/bulk",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [
+        "AdminCertificates",
+        "AdminOverview",
+        "MyCertificates",
+      ],
+    }),
+    getAdminEventRankings: builder.query({
+      query: (eventId) => ({
+        url: `/admin/events/${encodeURIComponent(eventId)}/rankings`,
+      }),
+      providesTags: (result, error, eventId) => [
+        { type: "AdminEventRankings", id: eventId },
+      ],
+    }),
+    submitAdminEventRankings: builder.mutation({
+      query: ({ eventId, ...body }) => ({
+        url: `/admin/events/${encodeURIComponent(eventId)}/rankings`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, arg) => [
+        "AdminCertificates",
+        "AdminOverview",
+        "MyCertificates",
+        { type: "AdminEventRankings", id: arg?.eventId },
+      ],
+    }),
     // ===== Role Management =====
     getAdminRoles: builder.query({
       query: () => "/admin/roles",
@@ -239,6 +276,11 @@ export const {
   useGetAdminStatisticsQuery,
   useUpdateAdminCertificateMutation,
   useUpdateAdminContentMutation,
+  useGetAdminCertificateTemplatesQuery,
+  useBulkIssueAdminCertificatesMutation,
+  useGetAdminEventRankingsQuery,
+  useLazyGetAdminEventRankingsQuery,
+  useSubmitAdminEventRankingsMutation,
   useGetAdminSystemSettingsQuery,
   useUpdateAdminSystemSettingsMutation,
   useUploadAdminImageMutation,

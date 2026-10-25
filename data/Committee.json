@@ -1,58 +1,132 @@
 [
   {
-    "img": "https://i.ibb.co.com/Vc2dY95L/IMG-6764-JPG.jpg",
-    "name": "Zahin Abdullah",
+    "_id": "6aad8ed7ce41273ff8a50188",
+    "id": "6aad8ed7ce41273ff8a50188",
+    "fullName": "MD Labib Ibnus salam",
+    "name": "MD Labib Ibnus salam",
     "position": "President",
-    "email": "zahin.abdullah10000@gmail.com",
-    "phone": "+8801912027692"
+    "email": "lssskhan609@gmail.com",
+    "phone": "01783655141",
+    "avatar": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789023617/cpccu/profiles/wvzdtoxt0ea3ysapq9hc.jpg",
+    "img": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789023617/cpccu/profiles/wvzdtoxt0ea3ysapq9hc.jpg",
+    "uniID": "02724205101105",
+    "order": 0
   },
   {
-    "img": "https://i.ibb.co.com/TBLKcS8t/IMG-2447.jpg",
-    "name": "Md. Rihad Hasan Rasin",
-    "position": "Vice President",
-    "email": "rihadhasan747@gmail.com",
-    "phone": "+8801405800752"
-  },
-  {
-    "img": "https://i.ibb.co.com/7t4L6ny3/ranju.jpg",
-    "name": "Md.Rangu Mia",
-    "position": "General Secretary",
-    "email": "mdranjuahmed783@gmail.com",
-    "phone": "+8801925707116"
-  },
-  {
-    "img": "https://i.ibb.co.com/JFnFhcfB/Whats-App-Image-2026-03-10-at-7-29-37-PM.jpg",
-    "name": "Md Masum Hossen",
-    "position": "Web Developer",
-    "email": "mdmasumhossain1712@gmail.com",
-    "phone": "+8801772423200"
-  },
-  {
-    "img": "https://i.ibb.co.com/Kc4rSR4L/sohag.jpg",
-    "name": "Mohammad Sohag Mia",
-    "position": "Treasurer",
-    "email": "sohugmia1234@gmail.com",
-    "phone": "+8801887374177"
-  },
-  {
-    "img": "https://i.ibb.co.com/Sw0KGwpC/MD-MA-R-UF.jpg",
+    "_id": "6aad8f2ace41273ff8a50190",
+    "id": "6aad8f2ace41273ff8a50190",
+    "fullName": "Md. Maruf",
     "name": "Md. Maruf",
-    "position": "Contest Support Lead",
+    "position": "Vice President",
     "email": "mdmarufhasan135rg@gmail.com",
-    "phone": "+8801876830549"
+    "phone": "+8801876830549",
+    "avatar": "https://i.ibb.co.com/Sw0KGwpC/MD-MA-R-UF.jpg",
+    "img": "https://i.ibb.co.com/Sw0KGwpC/MD-MA-R-UF.jpg",
+    "uniID": "02725105101076",
+    "order": 1
   },
   {
-    "img": "https://avatars.githubusercontent.com/u/71831499?v=4",
+    "_id": "6aad8db5ce41273ff8a5015a",
+    "id": "6aad8db5ce41273ff8a5015a",
+    "fullName": "Anisur Rahman Farazi",
     "name": "Anisur Rahman Farazi",
-    "position": "Social Media Manager",
+    "position": "General Secretary",
     "email": "anisurrahmanfarazi@gmail.com",
-    "phone": "+8801641088544"
+    "phone": "01641088544",
+    "avatar": "https://avatars.githubusercontent.com/u/71831499?v=4",
+    "img": "https://avatars.githubusercontent.com/u/71831499?v=4",
+    "uniID": "02725205101015",
+    "order": 2
   },
   {
-    "img": "https://res.cloudinary.com/dfspekq6u/image/upload/v1781023418/cpccu/profiles/v1upak2gbxghmeqz6tjs.jpg",
-    "name": "Jamia islam tanha",
-    "position": "Event Organizer",
-    "email": "jamiaislamtanha@gmail.com",
-    "phone": "+8801820290838"
+    "_id": "6aad8fedce41273ff8a501a1",
+    "id": "6aad8fedce41273ff8a501a1",
+    "fullName": "Sheikh Washe-Ul-Haque Utshav",
+    "name": "Sheikh Washe-Ul-Haque Utshav",
+    "position": "Treasurer",
+    "email": "utshavwasheulhaque@gmail.com",
+    "phone": "01614355562",
+    "avatar": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789759452/cpccu/committees/xmaqvlj1z1bqbe7exyse.jpg",
+    "img": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789759452/cpccu/committees/xmaqvlj1z1bqbe7exyse.jpg",
+    "uniID": "02725205101041",
+    "order": 3
+  },
+  {
+    "_id": "6aad9aface41273ff8a501b5",
+    "id": "6aad9aface41273ff8a501b5",
+    "fullName": "Jannat Akter",
+    "name": "Jannat Akter",
+    "position": "Social Media Manager",
+    "email": "jannatakter111999@gmail.com",
+    "phone": "01952555373",
+    "avatar": "https://res.cloudinary.com/dfspekq6u/image/upload/v1783607763/cpccu/profiles/uvuqxosslbagdvfhytl6.jpg",
+    "img": "https://res.cloudinary.com/dfspekq6u/image/upload/v1783607763/cpccu/profiles/uvuqxosslbagdvfhytl6.jpg",
+    "uniID": "02725205101067",
+    "order": 4
+  },
+  {
+    "_id": "6aada29fce41273ff8a501c6",
+    "id": "6aada29fce41273ff8a501c6",
+    "fullName": "Raihan Sikder",
+    "name": "Raihan Sikder",
+    "position": "Social Media Manager",
+    "email": "srraihan970@gmail.com",
+    "phone": "01738328005",
+    "avatar": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789764142/cpccu/committees/tbnevogvrkri7ykchwcp.jpg",
+    "img": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789764142/cpccu/committees/tbnevogvrkri7ykchwcp.jpg",
+    "uniID": "02726205101065",
+    "order": 5
+  },
+  {
+    "_id": "6aada4c5ce41273ff8a501dd",
+    "id": "6aada4c5ce41273ff8a501dd",
+    "fullName": "Lamia Akter Shoya",
+    "name": "Lamia Akter Shoya",
+    "position": "Social Media Manager",
+    "email": "lamiashoya013@gmail.com",
+    "phone": "01343960241",
+    "avatar": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789764321/cpccu/committees/y9af2cs0etepaor7kmm1.jpg",
+    "img": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789764321/cpccu/committees/y9af2cs0etepaor7kmm1.jpg",
+    "uniID": "0272605101030",
+    "order": 6
+  },
+  {
+    "_id": "6aada5e1ce41273ff8a501e8",
+    "id": "6aada5e1ce41273ff8a501e8",
+    "fullName": "MD. Sanwar Hosen",
+    "name": "MD. Sanwar Hosen",
+    "position": "Contest & Events Operations Team",
+    "email": "mdsanwar217@gmail.com",
+    "phone": "01648566111",
+    "avatar": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789764986/cpccu/committees/alilinzhh2oebjfgr3tl.jpg",
+    "img": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789764986/cpccu/committees/alilinzhh2oebjfgr3tl.jpg",
+    "uniID": "02725205101066",
+    "order": 7
+  },
+  {
+    "_id": "6aada6f6ce41273ff8a501f9",
+    "id": "6aada6f6ce41273ff8a501f9",
+    "fullName": "Fuad Ahamed Rahim",
+    "name": "Fuad Ahamed Rahim",
+    "position": "Contest & Events Operations Team",
+    "email": "rimuru6677@gmail.com",
+    "phone": "01317468240",
+    "avatar": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789765599/cpccu/committees/hg7pt5jsdst86i5fht5c.jpg",
+    "img": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789765599/cpccu/committees/hg7pt5jsdst86i5fht5c.jpg",
+    "uniID": "02725105101121",
+    "order": 8
+  },
+  {
+    "_id": "6aada8ddce41273ff8a50220",
+    "id": "6aada8ddce41273ff8a50220",
+    "fullName": "Ajraf Fahim",
+    "name": "Ajraf Fahim",
+    "position": "Contest & Events Operations Team",
+    "email": "fahimajraf2006f@gmail.com",
+    "phone": "01647694771",
+    "avatar": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789765833/cpccu/committees/wkue93sihknhxiuzojcm.jpg",
+    "img": "https://res.cloudinary.com/dfspekq6u/image/upload/v1789765833/cpccu/committees/wkue93sihknhxiuzojcm.jpg",
+    "uniID": "02726105101018",
+    "order": 9
   }
 ]

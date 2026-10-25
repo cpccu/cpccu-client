@@ -1,13 +1,20 @@
 "use client";
 
-import { CertificateBadge } from "./certificate-badge";
+import { useSelector } from "react-redux";
 import {
   CalendarDays,
-  User,
-  Hash,
-  Code2,
   CheckCircle2,
+  Code2,
+  Hash,
+  Info,
+  User,
 } from "lucide-react";
+import { canDownloadCertificate, getCertificatesFromResponse } from "@/lib/certificates";
+import { useGetMyCertificatesQuery, useGetCertificateSignatoriesQuery } from "@/features/certificate/certificateApi";
+import { CertificateBadge } from "./certificate-badge";
+import { CertificatePreview } from "./templates/certificate-document";
+import { DownloadCertificateButton } from "./download-certificate-button";
+import { resolveSignatory } from "@/lib/certificate-signatories";
 
 const CONTEST_TYPE_LABELS = {
   "programming-contest": "Programming Contest",
@@ -17,15 +24,33 @@ const CONTEST_TYPE_LABELS = {
 };
 
 export function CertificateCard({ certificate }) {
+  const token = useSelector((state) => state.auth.token);
+  const isSignedIn = Boolean(token);
 
-  const formattedDate = new Date(certificate.issueDate).toLocaleDateString(
-    "en-US",
-    {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    },
+  // ⚠️ THE SERVER SAYS WHO MAY DOWNLOAD. This card renders a certificate
+  // from the PUBLIC verify endpoint, which carries no `canDownload` flag, so
+  // the client asks `GET /certificates/me` — the one list the server scopes
+  // to the signed-in member. Every card on the page shares that one query.
+  const { data: myCertificates } = useGetMyCertificatesQuery(undefined, {
+    skip: !isSignedIn,
+  });
+  const { data: signatoriesResponse } = useGetCertificateSignatoriesQuery();
+
+  const ownCertificate = getCertificatesFromResponse(myCertificates).find(
+    (mine) => mine.certificateId === certificate.certificateId,
   );
+  const canDownload = canDownloadCertificate(ownCertificate);
+  const signatory = resolveSignatory(signatoriesResponse, certificate?.committee);
+
+  const formattedDate = certificate.issueDate
+    ? new Date(certificate.issueDate).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "";
+
+  const isParticipation = certificate.certificateType === "participation";
 
   return (
     <div className="relative overflow-hidden rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-card to-card/80 shadow-xl shadow-primary/10">
@@ -55,39 +80,20 @@ export function CertificateCard({ certificate }) {
         }}
       />
 
-      {/* Certificate body */}
-      <div className="p-6 space-y-5">
-        {/* Name and contest */}
-        <div>
-          <p className="text-xs text-muted-foreground mb-2 font-mono uppercase tracking-wider">
-            This certifies that
-          </p>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-foreground text-balance">
-            {certificate.recipientName}
-          </h2>
-          {certificate.batch && (
-            <span className="text-xs text-primary font-semibold mt-1 inline-block px-2 py-1 bg-primary/10 rounded-md">
-              Batch {certificate.batch}
-            </span>
-          )}
-          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-            {certificate.description}
-          </p>
-        </div>
+      <div className="relative p-4 sm:p-6 space-y-5">
+        {/* The certificate itself, scaled down to the card width */}
+        <CertificatePreview
+          certificate={certificate}
+          templateKey={certificate.templateKey}
+          signatory={signatory}
+          className="rounded-xl border border-border/60 bg-white shadow-sm"
+        />
 
-        {/* Contest name */}
-        <div className="rounded-xl bg-gradient-to-br from-muted/80 to-muted/40 border border-border/60 px-5 py-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2 font-mono flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            Contest / Event
-          </p>
-          <p className="text-lg font-bold text-foreground">
-            {certificate.contestName}
-          </p>
-          <span className="text-xs text-primary font-semibold mt-2 inline-block px-2 py-1 bg-primary/10 rounded-md">
-            {CONTEST_TYPE_LABELS[certificate.contestType]}
+        {certificate.batch && (
+          <span className="text-xs text-primary font-semibold inline-block px-2 py-1 bg-primary/10 rounded-md">
+            Batch {certificate.batch}
           </span>
-        </div>
+        )}
 
         {/* Details grid */}
         <div className="grid grid-cols-2 gap-4">
@@ -95,9 +101,9 @@ export function CertificateCard({ certificate }) {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Hash className="w-4 h-4 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Certificate ID</p>
-              <p className="text-sm font-mono font-bold text-foreground">
+              <p className="text-sm font-mono font-bold text-foreground break-all">
                 {certificate.certificateId}
               </p>
             </div>
@@ -106,9 +112,9 @@ export function CertificateCard({ certificate }) {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <User className="w-4 h-4 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Student ID</p>
-              <p className="text-sm font-mono font-bold text-foreground">
+              <p className="text-sm font-mono font-bold text-foreground break-all">
                 {certificate.recipientId}
               </p>
             </div>
@@ -117,7 +123,7 @@ export function CertificateCard({ certificate }) {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <CalendarDays className="w-4 h-4 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Issue Date</p>
               <p className="text-sm font-bold text-foreground">
                 {formattedDate}
@@ -128,7 +134,7 @@ export function CertificateCard({ certificate }) {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Code2 className="w-4 h-4 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Issued By</p>
               <p className="text-sm font-bold text-foreground">
                 {certificate.issuedBy}
@@ -137,10 +143,52 @@ export function CertificateCard({ certificate }) {
           </div>
         </div>
 
+        {CONTEST_TYPE_LABELS[certificate.contestType] && (
+          <span className="text-xs text-primary font-semibold inline-block px-2 py-1 bg-primary/10 rounded-md">
+            {CONTEST_TYPE_LABELS[certificate.contestType]}
+          </span>
+        )}
+
+        {/* Download — the server's own list decides, and it says no by default */}
+        <div className="pt-1">
+          {canDownload ? (
+            <DownloadCertificateButton
+              certificate={certificate}
+              signatory={signatory}
+              className="w-full rounded-xl py-5 text-sm font-bold"
+            />
+          ) : null}
+
+          {!isParticipation && (
+            <p className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+              Winners&apos; certificates are verified online; PDF download is
+              available for participation certificates only.
+            </p>
+          )}
+
+          {isParticipation && isSignedIn && !canDownload && (
+            <p className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+              Only the certificate holder can download this certificate as a
+              PDF.
+            </p>
+          )}
+
+          {isParticipation && !isSignedIn && (
+            <p className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+              Signed in as this certificate&apos;s holder? Sign in to download
+              your PDF.
+            </p>
+          )}
+        </div>
+
         {/* Footer note */}
         <div className="pt-4 border-t border-border/50">
           <p className="text-center text-xs text-muted-foreground">
-            This certificate is verified by CPCCU — Competitive Programming Camp City University
+            This certificate is verified by CPCCU — Competitive Programming Camp
+            City University
           </p>
         </div>
       </div>
