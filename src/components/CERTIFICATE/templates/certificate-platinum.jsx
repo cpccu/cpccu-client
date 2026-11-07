@@ -1,5 +1,7 @@
 'use client';
 
+import InstituteInfo from '@/data/global/institude.json';
+
 import {
   CertificateSheet,
   getRecipientNameFontSize,
@@ -113,9 +115,17 @@ export function PlatinumAppreciation({ view, theme, signatory }) {
     resolvedSignatory?.coordinator?.signatureUrl ||
     '/assets/certificates/signature_vp.png';
 
+  const clubLogo = view?.clubLogo || '/assets/logo/cpccu.png';
+  const clubShortName =
+    view?.clubShortName || InstituteInfo?.shortName || 'CPCCU';
+  const clubFullName =
+    view?.clubFullName ||
+    InstituteInfo?.fullName ||
+    'Competitive Programming Camp';
+
   const presidentName = resolvedSignatory?.president?.name || 'PRESIDENT';
   const presidentTitle =
-    resolvedSignatory?.president?.title || 'COMPETITIVE PROGRAMMING CAMP';
+    resolvedSignatory?.president?.title || clubFullName.toUpperCase();
 
   const vpName =
     resolvedSignatory?.vicePresident?.name ||
@@ -124,7 +134,7 @@ export function PlatinumAppreciation({ view, theme, signatory }) {
   const vpTitle =
     resolvedSignatory?.vicePresident?.title ||
     resolvedSignatory?.coordinator?.title ||
-    'COMPETITIVE PROGRAMMING CAMP';
+    clubFullName.toUpperCase();
 
   const isDefaultContest =
     !view.contestName ||
@@ -175,6 +185,80 @@ export function PlatinumAppreciation({ view, theme, signatory }) {
           userSelect: 'none',
         }}
       />
+
+      {/* Top Left: Dynamic Club Logo & Name */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 22,
+          left: 104,
+          display: 'flex',
+          alignItems: 'center',
+          zIndex: 5,
+        }}
+      >
+        <img
+          src={clubLogo}
+          alt={InstituteInfo?.alt || 'Club Logo'}
+          crossOrigin="anonymous"
+          style={{
+            width: 92,
+            height: 92,
+            objectFit: 'contain',
+            borderRadius: '50%',
+            flexShrink: 0,
+          }}
+        />
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            marginLeft: 10,
+          }}
+        >
+          <span
+            style={{
+              fontFamily:
+                "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+              fontSize: 30,
+              fontWeight: 900,
+              color: '#0B1B3D',
+              letterSpacing: '0.04em',
+              lineHeight: 1,
+            }}
+          >
+            {clubShortName}
+          </span>
+          <span
+            style={{
+              marginTop: 4,
+              maxWidth: 135,
+              fontFamily:
+                "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+              fontSize: 10,
+              fontWeight: 700,
+              color: '#0B1B3D',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              lineHeight: 1.25,
+            }}
+          >
+            {clubFullName}
+          </span>
+        </div>
+
+        {/* Subtle vertical divider line separating club branding from event header */}
+        <div
+          style={{
+            width: 1,
+            height: 52,
+            background: '#CBD5E1',
+            marginLeft: 12,
+            flexShrink: 0,
+          }}
+        />
+      </div>
 
       {/* Top Center: Event & Contest Header */}
       <div
@@ -617,7 +701,7 @@ export function PlatinumAppreciation({ view, theme, signatory }) {
               textAlign: 'center',
             }}
           >
-            (CPCCU)
+            ({clubShortName})
           </span>
         </div>
       </div>
@@ -716,7 +800,7 @@ export function PlatinumParticipation({ view, theme, signatory }) {
             textTransform: 'uppercase',
           }}
         >
-          CITY UNIVERSITY
+          {view?.universityName || InstituteInfo?.uniName || 'CITY UNIVERSITY'}
         </h2>
         <p
           style={{
@@ -727,7 +811,10 @@ export function PlatinumParticipation({ view, theme, signatory }) {
             color: '#1E293B',
           }}
         >
-          Competitive Programming Camp City University
+          {view?.clubFullName ||
+            (InstituteInfo?.fullName
+              ? `${InstituteInfo.fullName} ${InstituteInfo.uniName || ''}`.trim()
+              : 'Competitive Programming Camp City University')}
         </p>
 
         <DiamondDivider width={160} color="#C5A059" style={{ margin: '10px auto' }} />
@@ -1129,7 +1216,7 @@ export function PlatinumAchievement({ view, theme, signatory }) {
             textTransform: 'uppercase',
           }}
         >
-          CITY UNIVERSITY
+          {view?.universityName || InstituteInfo?.uniName || 'CITY UNIVERSITY'}
         </h2>
         <p
           style={{
@@ -1140,7 +1227,10 @@ export function PlatinumAchievement({ view, theme, signatory }) {
             color: '#1E293B',
           }}
         >
-          Competitive Programming Camp City University
+          {view?.clubFullName ||
+            (InstituteInfo?.fullName
+              ? `${InstituteInfo.fullName} ${InstituteInfo.uniName || ''}`.trim()
+              : 'Competitive Programming Camp City University')}
         </p>
 
         <DiamondDivider width={160} color="#C5A059" style={{ margin: '10px auto' }} />
