@@ -85,7 +85,7 @@ export function CertificateCard({ certificate }) {
             {certificate.contestName}
           </p>
           <span className="text-xs text-primary font-semibold mt-2 inline-block px-2 py-1 bg-primary/10 rounded-md">
-            {CONTEST_TYPE_LABELS[certificate.contestType]}
+            {CONTEST_TYPE_LABELS[certificate.contestType] || (certificate.contestType ? certificate.contestType.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Contest')}
           </span>
         </div>
 

@@ -714,6 +714,37 @@ Two obvious CSP options both fail:
 
 ---
 
+## ADR-018 — Dynamic Certificate Placement and Contest Type Options Persisted in MongoDB
+
+### Status
+
+Accepted
+
+### Context
+
+When issuing certificates, club administrators and event organizers require diverse placement roles (such as Organizer, Co-organizer, Volunteer, Mentor, Top Performer) and contest categories (such as Bootcamp, Ideathon, Workshop, Webinar). Previously, rigid Mongoose schema enums restricted accepted values on the backend, and dropdown selections were fixed. An initial client-side `localStorage` caching approach prevented new types from being shared with other administrators.
+
+### Decision
+
+1. **Schema Relaxed to Validated Trimmed Strings**: In `cpccu-server/src/models/certificate.model.js`, `certificateType` and `contestType` enums were replaced with trimmed strings (`type: String, required: true, trim: true`).
+2. **Dedicated MongoDB Storage for Options**: Created the `CertificateOption` model (`cpccu-server/src/models/certificateOption.model.js`) with `category` (`'placement'` | `'contestType'`), `value` (slugified key), `label` (display name), and `createdBy` admin reference.
+3. **Admin Options Endpoints**: Added `GET /api/v1/admin/certificates/options`, `POST /api/v1/admin/certificates/options`, and `DELETE /api/v1/admin/certificates/options/:id` with admin audit logging. `GET` aggregates options from the `CertificateOption` collection merged with distinct historical types from the `Certificate` collection.
+4. **Real-Time Multi-Admin Synchronization**: Frontend manages options via RTK Query (`AdminCertificateOptions` tag). Adding a new placement or contest type sends an immediate `POST` mutation to MongoDB, keeping all admins' dropdown menus synchronized across devices and sessions.
+5. **Excel Bulk Issue Compatibility**: In `src/components/certificates-content.jsx`, bulk issue preserves custom placement and contest type values rather than forcing them to default values, and novel types discovered in uploads are automatically registered in the database.
+
+### Consequences
+
+**Pros:**
+- All administrators share a unified, persistent set of placements and contest types stored in the database.
+- Completely backwards-compatible: historical certificates with non-standard types are automatically surfaced in dropdown lists.
+- Full auditability: creation and removal of options are recorded in `AdminAuditLog`.
+- Future placements and event formats require zero schema changes or backend redeployments.
+
+**Cons:**
+- Requires network connectivity to create new options (handled with optimistic UI updates in the dialog).
+
+---
+
 ## ADR-012 — Future Decisions (Planned, Not Implemented)
 
 > The following are **Planned** directions. None of them are implemented in the current codebase — treat them as proposals, not facts.
@@ -757,4 +788,5 @@ Two obvious CSP options both fail:
 - ADR-001 to ADR-012 created during the documentation audit (August 2026).
 - ADR-013 to ADR-015 added in September 2026 (GitHub-synced contributors, derived statistics, backend-enforced email verification).
 - ADR-016 and ADR-017 added in September 2026 (hackathon reuses the `Event` model with dedicated public routes; fixed `frame-src` allowlist coupled to the embeddable host list).
+- ADR-018 added in November 2026 (dynamic certificate placement and contest type options persisted in MongoDB for multi-admin sync).
 - All "Accepted" ADRs verified against the current `cpccu-client` and `cpccu-server` codebases.

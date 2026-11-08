@@ -34,6 +34,11 @@ const BADGE_CONFIG = {
     colorClass: 'bg-green-100 text-green-800 ring-1 ring-green-200',
     icon: 'book',
   },
+  organizer: {
+    label: 'Organizer',
+    colorClass: 'bg-purple-100 text-purple-800 ring-1 ring-purple-200',
+    icon: 'award',
+  },
 };
 
 const FALLBACK_CONFIG = {
@@ -48,7 +53,12 @@ const FALLBACK_CONFIG = {
 export function getCertificateBadge(certificateType) {
   if (!certificateType) return FALLBACK_CONFIG;
   const key = certificateType.trim().toLowerCase();
-  return BADGE_CONFIG[key] || FALLBACK_CONFIG;
+  if (BADGE_CONFIG[key]) return BADGE_CONFIG[key];
+  const formattedLabel = key
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+  return { ...FALLBACK_CONFIG, label: formattedLabel };
 }
 
 /**
