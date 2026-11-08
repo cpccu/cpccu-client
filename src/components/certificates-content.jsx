@@ -15,7 +15,14 @@ import { formatDate } from '@/lib/format-date';
 import { isValidStudentId, detectScientificNotation, normalizeStudentId } from '@/lib/id-validation';
 import { getCertificatesFromResponse } from '@/lib/certificates';
 import * as XLSX from 'xlsx';
-import { useCreateAdminCertificateMutation, useDeleteAdminCertificateMutation, useGetAdminCertificatesQuery, useUpdateAdminCertificateMutation } from '@/features/admin/adminApi';
+import {
+    useCreateAdminCertificateMutation,
+    useCreateAdminCertificateOptionMutation,
+    useDeleteAdminCertificateMutation,
+    useGetAdminCertificateOptionsQuery,
+    useGetAdminCertificatesQuery,
+    useUpdateAdminCertificateMutation
+} from '@/features/admin/adminApi';
 import { AdminDataTable } from '@/components/admin-data-table';
 const placementConfig = {
     '1st': { label: '1st Place', variant: 'default' },
@@ -23,6 +30,20 @@ const placementConfig = {
     '3rd': { label: '3rd Place', variant: 'outline' },
     participant: { label: 'Participant', variant: 'outline' },
     completion: { label: 'Completion', variant: 'outline' },
+    organizer: { label: 'Organizer', variant: 'secondary' },
+};
+
+const formatPlacementLabel = (value) => {
+    if (!value) return '';
+    if (placementConfig[value]) return placementConfig[value].label;
+    return value
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+};
+
+const getPlacementBadgeVariant = (placement) => {
+    return placementConfig[placement]?.variant || 'outline';
 };
 const CONTEST_TYPE_LABELS = {
     'programming-contest': 'Programming Contest',
@@ -30,12 +51,23 @@ const CONTEST_TYPE_LABELS = {
     workshop: 'Workshop',
     'article-writing': 'Article Writing Contest',
 };
+
+const formatContestTypeLabel = (value) => {
+    if (!value) return '';
+    if (CONTEST_TYPE_LABELS[value]) return CONTEST_TYPE_LABELS[value];
+    return value
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+};
 export function CertificatesContent() {
     const [certificates, setCertificates] = useState([]);
     const { data: certificatesResponse } = useGetAdminCertificatesQuery();
+    const { data: certificateOptionsResponse } = useGetAdminCertificateOptionsQuery();
     const [createCertificate] = useCreateAdminCertificateMutation();
     const [updateCertificate] = useUpdateAdminCertificateMutation();
     const [deleteCertificate] = useDeleteAdminCertificateMutation();
+    const [createCertificateOption] = useCreateAdminCertificateOptionMutation();
     const [searchQuery, setSearchQuery] = useState('');
     const [placementFilter, setPlacementFilter] = useState('all');
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -48,6 +80,28 @@ export function CertificatesContent() {
     const [bulkValidationErrors, setBulkValidationErrors] = useState([]);
     const [bulkSuccessSummary, setBulkSuccessSummary] = useState(null);
     const [idValidationError, setIdValidationError] = useState('');
+    const [customPlacements, setCustomPlacements] = useState(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('cpccu_custom_placements');
+                if (saved) return JSON.parse(saved);
+            } catch {}
+        }
+        return [{ value: 'organizer', label: 'Organizer' }];
+    });
+    const [isAddingPlacement, setIsAddingPlacement] = useState(false);
+    const [newPlacementName, setNewPlacementName] = useState('');
+    const [customContestTypes, setCustomContestTypes] = useState(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('cpccu_custom_contest_types');
+                if (saved) return JSON.parse(saved);
+            } catch {}
+        }
+        return [];
+    });
+    const [isAddingContestType, setIsAddingContestType] = useState(false);
+    const [newContestTypeName, setNewContestTypeName] = useState('');
     const [formData, setFormData] = useState({
         recipientName: '',
         recipientStudentId: '',
@@ -56,27 +110,99 @@ export function CertificatesContent() {
         contestType: 'programming-contest',
         batch: '',
     });
+    // Sync certificate options directly from MongoDB database
+    useEffect(() => {
+        const optData = certificateOptionsResponse?.data;
+        if (optData) {
+            if (Array.isArray(optData.customPlacements) && optData.customPlacements.length > 0) {
+                setCustomPlacements((prev) => {
+                    const map = new Map(prev.map((p) => [p.value, p]));
+                    optData.customPlacements.forEach((p) => {
+                        map.set(p.value, { value: p.value, label: p.label || formatPlacementLabel(p.value), id: p.id });
+                    });
+                    return Array.from(map.values());
+                });
+            }
+            if (Array.isArray(optData.customContestTypes) && optData.customContestTypes.length > 0) {
+                setCustomContestTypes((prev) => {
+                    const map = new Map(prev.map((t) => [t.value, t]));
+                    optData.customContestTypes.forEach((t) => {
+                        map.set(t.value, { value: t.value, label: t.label || formatContestTypeLabel(t.value), id: t.id });
+                    });
+                    return Array.from(map.values());
+                });
+            }
+        }
+    }, [certificateOptionsResponse]);
+
     useEffect(() => {
         const certData = getCertificatesFromResponse(certificatesResponse);
         if (certData.length > 0) {
-            setCertificates(certData.map((certificate) => ({
-                id: certificate._id,
-                certificateId: certificate.certificateId,
-                recipientName: certificate.recipientName,
-                recipientStudentId: certificate.recipientId,
-                eventName: certificate.contestName,
-                contestType: certificate.contestType,
-                batch: certificate.batch || '',
-                placement: certificate.certificateType === 'runner-up'
-                    ? '2nd'
-                    : certificate.certificateType === '2nd-runner-up'
-                        ? '3rd'
-                        : certificate.certificateType === 'participation'
-                            ? 'participant'
-                            : '1st',
-                issuedAt: certificate.issueDate,
-                verificationUrl: `/certificate/${certificate.certificateId}`,
-            })));
+            setCertificates(certData.map((certificate) => {
+                let placement = certificate.certificateType;
+                if (certificate.certificateType === 'runner-up') placement = '2nd';
+                else if (certificate.certificateType === '2nd-runner-up') placement = '3rd';
+                else if (certificate.certificateType === 'participation') placement = 'participant';
+                else if (certificate.certificateType === 'winner') placement = '1st';
+                else placement = certificate.certificateType || '1st';
+
+                return {
+                    id: certificate._id,
+                    certificateId: certificate.certificateId,
+                    recipientName: certificate.recipientName,
+                    recipientStudentId: certificate.recipientId,
+                    eventName: certificate.contestName,
+                    contestType: certificate.contestType,
+                    batch: certificate.batch || '',
+                    placement,
+                    issuedAt: certificate.issueDate,
+                    verificationUrl: `/certificate/${certificate.certificateId}`,
+                };
+            }));
+
+            // Sync any custom placement types found in certificates
+            const foundCustom = [];
+            certData.forEach((c) => {
+                const type = c.certificateType?.toLowerCase();
+                if (type && !['runner-up', '2nd-runner-up', 'participation', 'winner', '1st', '2nd', '3rd', 'participant', 'completion'].includes(type)) {
+                    foundCustom.push(type);
+                }
+            });
+            if (foundCustom.length > 0) {
+                setCustomPlacements((prev) => {
+                    const existing = new Set(prev.map((p) => p.value));
+                    const additions = foundCustom
+                        .filter((val) => !existing.has(val))
+                        .map((val) => ({ value: val, label: formatPlacementLabel(val) }));
+                    const next = additions.length > 0 ? [...prev, ...additions] : prev;
+                    try {
+                        localStorage.setItem('cpccu_custom_placements', JSON.stringify(next));
+                    } catch {}
+                    return next;
+                });
+            }
+
+            // Sync any custom contest types found in certificates
+            const foundContestTypes = [];
+            certData.forEach((c) => {
+                const type = c.contestType?.toLowerCase();
+                if (type && !['programming-contest', 'hackathon', 'workshop', 'article-writing'].includes(type)) {
+                    foundContestTypes.push(type);
+                }
+            });
+            if (foundContestTypes.length > 0) {
+                setCustomContestTypes((prev) => {
+                    const existing = new Set(prev.map((t) => t.value));
+                    const additions = foundContestTypes
+                        .filter((val) => !existing.has(val))
+                        .map((val) => ({ value: val, label: formatContestTypeLabel(val) }));
+                    const next = additions.length > 0 ? [...prev, ...additions] : prev;
+                    try {
+                        localStorage.setItem('cpccu_custom_contest_types', JSON.stringify(next));
+                    } catch {}
+                    return next;
+                });
+            }
         }
     }, [certificatesResponse]);
     const filteredCerts = certificates.filter((cert) => {
@@ -212,9 +338,83 @@ export function CertificatesContent() {
         const file = e.dataTransfer.files?.[0];
         if (file) await handleXlsxUpload(file);
     };
+    const handleAddCustomPlacement = async () => {
+        const trimmed = newPlacementName.trim();
+        if (!trimmed) {
+            showSuccessAlert('Invalid Name', 'Please enter a placement name.');
+            return;
+        }
+        const slug = trimmed.toLowerCase().replace(/\s+/g, '-');
+        const label = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+
+        setCustomPlacements((prev) => {
+            const next = prev.some((p) => p.value === slug) ? prev : [...prev, { value: slug, label }];
+            try {
+                localStorage.setItem('cpccu_custom_placements', JSON.stringify(next));
+            } catch {}
+            return next;
+        });
+
+        setFormData((prev) => ({ ...prev, placement: slug }));
+        setNewPlacementName('');
+        setIsAddingPlacement(false);
+
+        // Persist to Database so all admins see it
+        try {
+            await createCertificateOption({ category: 'placement', label, value: slug }).unwrap();
+        } catch (err) {
+            console.error('Failed to save placement to database:', err);
+        }
+    };
+
+    const handleAddCustomContestType = async () => {
+        const trimmed = newContestTypeName.trim();
+        if (!trimmed) {
+            showSuccessAlert('Invalid Name', 'Please enter a contest type name.');
+            return;
+        }
+        const slug = trimmed.toLowerCase().replace(/\s+/g, '-');
+        const label = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+
+        setCustomContestTypes((prev) => {
+            const next = prev.some((t) => t.value === slug) ? prev : [...prev, { value: slug, label }];
+            try {
+                localStorage.setItem('cpccu_custom_contest_types', JSON.stringify(next));
+            } catch {}
+            return next;
+        });
+
+        setFormData((prev) => ({ ...prev, contestType: slug }));
+        setNewContestTypeName('');
+        setIsAddingContestType(false);
+
+        // Persist to Database so all admins see it
+        try {
+            await createCertificateOption({ category: 'contestType', label, value: slug }).unwrap();
+        } catch (err) {
+            console.error('Failed to save contest type to database:', err);
+        }
+    };
+
     const handleOpenDialog = (cert) => {
+        setIsAddingPlacement(false);
+        setNewPlacementName('');
+        setIsAddingContestType(false);
+        setNewContestTypeName('');
         if (cert) {
             setEditingCert(cert);
+            if (cert.placement && !['1st', '2nd', '3rd', 'participant', 'completion'].includes(cert.placement)) {
+                setCustomPlacements((prev) => {
+                    if (prev.some((p) => p.value === cert.placement)) return prev;
+                    return [...prev, { value: cert.placement, label: formatPlacementLabel(cert.placement) }];
+                });
+            }
+            if (cert.contestType && !['programming-contest', 'hackathon', 'workshop', 'article-writing'].includes(cert.contestType)) {
+                setCustomContestTypes((prev) => {
+                    if (prev.some((t) => t.value === cert.contestType)) return prev;
+                    return [...prev, { value: cert.contestType, label: formatContestTypeLabel(cert.contestType) }];
+                });
+            }
             setFormData({
                 recipientName: cert.recipientName,
                 recipientStudentId: normalizeStudentId(cert.recipientStudentId),
@@ -257,7 +457,9 @@ export function CertificatesContent() {
                 ? '2nd-runner-up'
                 : formData.placement === 'participant' || formData.placement === 'completion'
                     ? 'participation'
-                    : 'winner';
+                    : formData.placement === '1st'
+                        ? 'winner'
+                        : formData.placement.toLowerCase();
         const payload = {
             recipientName: formData.recipientName,
             recipientId: trimmedId,
@@ -307,7 +509,8 @@ export function CertificatesContent() {
     };
     const normalizeContestType = (raw) => {
         const key = String(raw || '').trim().toLowerCase();
-        return CONTEST_TYPE_MAP[key] || 'programming-contest';
+        if (!key) return 'programming-contest';
+        return CONTEST_TYPE_MAP[key] || key.replace(/\s+/g, '-');
     };
     const handleBulkIssue = async () => {
         const rows = bulkFileRows;
@@ -358,14 +561,50 @@ export function CertificatesContent() {
         const issued = [];
         const skipped = [];
         for (const row of rowsWithIds) {
-            const normalizedPlacement = row.placement.toLowerCase();
-            const certificateType = normalizedPlacement.includes('2')
-                ? 'runner-up'
-                : normalizedPlacement.includes('3')
-                    ? '2nd-runner-up'
-                    : normalizedPlacement.includes('winner') || normalizedPlacement.includes('1')
-                        ? 'winner'
-                        : 'participation';
+            const rawPlacement = String(row.placement || '').trim().toLowerCase();
+            let certificateType = 'participation';
+            if (rawPlacement.includes('2nd runner') || rawPlacement.includes('2nd-runner') || rawPlacement.includes('3rd') || rawPlacement === '3') {
+                certificateType = '2nd-runner-up';
+            } else if (rawPlacement.includes('runner') || rawPlacement.includes('2nd') || rawPlacement === '2') {
+                certificateType = 'runner-up';
+            } else if (rawPlacement.includes('winner') || rawPlacement.includes('1st') || rawPlacement === '1' || rawPlacement.includes('champion')) {
+                certificateType = 'winner';
+            } else if (rawPlacement.includes('participant') || rawPlacement.includes('completion')) {
+                certificateType = 'participation';
+            } else if (rawPlacement) {
+                certificateType = rawPlacement.replace(/\s+/g, '-');
+            }
+
+            // Sync any new placement or contestType to database, local state and localStorage
+            if (certificateType && !['runner-up', '2nd-runner-up', 'participation', 'winner'].includes(certificateType)) {
+                setCustomPlacements((prev) => {
+                    const next = prev.some((p) => p.value === certificateType) ? prev : [...prev, { value: certificateType, label: formatPlacementLabel(certificateType) }];
+                    try {
+                        localStorage.setItem('cpccu_custom_placements', JSON.stringify(next));
+                    } catch {}
+                    return next;
+                });
+                createCertificateOption({
+                    category: 'placement',
+                    label: formatPlacementLabel(certificateType),
+                    value: certificateType,
+                }).catch(() => {});
+            }
+            if (row.contestType && !['programming-contest', 'hackathon', 'workshop', 'article-writing'].includes(row.contestType)) {
+                setCustomContestTypes((prev) => {
+                    const next = prev.some((t) => t.value === row.contestType) ? prev : [...prev, { value: row.contestType, label: formatContestTypeLabel(row.contestType) }];
+                    try {
+                        localStorage.setItem('cpccu_custom_contest_types', JSON.stringify(next));
+                    } catch {}
+                    return next;
+                });
+                createCertificateOption({
+                    category: 'contestType',
+                    label: formatContestTypeLabel(row.contestType),
+                    value: row.contestType,
+                }).catch(() => {});
+            }
+
             try {
                 await createCertificate({
                     certificateId: row.certificateId,
@@ -407,14 +646,14 @@ export function CertificatesContent() {
             key: 'contestType',
             header: 'Type',
             accessor: 'contestType',
-            cell: (cert) => <span className="text-xs font-semibold px-2 py-1 bg-primary/10 rounded-md">{CONTEST_TYPE_LABELS[cert.contestType] || cert.contestType}</span>,
+            cell: (cert) => <span className="text-xs font-semibold px-2 py-1 bg-primary/10 rounded-md">{formatContestTypeLabel(cert.contestType)}</span>,
         },
         { key: 'batch', header: 'Batch', accessor: 'batch', cellClassName: 'text-muted-foreground' },
         {
             key: 'placement',
             header: 'Placement',
             accessor: 'placement',
-            cell: (cert) => <Badge variant={placementConfig[cert.placement]?.variant || 'outline'}>{placementConfig[cert.placement]?.label || cert.placement}</Badge>,
+            cell: (cert) => <Badge variant={getPlacementBadgeVariant(cert.placement)}>{formatPlacementLabel(cert.placement)}</Badge>,
         },
         { key: 'issuedAt', header: 'Issued Date', accessor: (cert) => formatDate(cert.issuedAt), cellClassName: 'text-muted-foreground' },
         {
@@ -538,6 +777,11 @@ export function CertificatesContent() {
               <SelectItem value="3rd">3rd Place</SelectItem>
               <SelectItem value="participant">Participant</SelectItem>
               <SelectItem value="completion">Completion</SelectItem>
+              {customPlacements.map((cp) => (
+                <SelectItem key={cp.value} value={cp.value}>
+                  {cp.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>}
         />
@@ -583,33 +827,201 @@ export function CertificatesContent() {
               <Input value={formData.eventName} onChange={(e) => setFormData((prev) => ({ ...prev, eventName: e.target.value }))} placeholder="e.g. CPCCU Contest 3"/>
             </div>
             <div className="flex flex-col gap-2">
-              <Label>Contest Type</Label>
-              <Select value={formData.contestType} onValueChange={(v) => setFormData((prev) => ({ ...prev, contestType: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="programming-contest">Programming Contest</SelectItem>
-                  <SelectItem value="hackathon">Hackathon</SelectItem>
-                  <SelectItem value="workshop">Workshop</SelectItem>
-                  <SelectItem value="article-writing">Article Writing Contest</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label>Contest Type</Label>
+                {!isAddingContestType && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs text-primary hover:text-primary/80 font-medium"
+                    onClick={() => setIsAddingContestType(true)}
+                  >
+                    <Plus className="mr-1 size-3" />
+                    Add Contest Type
+                  </Button>
+                )}
+              </div>
+
+              {isAddingContestType ? (
+                <div className="flex items-center gap-2 p-2 rounded-lg border border-primary/30 bg-primary/5">
+                  <Input
+                    value={newContestTypeName}
+                    onChange={(e) => setNewContestTypeName(e.target.value)}
+                    placeholder="Enter contest type (e.g. Bootcamp)"
+                    className="h-8 text-xs bg-background"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCustomContestType();
+                      } else if (e.key === 'Escape') {
+                        setIsAddingContestType(false);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 px-2.5 text-xs font-semibold"
+                    onClick={handleAddCustomContestType}
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 px-2 text-xs"
+                    onClick={() => {
+                      setIsAddingContestType(false);
+                      setNewContestTypeName('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Select
+                  value={formData.contestType}
+                  onValueChange={(v) => {
+                    if (v === '__add_new__') {
+                      setIsAddingContestType(true);
+                    } else {
+                      setFormData((prev) => ({ ...prev, contestType: v }));
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select contest type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="programming-contest">Programming Contest</SelectItem>
+                    <SelectItem value="hackathon">Hackathon</SelectItem>
+                    <SelectItem value="workshop">Workshop</SelectItem>
+                    <SelectItem value="article-writing">Article Writing Contest</SelectItem>
+                    {customContestTypes.map((ct) => (
+                      <SelectItem key={ct.value} value={ct.value}>
+                        {ct.label}
+                      </SelectItem>
+                    ))}
+                    <div className="p-1 border-t border-border/60 mt-1">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setIsAddingContestType(true);
+                        }}
+                        className="w-full flex items-center gap-1.5 px-2 py-1.5 text-xs font-semibold text-primary rounded-md hover:bg-primary/10 transition-colors cursor-pointer text-left"
+                      >
+                        <Plus className="size-3.5" />
+                        + Add New Contest Type
+                      </button>
+                    </div>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Label>Batch</Label>
               <Input value={formData.batch} onChange={(e) => setFormData((prev) => ({ ...prev, batch: e.target.value }))} placeholder="e.g. 2022, 2023"/>
             </div>
             <div className="flex flex-col gap-2">
-              <Label>Placement</Label>
-              <Select value={formData.placement} onValueChange={(v) => setFormData((prev) => ({ ...prev, placement: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1st">1st Place</SelectItem>
-                  <SelectItem value="2nd">2nd Place</SelectItem>
-                  <SelectItem value="3rd">3rd Place</SelectItem>
-                  <SelectItem value="participant">Participant</SelectItem>
-                  <SelectItem value="completion">Completion</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label>Placement</Label>
+                {!isAddingPlacement && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs text-primary hover:text-primary/80 font-medium"
+                    onClick={() => setIsAddingPlacement(true)}
+                  >
+                    <Plus className="mr-1 size-3" />
+                    Add Placement
+                  </Button>
+                )}
+              </div>
+
+              {isAddingPlacement ? (
+                <div className="flex items-center gap-2 p-2 rounded-lg border border-primary/30 bg-primary/5">
+                  <Input
+                    value={newPlacementName}
+                    onChange={(e) => setNewPlacementName(e.target.value)}
+                    placeholder="Enter placement (e.g. Organizer)"
+                    className="h-8 text-xs bg-background"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCustomPlacement();
+                      } else if (e.key === 'Escape') {
+                        setIsAddingPlacement(false);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 px-2.5 text-xs font-semibold"
+                    onClick={handleAddCustomPlacement}
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 px-2 text-xs"
+                    onClick={() => {
+                      setIsAddingPlacement(false);
+                      setNewPlacementName('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Select
+                  value={formData.placement}
+                  onValueChange={(v) => {
+                    if (v === '__add_new__') {
+                      setIsAddingPlacement(true);
+                    } else {
+                      setFormData((prev) => ({ ...prev, placement: v }));
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select placement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1st">1st Place</SelectItem>
+                    <SelectItem value="2nd">2nd Place</SelectItem>
+                    <SelectItem value="3rd">3rd Place</SelectItem>
+                    <SelectItem value="participant">Participant</SelectItem>
+                    <SelectItem value="completion">Completion</SelectItem>
+                    {customPlacements.map((cp) => (
+                      <SelectItem key={cp.value} value={cp.value}>
+                        {cp.label}
+                      </SelectItem>
+                    ))}
+                    <div className="p-1 border-t border-border/60 mt-1">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setIsAddingPlacement(true);
+                        }}
+                        className="w-full flex items-center gap-1.5 px-2 py-1.5 text-xs font-semibold text-primary rounded-md hover:bg-primary/10 transition-colors cursor-pointer text-left"
+                      >
+                        <Plus className="size-3.5" />
+                        + Add New Placement
+                      </button>
+                    </div>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
           <DialogFooter>

@@ -43,6 +43,14 @@ const BADGE_CONFIG = {
     glowClass: "shadow-emerald-400/20",
     Icon: BookOpen,
   },
+  organizer: {
+    label: "Organizer",
+    colorClass: "text-purple-300",
+    bgClass: "bg-gradient-to-r from-purple-400/15 to-indigo-400/15",
+    borderClass: "border-purple-400/50",
+    glowClass: "shadow-purple-400/20",
+    Icon: Award,
+  },
 };
 
 const FALLBACK_BADGE = {
@@ -58,7 +66,13 @@ export function CertificateBadge({ type, className = "" }) {
   const normalizedType = type?.trim()?.toLowerCase();
   const config = BADGE_CONFIG[normalizedType] || FALLBACK_BADGE;
 
-  const { label, colorClass, bgClass, borderClass, glowClass, Icon } = config;
+  const { colorClass, bgClass, borderClass, glowClass, Icon } = config;
+  const label = config === FALLBACK_BADGE && normalizedType
+    ? normalizedType
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')
+    : config.label;
 
   return (
     <span

@@ -21,7 +21,7 @@ Defined in `src/services/baseApi.js`.
   ```
   Auth, Users, Posts, Projects, PublicContent, AdminOverview, AdminMembers,
   AdminContent, AdminContributors, AdminStatistics, AdminCertificates,
-  AdminSystemSettings, AdminRoles, Participation
+  AdminCertificateOptions, AdminSystemSettings, AdminRoles, Participation
   ```
 
 > ⚠️ `memberApi.js` provides a `Members` tag for `fetchMemberById`, but `Members` is **not** registered in `baseApi.tagTypes`.
@@ -201,8 +201,11 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
+| `/admin/certificates/options` | `GET` | Fetch custom placement & contest type options from database + historical data | None | Provides `AdminCertificateOptions` tag |
+| `/admin/certificates/options` | `POST` | Create/upsert new custom placement or contest type option | `{ category, label, value }` | Invalidates `AdminCertificateOptions` |
+| `/admin/certificates/options/:id` | `DELETE` | Remove custom certificate option | Path param `id` | Invalidates `AdminCertificateOptions` |
 | `/admin/certificates` | `GET` | Fetch certificates for admin panel | None | Provides `AdminCertificates` tag |
-| `/admin/certificates` | `POST` | Create certificate | `body` | Invalidates `AdminCertificates`, `AdminOverview` |
+| `/admin/certificates` | `POST` | Create certificate (custom types auto-sync to DB) | `body` | Invalidates `AdminCertificates`, `AdminOverview`, `AdminCertificateOptions` |
 | `/admin/certificates/:id` | `PATCH` | Update certificate | Path param `id`, `body` | Invalidates `AdminCertificates` |
 | `/admin/certificates/:id` | `DELETE` | Delete certificate | Path param `id` | Invalidates `AdminCertificates`, `AdminOverview` |
 

@@ -416,6 +416,19 @@ Each log stores:
 - Resource id
 - Summary
 
+## Certificate Management & Dynamic Options
+
+The certificate management interface (`src/components/certificates-content.jsx`) supports dynamic creation and persistent synchronization of placement types and contest types across all administrators:
+
+- **Dynamic Placement & Contest Type Creation**:
+  - Admins can add new placement types (e.g., `Organizer`, `Volunteer`, `Mentor`) and contest types (e.g., `Bootcamp`, `Ideathon`) directly from the issue/edit modal using the inline `+ Add Placement` and `+ Add Contest Type` controls.
+- **Database Persistence & Multi-Admin Sync**:
+  - Options are saved directly into the MongoDB `CertificateOption` collection via `POST /api/v1/admin/certificates/options` (with audit logging).
+  - When any admin opens the certificates screen, `useGetAdminCertificateOptionsQuery` fetches the complete set of options from MongoDB (merged with historical values from the `Certificate` collection). Every admin immediately sees all custom types across devices without relying on browser `localStorage`.
+- **Bulk Creation (XLSX) Compatibility**:
+  - Bulk certificate uploads via Excel preserve custom placements and contest types without forcing them into default categories.
+  - Novel types encountered during bulk uploads are automatically recorded into the database so they appear in future dropdown options.
+
 ## Certificate Verification Logs
 
 Certificate verification attempts write to `CertificateVerificationLog`.
