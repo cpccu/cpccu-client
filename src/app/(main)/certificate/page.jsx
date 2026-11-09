@@ -75,8 +75,8 @@ export default function CertificatePage({ initialCertificateId }) {
         </section>
 
         {/* Main content */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 md:py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 py-10 sm:py-14 md:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
             {/* Left: Verify form */}
             <div className="lg:col-span-3 space-y-8">
               <div>
@@ -90,12 +90,12 @@ export default function CertificatePage({ initialCertificateId }) {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-6 md:p-8 shadow-xl shadow-primary/5">
+              <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-3.5 sm:p-6 md:p-8 shadow-xl shadow-primary/5">
                 <VerifyForm initialCertificateId={initialCertificateId} />
               </div>
 
               {/* How it works */}
-              <div className="rounded-2xl border border-border/60 bg-card/50 p-6 md:p-8 space-y-5">
+              <div className="rounded-2xl border border-border/60 bg-card/50 p-3.5 sm:p-6 md:p-8 space-y-5">
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
                   <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
                   How It Works
