@@ -76,10 +76,10 @@ export function CertificateBadge({ type, className = "" }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border shadow-md ${colorClass} ${bgClass} ${borderClass} ${glowClass} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold border shadow-md shrink-0 max-w-full ${colorClass} ${bgClass} ${borderClass} ${glowClass} ${className}`}
     >
-      <Icon className="w-3.5 h-3.5" />
-      {label}
+      <Icon className="w-3.5 h-3.5 shrink-0" />
+      <span className="truncate">{label}</span>
     </span>
   );
 }
