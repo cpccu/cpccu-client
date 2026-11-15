@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   user: null,
   token: null,
+  csrfToken: null,
   loading: false,
   error: null,
   hydrated: false,
@@ -30,6 +31,7 @@ const authSlice = createSlice({
     clearCredentials: (state) => {
       state.user = null;
       state.token = null;
+      state.csrfToken = null;
       state.loading = false;
       state.error = null;
       state.hydrated = true;
@@ -43,10 +45,13 @@ const authSlice = createSlice({
     setHydrated: (state) => {
       state.hydrated = true;
     },
+    setCsrfToken: (state, action) => {
+      state.csrfToken = action.payload;
+    },
   },
 });
 
-export const { setCredentials, clearCredentials, setHydrated } =
+export const { setCredentials, clearCredentials, setHydrated, setCsrfToken } =
   authSlice.actions;
 
 export default authSlice.reducer;

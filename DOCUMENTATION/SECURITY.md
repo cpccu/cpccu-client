@@ -37,17 +37,16 @@ See [ADR-015](./ADR.md#adr-015--backend-enforced-email-verification) and the bac
 
 ### 3.1 The backend CSRF guard and this client
 
-The backend mounts a CSRF guard (`src/middlewares/csrfGuard.middleware.js`) after `cors()` and before body parsing. It checks `Sec-Fetch-Site` on every method; `cross-site` requests pass only when their `Origin` exactly matches the backend's `ALLOWED_ORIGINS`. When `Sec-Fetch-Site` is absent, `Origin` is checked on mutating methods and the state-changing GET prefixes (`/auth/logout`, `/auth/reset-link/`).
+The backend mounts a CSRF guard (`src/middlewares/csrfGuard.middleware.js`) after `cors()` and cookie parsing. It checks `Sec-Fetch-Site` on every method; `cross-site` requests pass only when their `Origin` exactly matches the backend's `ALLOWED_ORIGINS`. The client sends `X-CSRF-Token` matching the backend's host-only `__Host-csrfToken` cookie; this token check is required when a write has no allow-listed `Origin`, including browsers that omit both browser headers.
 
 What this means for the frontend:
 
-- **The client does nothing, and must invent nothing.** There is still **no CSRF token** anywhere in the system — the guard is header-based. RTK Query already sends `credentials: 'include'` and the `Authorization: Bearer` header; a legitimate call from this origin passes both checks by construction. Do not add a token field to requests — no backend middleware validates one.
+- **The shared API client handles the token.** RTK Query sends `credentials: 'include'` and attaches `X-CSRF-Token` to writes and the state-changing GETs. It fetches a fresh token before the first write and retries once after an expired cookie.
 - **The auth cookie is still `SameSite=None`**, forced by the topology (frontend on Vercel, API on Render — different origins, so `Lax` would drop the cookie on every authenticated call). Requests from this frontend are cross-site at the browser level, so the backend permits them by exact Origin; requests from other sites are refused with `403`.
 - **The allow-list is load-bearing for this client.** The production origins (`cpccu.club`, `www.cpccu.club`, `cpccu.pro.bd`, `www.cpccu.pro.bd`, `cpccu-client.vercel.app`, `cpccu-client-nextjs.onrender.com`) are on the backend's list. Serving the frontend from a **new** origin without adding it to the backend's `ALLOWED_ORIGINS` (the `CORS_ORIGIN` env var or the list itself) breaks every mutating call with a `403` — and `cors()` would refuse it earlier anyway.
-- **The client calls one of the two state-changing GETs** — `GET /auth/logout` (`authApi.logout`). It passes the guard because it carries an allowed `Origin`.
-- **Residual gap, unchanged:** browsers older than **Chrome 76 / Firefox 90 / Safari 16.4** send neither header, so against those the guard is inert and the original cross-site exposure stands. The only remaining answer is a synchroniser token, which is not implemented. Full detail: backend [SECURITY.md §4.1](https://github.com/cpccu/cpccu-server/blob/dev/docs/SECURITY.md#41-csrf-guard-srcmiddlewarescsrfguardmiddlewarejs).
+- **State-changing GETs** — `GET /auth/logout` (`authApi.logout`) and `GET /auth/reset-link/:email` carry the same token header as writes.
 
-> ℹ️ This is the mitigation for the cross-site-form finding formerly recorded as HIGH in the backend's known-debt list. It is a header check, not a token — see the residual gap above before assuming the issue is closed.
+> ℹ️ The token is paired with an HttpOnly host-only cookie, so a token fetched in an attacker's browser does not work in the visitor's browser. Full detail: backend [SECURITY.md §4.1](https://github.com/cpccu/cpccu-server/blob/dev/docs/SECURITY.md#41-csrf-guard-srcmiddlewarescsrfguardmiddlewarejs).
 
 ## 4. Hackathon surface (frontend view)
 

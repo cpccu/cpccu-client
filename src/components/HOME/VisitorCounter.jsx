@@ -16,33 +16,16 @@ const ONE_HOUR = 60 * 60 * 1000;
 // constant, NOT a runtime check. Both branches still ship in the bundle; the
 // guard exists for behaviour, not for dead-code elimination.
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
-// This component calls the visitor endpoint with raw `fetch` instead of going
-// through RTK Query, so it does NOT inherit the `baseApi.js` fallback — it has to
-// resolve its own base URL, and the two must agree.
-//
-// The default here MUST be the absolute cross-origin backend origin
-// (`http://localhost:5000`), never `""`. An empty default silently degrades to
-// the SAME-ORIGIN relative path `/api/visitor`, which resolves against the Next
-// dev server on :3000. There is no `src/app/api` in this repo (the App Router
-// API migration was reverted and the Express backend is mounted separately), so
-// :3000 answers both calls with 404 and the console fills with "Failed to fetch"
-// / "Failed to increment".
-//
-// No `/v1` suffix is appended on purpose: the backend mounts the visitor router
-// at `/api`, so the reachable paths are `http://localhost:5000/visitor` and
-// `http://localhost:5000/api/v1/visitor` (the router aliases `/v1/*`).
-// `http://localhost:5000/visitor` is the shorter of the two working URLs.
-//
-// `NEXT_PUBLIC_API_BASE_URL` is deliberately UNSET and must stay that way. See
-// `.env` lines 29-55: `NEXT_PUBLIC_*` values are inlined at build time, so a
-// set-but-wrong value silently wins in production and this `||` fallback never
-// gets a chance to apply. The fallback — not the environment — is the thing to
-// fix here, which is why this default is load-bearing rather than incidental.
+// This component uses raw fetch, so it resolves the backend paths and CSRF
+// token itself instead of inheriting the shared RTK Query setup.
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
-const VISITOR_API_URL = API_BASE_URL
-  ? `${API_BASE_URL.replace(/\/+$/, "")}/visitor`
-  : "/api/visitor";
+const API_ROOT = API_BASE_URL.replace(/\/+$/, "");
+const API_V1_BASE_URL = API_ROOT.endsWith("/api/v1")
+  ? API_ROOT
+  : `${API_ROOT}/api/v1`;
+const CSRF_API_URL = `${API_V1_BASE_URL}/auth/csrf-token`;
+const VISITOR_API_URL = `${API_V1_BASE_URL}/visitor`;
 
 const getStoredVisitTimestamp = () => {
   try {
@@ -119,10 +102,18 @@ const VisitorCounter = () => {
       }
 
       try {
+        const csrfResponse = await fetch(CSRF_API_URL, {
+          credentials: "include",
+        });
+        if (!csrfResponse.ok) throw new Error("Failed to get CSRF token");
+        const { data } = await csrfResponse.json();
+
         const response = await fetch(`${VISITOR_API_URL}/increment`, {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
+            "X-CSRF-Token": data.csrfToken,
           },
         });
 

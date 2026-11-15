@@ -1,24 +1,83 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
+import { setCsrfToken } from '@/features/auth/authSlice';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl,
+  credentials: 'include',
+  prepareHeaders: (headers, { getState, endpoint }) => {
+    const token = getState().auth.token;
+    if (!['userImageUpload', 'uploadAdminImage'].includes(endpoint)) {
+      headers.set('Content-Type', 'application/json');
+    }
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    return headers;
+  },
+});
+
+const stateChangingGetPaths = [
+  '/auth/logout',
+  '/auth/refresh-token',
+  '/auth/reset-link/',
+  '/users/user',
+];
+
+const needsCsrfToken = ({ url, method = 'GET' }) => {
+  const verb = method.toUpperCase();
+  return !['GET', 'HEAD', 'OPTIONS'].includes(verb) ||
+    (verb === 'GET' && stateChangingGetPaths.some((path) =>
+      path.endsWith('/') ? url.startsWith(path) : url === path
+    ));
+};
+
+const fetchCsrfToken = async (api, extraOptions) => {
+  const result = await rawBaseQuery('/auth/csrf-token', api, extraOptions);
+  const token = result.data?.data?.csrfToken;
+  if (token) api.dispatch(setCsrfToken(token));
+  return { result, token };
+};
+
+const baseQuery = async (args, api, extraOptions) => {
+  const request = typeof args === 'string' ? { url: args } : { ...args };
+  if (!needsCsrfToken(request)) return rawBaseQuery(args, api, extraOptions);
+
+  let csrfToken = api.getState().auth.csrfToken;
+  if (!csrfToken) {
+    const fetched = await fetchCsrfToken(api, extraOptions);
+    if (fetched.result.error) return fetched.result;
+    csrfToken = fetched.token;
+    if (!csrfToken) {
+      return {
+        error: {
+          status: 'CUSTOM_ERROR',
+          error: 'The server did not return a CSRF token.',
+        },
+      };
+    }
+  }
+
+  const headers = new Headers(request.headers);
+  headers.set('X-CSRF-Token', csrfToken);
+  let result = await rawBaseQuery({ ...request, headers }, api, extraOptions);
+
+  if (
+    result.error?.status === 403 &&
+    result.error.data?.code === 'CSRF_TOKEN_INVALID'
+  ) {
+    const fetched = await fetchCsrfToken(api, extraOptions);
+    if (fetched.result.error) return fetched.result;
+    if (fetched.token) {
+      headers.set('X-CSRF-Token', fetched.token);
+      result = await rawBaseQuery({ ...request, headers }, api, extraOptions);
+    }
+  }
+
+  return result;
+};
+
 export const baseApi = createApi({
   reducerPath: 'api',
-  baseQuery: fetchBaseQuery({ baseUrl,
-    credentials: 'include',
-    prepareHeaders: (headers, { getState, endpoint }) => {
-      const token = getState().auth.token;
-      // For image uploads, we don't set Content-Type to let the browser set it with the boundary
-      if (!['userImageUpload', 'uploadAdminImage'].includes(endpoint)) {
-        headers.set('Content-Type', 'application/json');
-      }
-      // Always set Authorization if token exists
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
+  baseQuery,
   // ⚠️ `Participation` IS A NEW TAG TYPE, ADDED FOR THE EVENT PARTICIPATION
   // FEATURE, and it exists for one specific reason: a registration is written on
   // ONE screen and read on another.
