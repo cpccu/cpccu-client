@@ -8,31 +8,9 @@ import { toDhakaInputValue, utcIsoFromDhakaInput } from '@/lib/dhaka-time';
 /**
  * One schedule instant, plus the optional "same as the event" toggle.
  *
- * ⚠️ WHY THE `toInputValue` / `fromInputValue` PROPS ARE INJECTABLE, AND WHY THAT
- * IS NOT REFACTORING FOR ITS OWN SAKE.
- *
- * Two admin forms edit the same twelve fields and they deliberately disagree about
- * what a `datetime-local` wall-clock means:
- *
- *   events-content.jsx — a UTC slice in, `new Date(value).toISOString()` out, i.e.
- *     the typed wall-clock is interpreted in the ADMIN'S BROWSER timezone.
- *     Correct for a Dhaka admin; silently shifted by the browser's UTC offset for
- *     one abroad. It is a documented bug and it is left as it is, because the
- *     form covers the entire historical event archive: switching it to Dhaka
- *     wall-clock would re-interpret the stored instant of every event that
- *     already exists. See `src/lib/dhaka-time.js`.
- *
- *   hackathon-content.jsx / this component's default — `toDhakaInputValue` /
- *     `utcIsoFromDhakaInput`, i.e. Dhaka wall-clock pinned to UTC+6 regardless of
- *     where the admin is. Correct, and written correctly from the first commit
- *     because the participation window fields had no historical data to corrupt.
- *
- * Hard-coding Dhaka HERE would have silently given `events-content.jsx` Dhaka
- * semantics for the whole schedule the first time someone reused this component,
- * and nothing about that change would have been visible in a diff of the events
- * form — the form would simply start saving six hours off. So the asymmetry is a
- * PROP, the two callers state theirs explicitly, and neither inherits the other's
- * rule by accident.
+ * The default conversion pins admin-entered wall-clock times to Dhaka, independent
+ * of the browser's timezone. Optional converters remain available to callers with
+ * a different explicit time convention.
  *
  * Props:
  *   id               — required, for `<Label htmlFor>`.
@@ -53,12 +31,8 @@ import { toDhakaInputValue, utcIsoFromDhakaInput } from '@/lib/dhaka-time';
  * ⚠️ THE FIELD NEVER SHOWS THE ANCHOR INSTANT, AND THAT IS A DELIBERATE OMISSION.
  * The obvious next feature is "when the box is ticked, display the event start it
  * now follows" — and it cannot be done safely from here, because the anchor lives
- * in the CALLING form's own space. `admin-event-participation-settings.jsx` keeps
- * its window instants as ISO strings while `events-content.jsx` keeps its event
- * instants as browser-timezone wall-clock, so the same `formData.eventStartAt` has
- * two encodings depending on which editor last wrote it. Rendering one through the
- * other's converter would put a time on screen that is six hours off the value the
- * server actually stores, and nothing about it would look wrong.
+ * in the CALLING form's own space. Its instant is supplied by the calling form,
+ * and should only be resolved by that form rather than guessed here.
  *
  * The explanation the checkbox gets instead is static for exactly that reason. An
  * admin who needs the resolved instant can read the event start on the same form.

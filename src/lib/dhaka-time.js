@@ -17,12 +17,9 @@
  *      and the browser disagree the first paint can differ from the hydrated
  *      tree. BUG — reported, not fixed here: changing it would alter every
  *      date on the public site, which is far outside a hackathon PR.
- *   2. `new Date(value).toISOString()` on a `datetime-local` value — this is
- *      what `events-content.jsx` does, and it silently interprets the typed
- *      wall-clock in the *admin's browser* timezone. Correct for a Dhaka admin,
- *      wrong by the browser's UTC offset for any admin abroad. Left alone on
- *      purpose: changing the existing events form would rewrite the stored
- *      instant of every historical event.
+ *   2. `new Date(value).toISOString()` on a `datetime-local` value silently
+ *      interprets the typed wall-clock in the *admin's browser* timezone. It is
+ *      correct only when that timezone is Dhaka; this module pins it explicitly.
  *
  * Dhaka has observed UTC+6 with no daylight saving since 2009, so a fixed
  * `+06:00` offset is exact for every date this feature can produce. It is
