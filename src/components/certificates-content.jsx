@@ -106,25 +106,25 @@ const SIGNATORY_OPTIONS = [
     { key: 'coordinator', label: 'Contest and Event Coordinator' },
 ];
 
-function SignatorySelector({ value, onChange }) {
+function SignatorySelector({ value, onChange, maxSignatories = 3 }) {
     const selected = Array.isArray(value) ? value : ['president', 'coordinator'];
     const toggle = (key) => {
         if (selected.includes(key)) {
             if (selected.length <= 1) return;
             onChange(selected.filter((k) => k !== key));
         } else {
-            if (selected.length >= 3) return;
+            if (selected.length >= maxSignatories) return;
             onChange([...selected, key]);
         }
     };
     return (
         <div className="flex flex-col gap-2">
             <Label>Signatories</Label>
-            <p className="text-xs text-muted-foreground">Select 1 to 3 signatories to appear on the certificate.</p>
+            <p className="text-xs text-muted-foreground">Select 1 to {maxSignatories} signatories to appear on the certificate.</p>
             <div className="flex flex-col gap-2">
                 {SIGNATORY_OPTIONS.map((opt) => {
                     const checked = selected.includes(opt.key);
-                    const disabled = checked ? selected.length <= 1 : selected.length >= 3;
+                    const disabled = checked ? selected.length <= 1 : selected.length >= maxSignatories;
                     return (
                         <label key={opt.key} className="flex items-center gap-2 text-sm">
                             <Checkbox
@@ -199,7 +199,7 @@ export function CertificatesContent() {
 
     // ===== Event rankings → certificates =====
     const [rankingsEventId, setRankingsEventId] = useState('');
-    const [rankingsTemplateKey, setRankingsTemplateKey] = useState(DEFAULT_CERTIFICATE_TEMPLATE_KEY);
+    const [rankingsTemplateKey, setRankingsTemplateKey] = useState('platinum-achievement');
     const [rankingsCommitteeKey, setRankingsCommitteeKey] = useState('');
     const [rankings, setRankings] = useState([]);
     const [rankingsMessage, setRankingsMessage] = useState(null);
@@ -227,7 +227,7 @@ export function CertificatesContent() {
         contestType: 'programming-contest',
         batch: '',
         eventId: '',
-        templateKey: DEFAULT_CERTIFICATE_TEMPLATE_KEY,
+        templateKey: 'platinum-achievement',
         committee: '',
         signatories: ['president', 'coordinator'],
     });
@@ -905,10 +905,20 @@ export function CertificatesContent() {
                       onBusyChange={handleDownloadBusyChange}
                     />
                   ) : null
+                ) : ['winner', 'runner-up', '2nd-runner-up'].includes(cert.certificateType) && canDownloadMemberCertificate ? (
+                  <DownloadCertificateButton
+                    certificate={cert}
+                    allowWinnerDownload
+                    eventDate={eventsById.get(cert.eventId)?.eventStartAt}
+                    variant="ghost"
+                    size="sm"
+                    label="Download PDF"
+                    className="w-full justify-start gap-2 rounded-sm px-2 py-1.5 text-sm font-normal"
+                    onBusyChange={handleDownloadBusyChange}
+                  />
                 ) : (
-                  // The print view is not the member endpoint — it opens the
-                  // public certificate page — so it stays for every
-                  // admin-panel role.
+                  // Moderators and mentors can still open the printable view;
+                  // the protected PDF credential endpoint is admin-only here.
                   <DropdownMenuItem onClick={() => openCertificate(cert.certificateId, true)}>
                     <Download className="mr-2 size-4"/>
                     Download
@@ -1031,6 +1041,7 @@ export function CertificatesContent() {
           <SignatorySelector
             value={rankingsSignatories}
             onChange={setRankingsSignatories}
+            maxSignatories={rankingsTemplateKey === 'platinum-achievement' ? 2 : 3}
           />
 
           {eventEndsInFuture && (
@@ -1252,6 +1263,7 @@ export function CertificatesContent() {
             <SignatorySelector
               value={formData.signatories}
               onChange={(signatories) => setFormData((prev) => ({ ...prev, signatories }))}
+              maxSignatories={formData.templateKey === 'platinum-achievement' ? 2 : 3}
             />
             <div className="flex flex-col gap-2">
               <Label>Committee</Label>
@@ -1342,6 +1354,7 @@ export function CertificatesContent() {
               <SignatorySelector
                 value={bulkSignatories}
                 onChange={setBulkSignatories}
+                maxSignatories={bulkTemplateKey === 'platinum-achievement' ? 2 : 3}
               />
             </div>
             <div className="flex flex-col gap-2">

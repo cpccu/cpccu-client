@@ -6,8 +6,9 @@
  * importing either one at module top level pulls it into the main bundle and
  * breaks the build's server rendering pass.
  *
- * Pipeline: DOM node → html2canvas raster (3×) → PNG → pdf-lib A4 landscape
- * page → AES-256 encrypted bytes → Blob → `<a download>`.
+ * Pipeline: DOM node → html2canvas raster → pdf-lib page → encrypted bytes.
+ * Platinum Achievement downloads instead overlay a transparent raster layer
+ * on the supplied blank PDF artwork to preserve its original vector design.
  *
  * ---------------------------------------------------------------------------
  * ⚠️ THE TWO-PASSWORD MODEL
@@ -34,6 +35,10 @@
  */
 
 import { CERTIFICATE_HEIGHT, CERTIFICATE_WIDTH } from '@/components/CERTIFICATE/templates/certificate-frame';
+import {
+  ACHIEVEMENT_OVERLAY_HEIGHT,
+  ACHIEVEMENT_OVERLAY_WIDTH,
+} from '@/components/CERTIFICATE/templates/certificate-achievement-overlay';
 
 // US Letter landscape in PDF points (1 pt = 1/72in): 11 × 8.5 in.
 const PDF_PAGE_WIDTH = 792;   // 11 in × 72
@@ -150,6 +155,106 @@ export async function downloadCertificatePdf(
 
   // The click starts the download synchronously; the blob URL is only needed
   // until the browser has taken it.
+  window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+  return bytes.length;
+}
+
+/**
+ * Renders the dynamic fields over the approved blank Achievement PDF. The
+ * original PDF remains the page artwork; only the variable layer is rasterised.
+ */
+export async function downloadCertificateAchievementPdf(
+  node,
+  { fileName, userPassword, ownerPassword } = {}
+) {
+  if (typeof document === 'undefined' || typeof window === 'undefined') {
+    throw new Error('Certificate PDFs can only be generated in the browser.');
+  }
+  if (!node) {
+    throw new Error('The certificate has not finished rendering. Please try again.');
+  }
+  if (typeof ownerPassword !== 'string' || !ownerPassword) {
+    throw new Error('An owner password is required to protect the certificate PDF.');
+  }
+  if (typeof userPassword !== 'string') {
+    throw new Error('The certificate PDF credentials are incomplete.');
+  }
+
+  if (document.fonts?.ready) await document.fonts.ready;
+
+  const images = Array.from(node.querySelectorAll('img'));
+  if (images.some((image) => image.complete && !image.naturalWidth)) {
+    throw new Error('A certificate signature could not be loaded.');
+  }
+  const pendingImages = images.filter(
+    (image) => !image.complete
+  );
+  await Promise.all(
+    pendingImages.map(
+      (image) =>
+        new Promise((resolve, reject) => {
+          image.addEventListener('load', resolve, { once: true });
+          image.addEventListener(
+            'error',
+            () => reject(new Error('A certificate signature could not be loaded.')),
+            { once: true }
+          );
+        })
+    )
+  );
+
+  const [{ default: html2canvas }, pdfLib] = await Promise.all([
+    import('html2canvas'),
+    import('@cantoo/pdf-lib'),
+  ]);
+
+  const overlay = await html2canvas(node, {
+    scale: 3,
+    backgroundColor: null,
+    useCORS: true,
+    logging: false,
+    width: ACHIEVEMENT_OVERLAY_WIDTH,
+    height: ACHIEVEMENT_OVERLAY_HEIGHT,
+  });
+
+  const templateResponse = await fetch(
+    '/assets/certificates/platinum_achievement_blank.pdf',
+    { cache: 'force-cache' }
+  );
+  if (!templateResponse.ok) {
+    throw new Error('The Certificate of Achievement artwork could not be loaded.');
+  }
+
+  const { PDFDocument } = pdfLib;
+  const pdf = await PDFDocument.load(await templateResponse.arrayBuffer());
+  const page = pdf.getPage(0);
+  const image = await pdf.embedPng(overlay.toDataURL('image/png'));
+  const { width, height } = page.getSize();
+
+  page.drawImage(image, { x: 0, y: 0, width, height });
+  pdf.encrypt({
+    userPassword,
+    ownerPassword,
+    permissions: {
+      printing: 'highResolution',
+      modifying: false,
+      copying: false,
+      annotating: false,
+      fillingForms: false,
+    },
+  });
+
+  const bytes = await pdf.save();
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = toSafeFileName(fileName);
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 4000);
 
   return bytes.length;

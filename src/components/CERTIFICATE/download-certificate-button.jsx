@@ -5,9 +5,13 @@ import { createPortal } from 'react-dom';
 import { Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { showErrorAlert, showSuccessAlert } from '@/lib/alerts';
-import { downloadCertificatePdf } from '@/lib/certificate-pdf';
+import {
+  downloadCertificateAchievementPdf,
+  downloadCertificatePdf,
+} from '@/lib/certificate-pdf';
 import { useLazyDownloadCertificateCredentialsQuery, useGetCertificateSignatoriesQuery } from '@/features/certificate/certificateApi';
 import { CertificateDocument } from './templates/certificate-document';
+import { CertificateAchievementOverlay } from './templates/certificate-achievement-overlay';
 import { resolveSignatory } from '@/lib/certificate-signatories';
 
 const toExportNodeId = (certificateId) =>
@@ -15,6 +19,18 @@ const toExportNodeId = (certificateId) =>
     /[^A-Za-z0-9_-]/g,
     '-'
   )}`;
+
+const WINNER_CERTIFICATE_TYPES = new Set([
+  'winner',
+  'runner-up',
+  '2nd-runner-up',
+]);
+
+const usesAchievementArtwork = (certificate, templateKey) =>
+  WINNER_CERTIFICATE_TYPES.has(certificate?.certificateType) &&
+  (templateKey === 'platinum-achievement' ||
+    (templateKey === 'platinum' &&
+      String(certificate?.contestName || '').includes('Beat the vibe')));
 
 /**
  * Turns an RTK Query rejection into a message a member can act on.
@@ -82,6 +98,8 @@ export function DownloadCertificateButton({
   // Reports whether an export is running, so a host that keeps this control
   // inside a menu can hold the menu open until the export is over.
   onBusyChange,
+  allowWinnerDownload = false,
+  eventDate,
 }) {
   const [getCredentials, { isFetching }] =
     useLazyDownloadCertificateCredentialsQuery();
@@ -98,7 +116,9 @@ export function DownloadCertificateButton({
   }, []);
 
   const isEligible =
-    certificate?.certificateType === 'participation' &&
+    (certificate?.certificateType === 'participation' ||
+      (allowWinnerDownload &&
+        WINNER_CERTIFICATE_TYPES.has(certificate?.certificateType))) &&
     Boolean(certificate?.certificateId);
   const isBusy = isFetching || isRendering;
 
@@ -123,13 +143,25 @@ export function DownloadCertificateButton({
 
   const handleClick = async () => {
     if (!isEligible || disabled || isBusy) return;
+    if (
+      allowWinnerDownload &&
+      WINNER_CERTIFICATE_TYPES.has(certificate?.certificateType) &&
+      Array.isArray(certificate.signatories) &&
+      certificate.signatories.length > 2
+    ) {
+      showErrorAlert(
+        'Too many signatories',
+        'This certificate artwork has two signature lines. Edit the certificate and select no more than two signatories.'
+      );
+      return;
+    }
 
     try {
       // No `preferCacheValue`: the credentials carry the owner password and
       // must not be replayed from the cache on a later click.
       const data = await getCredentials(certificate.certificateId).unwrap();
       setIsRendering(true);
-      setExportPayload(data);
+      setExportPayload({ ...data, eventDate });
     } catch (error) {
       showErrorAlert('Could not download certificate', resolveDownloadErrorMessage(error));
     }
@@ -155,7 +187,17 @@ export function DownloadCertificateButton({
           throw new Error('The certificate has not finished rendering. Please try again.');
         }
 
-        await downloadCertificatePdf(node, {
+        const templateKey =
+          exportPayload.template?.key ||
+          exportPayload.certificate?.templateKey;
+        const downloadPdf = usesAchievementArtwork(
+          exportPayload.certificate,
+          templateKey
+        )
+          ? downloadCertificateAchievementPdf
+          : downloadCertificatePdf;
+
+        await downloadPdf(node, {
           fileName: exportPayload.fileName,
           // The member's file opens with no prompt; the owner password is what
           // locks it against editing.
@@ -221,16 +263,30 @@ export function DownloadCertificateButton({
                 pointerEvents: 'none',
               }}
             >
-              <CertificateDocument
-                ref={exportRef}
-                certificate={exportPayload.certificate}
-                templateKey={
-                  exportPayload.template?.key ||
+              {usesAchievementArtwork(
+                exportPayload.certificate,
+                exportPayload.template?.key ||
                   exportPayload.certificate?.templateKey
-                }
-                signatory={resolvedSignatory}
-                exportId={toExportNodeId(certificate?.certificateId)}
-              />
+              ) ? (
+                <CertificateAchievementOverlay
+                  ref={exportRef}
+                  certificate={exportPayload.certificate}
+                  eventDate={exportPayload.eventDate}
+                  signatory={resolvedSignatory}
+                  exportId={toExportNodeId(certificate?.certificateId)}
+                />
+              ) : (
+                <CertificateDocument
+                  ref={exportRef}
+                  certificate={exportPayload.certificate}
+                  templateKey={
+                    exportPayload.template?.key ||
+                    exportPayload.certificate?.templateKey
+                  }
+                  signatory={resolvedSignatory}
+                  exportId={toExportNodeId(certificate?.certificateId)}
+                />
+              )}
             </div>,
             document.body
           )

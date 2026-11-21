@@ -30,11 +30,12 @@ const TEMPLATE_COMPONENTS = {
 };
 
 /**
- * The certificate document, always rendered at exactly 1123×794 CSS pixels
- * (A4 landscape at 96dpi) regardless of the space it is placed in.
+ * The general HTML certificate templates, rendered at the shared canvas size
+ * regardless of the space they are placed in. The Platinum Achievement PDF
+ * export uses its supplied PDF artwork and a separate transparent overlay.
  *
  * ⚠️ THE EXPORT NODE MUST KEEP THIS EXACT SIZE. html2canvas is called with a
- * fixed 1123×794 frame, so a root that had already been shrunk to fit its
+ * fixed shared frame, so a root that had already been shrunk to fit its
  * parent would rasterise at the wrong scale. The screen version is scaled
  * separately by `CertificatePreview`, which never wraps the node it exports.
  */
