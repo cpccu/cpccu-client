@@ -2,7 +2,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, FileText, Users, Calendar, Image as ImageIcon, Briefcase, Settings, LogOut, ChevronDown, Code2, UserCog, Wrench, Mail, Award, GitPullRequest, Heart, BarChart3, Home, UserRoundCog, GraduationCap, ScrollText, Trophy, ClipboardCheck, } from 'lucide-react';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger, } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from '@/components/ui/dropdown-menu';
 import { useDispatch, useSelector } from 'react-redux';
@@ -70,22 +70,26 @@ export function AdminSidebar() {
         router.push('/login');
     };
     return (<Sidebar collapsible="icon" variant="sidebar">
-      <SidebarHeader className="px-4 py-5">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/admin" className="flex items-center gap-3">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Code2 className="size-4"/>
-                </div>
-                <div className="flex flex-col leading-tight">
-                  <span className="text-sm font-semibold">CPCCU Admin</span>
-                  <span className="text-xs text-sidebar-foreground/60">Club Management</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="p-3 group-data-[collapsible=icon]:p-2">
+        <div className="flex items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
+          <Link
+            href="/admin"
+            className="flex items-center gap-3 min-w-0 group-data-[collapsible=icon]:hidden hover:opacity-85 transition-opacity"
+          >
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
+              <Code2 className="size-4"/>
+            </div>
+            <div className="flex flex-col leading-tight min-w-0">
+              <span className="text-sm font-semibold truncate text-sidebar-foreground">CPCCU Admin</span>
+              <span className="text-xs text-sidebar-foreground/60 truncate">Club Management</span>
+            </div>
+          </Link>
+
+          <SidebarTrigger
+            className="size-8 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+            title="Toggle Sidebar"
+          />
+        </div>
       </SidebarHeader>
 
       <SidebarSeparator />

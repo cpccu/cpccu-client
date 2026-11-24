@@ -24,6 +24,7 @@ import { formatTenureRange, DEFAULT_COMMITTEE_TENURES } from '@/lib/committeeTen
 const NO_COMMITTEE = 'none';
 
 const emptyForm = {
+  name: '',
   userId: '',
   position: '',
   committeeKey: '',
@@ -195,18 +196,19 @@ export function CommitteeContent() {
     [committeeMembers]
   );
 
-  // A committee executive must be linked to a user account; for every other
-  // position the link is optional.
-  const executiveRequired = isExecutivePosition(formData.position);
+  // [TEMPORARILY DISABLED AS REQUESTED]
+  // Rule requiring committee executives to have a linked website account is disabled for now.
+  // const executiveRequired = isExecutivePosition(formData.position);
+  const executiveRequired = false;
   const linkedUser = formData.userId ? membersById.get(String(formData.userId)) : null;
   const orderValue = Number(formData.order);
   const orderValid = Number.isInteger(orderValue) && orderValue >= 0;
-  // A member with no account at all has no name to derive, so a CREATE needs
-  // one even for a non-executive position. On an EDIT an unlinked legacy
-  // member may keep its position — only the executive rule blocks a save.
+  // A member without an account can have a typed name. Only validate name if no account is selected on create.
   const missingAccount = !formData.userId;
-  const missingExecutiveUser = executiveRequired && missingAccount;
-  const needsAccount = editingMember ? missingExecutiveUser : missingAccount;
+  // const missingExecutiveUser = executiveRequired && missingAccount;
+  // const needsAccount = editingMember ? missingExecutiveUser : missingAccount;
+  const missingExecutiveUser = false;
+  const needsAccount = false;
 
   const matchedMembers = useMemo(() => {
     const query = userSearch.trim().toLowerCase();
@@ -244,6 +246,7 @@ export function CommitteeContent() {
     setEditingMember(member);
     setInitialUserId(linkedId);
     setFormData({
+      name: member.fullName || member.name || '',
       userId: linkedId,
       position: member.position || '',
       committeeKey: member.committeeKey || '',
@@ -254,14 +257,17 @@ export function CommitteeContent() {
   };
 
   const handleSave = async () => {
-    // ⚠️ THE PAYLOAD CARRIES NO PERSON IDENTITY. The server derives the name,
-    // email, phone and picture from the linked account, so the client sends
-    // only the four fields the endpoint accepts.
+    // Identity comes from the linked account if selected, or typed name as fallback
     const payload = {
       position: formData.position.trim(),
       committeeKey: formData.committeeKey || null,
       order: orderValue,
     };
+
+    if (formData.name?.trim()) {
+      payload.name = formData.name.trim();
+      payload.fullName = formData.name.trim();
+    }
 
     if (formData.userId) {
       payload.userId = formData.userId;
@@ -273,10 +279,10 @@ export function CommitteeContent() {
     try {
       if (editingMember) {
         await updateItem(editingMember.id, payload);
-        showSuccessAlert('Committee Updated', `${formData.position} has been updated.`);
+        showSuccessAlert('Committee Updated', `${formData.name || formData.position} has been updated.`);
       } else {
         await createItem(payload);
-        showSuccessAlert('Committee Added', `${formData.position} has been added.`);
+        showSuccessAlert('Committee Added', `${formData.name || formData.position} has been added.`);
       }
       setDialogOpen(false);
     } catch (error) {
@@ -338,7 +344,7 @@ export function CommitteeContent() {
 
   const saveDisabled =
     !formData.position.trim() ||
-    needsAccount ||
+    (!editingMember && !formData.userId && !formData.name?.trim()) ||
     !orderValid;
 
   const openEditTenure = (group) => {
@@ -567,7 +573,7 @@ export function CommitteeContent() {
           <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2">
             <div className="sm:col-span-2 flex flex-col gap-2">
               <Label>
-                Account{executiveRequired ? ' *' : ''}
+                Account{/* {executiveRequired ? ' *' : ''} */}
               </Label>
               {linkedUser && (
                 <div className="flex items-center gap-3 rounded-md border p-2">
@@ -594,6 +600,16 @@ export function CommitteeContent() {
                   </Button>
                 </div>
               )}
+              {!linkedUser && (
+                <div className="flex flex-col gap-1.5 pb-1">
+                  <Label className="text-xs text-muted-foreground">Member Name {!editingMember ? '*' : ''}</Label>
+                  <Input
+                    value={formData.name || ''}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
+                    placeholder="Enter member's full name"
+                  />
+                </div>
+              )}
               <UserPicker
                 members={matchedMembers}
                 selectedId={formData.userId}
@@ -601,12 +617,14 @@ export function CommitteeContent() {
                 onSearchChange={setUserSearch}
                 onSelect={selectUser}
               />
+              {/* Temporarily commented out as requested:
               {executiveRequired && missingExecutiveUser && (
                 <p className="text-xs text-destructive">A committee executive must be linked to a user account.</p>
               )}
+              */}
               {!executiveRequired && missingAccount && !editingMember && (
                 <p className="text-xs text-muted-foreground">
-                  Pick the registered account this committee member belongs to.
+                  Pick a registered account (optional) or enter name above.
                 </p>
               )}
             </div>
