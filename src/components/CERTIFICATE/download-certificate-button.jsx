@@ -95,9 +95,13 @@ export function DownloadCertificateButton({
   const [getCredentials, { isFetching }] =
     useLazyDownloadCertificateCredentialsQuery();
   const { data: signatoriesResponse } = useGetCertificateSignatoriesQuery();
-  const resolvedSignatory =
-    signatory || resolveSignatory(signatoriesResponse, certificate?.committee);
   const [exportPayload, setExportPayload] = useState(null);
+  const resolvedSignatory =
+    signatory ||
+    resolveSignatory(
+      signatoriesResponse,
+      exportPayload?.certificate?.committee || certificate?.committee
+    );
   const [isRendering, setIsRendering] = useState(false);
   const [mounted, setMounted] = useState(false);
   const exportRef = useRef(null);

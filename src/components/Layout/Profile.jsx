@@ -785,6 +785,8 @@ export default function Profile({ user, isOwnProfile }) {
       rank: cert.rank ?? null,
       templateKey: cert.templateKey || "",
       eventId: cert.eventId || "",
+      committee: cert.committee || "",
+      signatories: cert.signatories || [],
       // ⚠️ THE SERVER'S FLAG, CARRIED THROUGH UNCHANGED. It is `true` only
       // for a certificate `/certificates/me` handed this member, and it is
       // absent on every certificate that came from the public search — which

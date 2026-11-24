@@ -49,6 +49,8 @@ const placementToCertificateType = (placement) => {
     if (normalized === '1st' || normalized === 'winner') return 'winner';
     if (normalized === '2nd' || normalized === 'runner-up') return 'runner-up';
     if (normalized === '3rd' || normalized === '2nd-runner-up') return '2nd-runner-up';
+    if (normalized === 'participant' || normalized === 'participation' || normalized === 'completion') return 'participation';
+    if (normalized) return normalized;
     return 'participation';
 };
 
@@ -1032,55 +1034,87 @@ export function CertificatesContent() {
             key: 'certificateId',
             header: 'Certificate ID',
             accessor: 'certificateId',
-            cell: (cert) => (<div className="flex items-center gap-2">
-              <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
+            className: 'whitespace-nowrap',
+            cell: (cert) => (<div className="flex items-center gap-1.5 whitespace-nowrap">
+              <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono font-semibold">
                 {cert.certificateId}
               </code>
-              <Button variant="ghost" size="icon" className="size-6" onClick={() => handleCopyId(cert.certificateId)}>
+              <Button variant="ghost" size="icon" className="size-6 text-muted-foreground hover:text-foreground" onClick={() => handleCopyId(cert.certificateId)}>
                 {copiedId === cert.certificateId ? (<Check className="size-3 text-green-500"/>) : (<Copy className="size-3"/>)}
               </Button>
             </div>),
         },
-        { key: 'recipientName', header: 'Recipient', accessor: 'recipientName', cellClassName: 'font-medium' },
-        { key: 'recipientStudentId', header: 'Student ID', accessor: 'recipientStudentId', cellClassName: 'text-muted-foreground' },
-        { key: 'eventName', header: 'Contest', accessor: 'eventName' },
         {
-            key: 'contestType',
-            header: 'Type',
-            accessor: 'contestType',
-            cell: (cert) => <span className="text-xs font-semibold px-2 py-1 bg-primary/10 rounded-md">{formatContestTypeLabel(cert.contestType)}</span>,
+            key: 'recipientName',
+            header: 'Recipient',
+            accessor: 'recipientName',
+            cell: (cert) => (
+              <div className="flex flex-col min-w-0 max-w-[190px]">
+                <span className="font-medium text-foreground truncate" title={cert.recipientName}>
+                  {cert.recipientName}
+                </span>
+                <span className="text-xs text-muted-foreground font-mono truncate">
+                  {cert.recipientStudentId || '—'}
+                </span>
+              </div>
+            ),
         },
-        { key: 'batch', header: 'Batch', accessor: 'batch', cellClassName: 'text-muted-foreground' },
+        {
+            key: 'recipientStudentId',
+            header: 'Student ID',
+            accessor: 'recipientStudentId',
+            className: 'hidden',
+            cellClassName: 'hidden',
+        },
+        {
+            key: 'eventName',
+            header: 'Event / Contest',
+            accessor: (cert) => cert.eventName || eventsById.get(cert.eventId)?.title || '',
+            cell: (cert) => {
+                const title = cert.eventName || eventsById.get(cert.eventId)?.title || '—';
+                const typeLabel = formatContestTypeLabel(cert.contestType);
+                return (
+                  <div className="flex flex-col min-w-0 max-w-[260px]">
+                    <span className="text-sm font-medium text-foreground truncate" title={title}>
+                      {title}
+                    </span>
+                    {typeLabel && (
+                      <span className="text-[11px] text-muted-foreground/80 truncate">
+                        {typeLabel}
+                      </span>
+                    )}
+                  </div>
+                );
+            },
+        },
         {
             key: 'placement',
             header: 'Placement',
             accessor: 'placement',
-            cell: (cert) => <Badge variant={getPlacementBadgeVariant(cert.placement)}>{formatPlacementLabel(cert.placement)}</Badge>,
+            className: 'whitespace-nowrap',
+            cell: (cert) => <Badge variant={getPlacementBadgeVariant(cert.placement)} className="whitespace-nowrap font-medium">{formatPlacementLabel(cert.placement)}</Badge>,
         },
         {
-            key: 'templateKey',
-            header: 'Template',
-            accessor: (cert) => getClientTemplate(cert.templateKey)?.label || cert.templateKey,
-            cell: (cert) => <span className="text-xs font-semibold px-2 py-1 bg-muted rounded-md">{getClientTemplate(cert.templateKey)?.label || cert.templateKey}</span>,
+            key: 'batch',
+            header: 'Batch',
+            accessor: 'batch',
+            className: 'whitespace-nowrap text-center',
+            cellClassName: 'text-muted-foreground whitespace-nowrap text-center text-xs',
+            cell: (cert) => cert.batch || '—',
         },
         {
-            key: 'eventId',
-            header: 'Event',
-            accessor: (cert) => eventsById.get(cert.eventId)?.title || '',
-            cell: (cert) => {
-                const eventTitle = eventsById.get(cert.eventId)?.title;
-                if (!eventTitle) {
-                    return <span className="text-xs text-muted-foreground">{cert.eventId ? 'Unknown event' : '—'}</span>;
-                }
-                return <span className="text-sm">{eventTitle}</span>;
-            },
+            key: 'issuedAt',
+            header: 'Issued Date',
+            accessor: (cert) => formatDate(cert.issuedAt),
+            className: 'whitespace-nowrap',
+            cellClassName: 'text-muted-foreground whitespace-nowrap text-xs',
         },
-        { key: 'issuedAt', header: 'Issued Date', accessor: (cert) => formatDate(cert.issuedAt), cellClassName: 'text-muted-foreground' },
         {
             key: 'actions',
             header: '',
             export: false,
-            className: 'w-12',
+            className: 'sticky right-0 w-12 bg-card/95 backdrop-blur z-10 text-right',
+            cellClassName: 'sticky right-0 w-12 bg-card/95 backdrop-blur z-10 text-right shadow-[-6px_0_6px_-3px_rgba(0,0,0,0.06)]',
             cell: (cert) => (<DropdownMenu open={openMenuId === cert.id} onOpenChange={(open) => {
               // A running export owns this menu: closing it now would unmount
               // the download control and cancel the export without a word.
@@ -1320,6 +1354,11 @@ export function CertificatesContent() {
                       <SelectItem value="runner-up">Runner-up</SelectItem>
                       <SelectItem value="2nd-runner-up">2nd Runner-up</SelectItem>
                       <SelectItem value="participation">Participation</SelectItem>
+                      {customPlacements.map((cp) => (
+                        <SelectItem key={cp.value} value={cp.value}>
+                          {cp.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <Button

@@ -219,7 +219,7 @@ export const CertificateParticipationOverlay = forwardRef(
             fontFamily: "'Great Vibes', cursive",
             fontSize: getRecipientNameFontSize(view.recipientName, {
               max: 71.7,
-              min: 44,
+              min: 32,
             }),
             color: '#000000',
             lineHeight: 1,
