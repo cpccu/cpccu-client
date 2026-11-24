@@ -188,6 +188,43 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["AdminCertificates", "AdminOverview"],
     }),
+    getAdminCertificateTemplates: builder.query({
+      query: () => "/admin/certificate-templates",
+      providesTags: ["CertificateTemplates"],
+    }),
+    bulkIssueAdminCertificates: builder.mutation({
+      query: (body) => ({
+        url: "/admin/certificates/bulk",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [
+        "AdminCertificates",
+        "AdminOverview",
+        "MyCertificates",
+      ],
+    }),
+    getAdminEventRankings: builder.query({
+      query: (eventId) => ({
+        url: `/admin/events/${encodeURIComponent(eventId)}/rankings`,
+      }),
+      providesTags: (result, error, eventId) => [
+        { type: "AdminEventRankings", id: eventId },
+      ],
+    }),
+    submitAdminEventRankings: builder.mutation({
+      query: ({ eventId, ...body }) => ({
+        url: `/admin/events/${encodeURIComponent(eventId)}/rankings`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, arg) => [
+        "AdminCertificates",
+        "AdminOverview",
+        "MyCertificates",
+        { type: "AdminEventRankings", id: arg?.eventId },
+      ],
+    }),
     // ===== Role Management =====
     getAdminRoles: builder.query({
       query: () => "/admin/roles",
@@ -239,6 +276,38 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["AdminCertificateOptions"],
     }),
+    bulkUpdateAdminCertificates: builder.mutation({
+      query: (body) => ({
+        url: "/admin/certificates/bulk-update",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: [
+        "AdminCertificates",
+        "AdminOverview",
+        "MyCertificates",
+      ],
+    }),
+    bulkDeleteAdminCertificates: builder.mutation({
+      query: (body) => ({
+        url: "/admin/certificates/bulk-delete",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [
+        "AdminCertificates",
+        "AdminOverview",
+        "MyCertificates",
+      ],
+    }),
+    updateAdminCommitteeTenure: builder.mutation({
+      query: ({ key, ...body }) => ({
+        url: `/admin/committees/${key}/tenure`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Signatories", "AdminContent"],
+    }),
   }),
 });
 
@@ -259,6 +328,14 @@ export const {
   useGetAdminStatisticsQuery,
   useUpdateAdminCertificateMutation,
   useUpdateAdminContentMutation,
+  useGetAdminCertificateTemplatesQuery,
+  useBulkIssueAdminCertificatesMutation,
+  useBulkUpdateAdminCertificatesMutation,
+  useBulkDeleteAdminCertificatesMutation,
+  useUpdateAdminCommitteeTenureMutation,
+  useGetAdminEventRankingsQuery,
+  useLazyGetAdminEventRankingsQuery,
+  useSubmitAdminEventRankingsMutation,
   useGetAdminSystemSettingsQuery,
   useUpdateAdminSystemSettingsMutation,
   useUploadAdminImageMutation,

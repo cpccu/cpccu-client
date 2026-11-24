@@ -75,12 +75,14 @@ Certificates are **not stored inside the User model/profile document**. The cert
 
 ```mermaid
 flowchart LR
-    A[User Profile] -->|Student ID uniID| B[Certificate API - GET /certificates/verify?recipientId=]
+    A[User Profile] -->|own profile| B[Certificate API - GET /certificates/me]
+    A -->|another member| E[Certificate API - GET /certificates/verify?recipientId=]
     B --> C[Certificate Database]
+    E --> C
     C --> D[CertificatesSection renders badges]
 ```
 
-Implementation: `src/components/Layout/Profile.jsx` calls `useLazyVerifyCertificateQuery({ recipientId: user.uniID })` and maps the response with `getCertificatesFromResponse` (`src/lib/certificates/parser.js`).
+Implementation: `src/components/Layout/Profile.jsx` calls `useGetMyCertificatesQuery()` for the **own** profile and `useLazyVerifyCertificateQuery({ recipientId: user.uniID })` for **another member's** profile, and maps the response with `getCertificatesFromResponse` (`src/lib/certificates/parser.js`).
 
 ### Why
 
@@ -89,6 +91,7 @@ Implementation: `src/components/Layout/Profile.jsx` calls `useLazyVerifyCertific
 - **Automatic synchronization** — any issue/edit/delete in the admin certificate module is reflected instantly on profiles.
 - **Lower maintenance** — no sync jobs or dual-writes.
 - **Certificates appear automatically** after issuance — no per-user profile update required.
+- **The download button follows the server's own answer** — only `GET /certificates/me` carries the `canDownload` flag, so the own profile can offer a download and another member's profile (a public, read-only view) cannot.
 
 ### Consequences
 
@@ -105,7 +108,7 @@ Implementation: `src/components/Layout/Profile.jsx` calls `useLazyVerifyCertific
 
 **Future considerations**
 
-- Download/share permission checks (stubs in `src/lib/certificates/permissions.js`) will gate client actions when implemented.
+- The download check is implemented and **server-driven**: `canDownloadCertificate` reads the `canDownload` flag the server stamps on `GET /certificates/me`. Share/edit/delete remain stubs.
 
 ---
 
@@ -121,7 +124,7 @@ Certificates are issued to students by their university student ID, while users 
 
 ### Decision
 
-The profile uses the member's **student ID (`uniID`)** — not the MongoDB `_id` — as `recipientId` when querying certificates (`GET /certificates/verify?recipientId=<uniID>`).
+The profile uses the member's **student ID (`uniID`)** — not the MongoDB `_id` — as `recipientId` when querying certificates (`GET /certificates/verify?recipientId=<uniID>`). ⚠️ This lookup is the **public, read-only** view of another member's certificates; the member's own list comes from `GET /certificates/me`, which the server scopes to the caller. The student-id lookup is never used to decide who may download anything.
 
 ### Why
 
@@ -142,6 +145,7 @@ The profile uses the member's **student ID (`uniID`)** — not the MongoDB `_id`
 
 - The `uniID` must be identical in both the user record and the certificate record — typos silently produce an empty certificate section.
 - Changing a student ID (rare) requires updating both systems.
+- ⚠️ The student id is **self-asserted and mutable**, so it can never stand in for an ownership check. It identifies a certificate record; it does not prove who holds it.
 
 **Future considerations**
 
@@ -580,7 +584,9 @@ The site displays statistics (members, gallery photos, events, visitors, certifi
 
 ### Decision
 
-All statistics are **computed live** by the backend's `statistics.service.js` (`getSiteStatistics`) using `countDocuments()`/`findOne()` against the real collections (`User`, `GalleryItem`, `Event`, `Certificate`, `CertificateVerificationLog`, `Visitor`). The admin (`GET /admin/statistics`) and public (`GET /content/statistics`) endpoints return the **same** derived values, and the admin page is read-only — there is no `PATCH /admin/statistics` route and no `SiteStatistics` model anymore.
+All statistics are **computed live** by the backend's `statistics.service.js` (`getSiteStatistics`) using `countDocuments()`/`findOne()` against the real collections (`User`, `GalleryItem`, `Event`, `Certificate`, `CertificateVerificationLog`, `Visitor`, `Project`, `Post`). The admin (`GET /admin/statistics`) and public (`GET /content/statistics`) endpoints return the **same** derived values, and the admin page is read-only — there is no `PATCH /admin/statistics` route and no `SiteStatistics` model anymore.
+
+Additionally, verification log stats (`certificateVerifications` and `failedCertificateVerifications`) accurately measure true verification portal and certificate-view queries: automated lookups from member profile pages (`Profile.jsx`) include `source=profile`, which the backend filters out to avoid artificially inflating verification counters or logging false failures for members without certificates.
 
 ### Why
 
@@ -745,17 +751,71 @@ When issuing certificates, club administrators and event organizers require dive
 
 ---
 
+## ADR-019 — Committee Tenures and Event-Date-Based Automatic Signatory Selection
+
+### Status
+
+Accepted
+
+### Context
+
+Certificates issued for past contests or events require the signatures of the President and Vice President who were active during that committee's tenure. Manually choosing signatories for every certificate was error-prone, while hardcoding current leaders caused past event certificates to show incorrect signatures.
+
+### Decision
+
+1. **Committee Tenure Storage**: The `Committee` model in MongoDB stores `startDate` and `endDate` for each committee registry key (`cpccu-server/src/models/committee.model.js`).
+2. **Tenure Management API**: Administrators can configure and adjust committee tenure dates via `PATCH /api/v1/admin/committees/:key/tenure`.
+3. **Event-Date-Based Automatic Signatories**: Each certificate includes an `eventDate` field. When issuing or bulk-updating certificates, the backend compares `eventDate` with committee tenures (`startDate <= eventDate <= endDate`). The President and Vice President of the matching committee are automatically resolved and attached as the default signatories.
+4. **Historical Backfill**: Historical certificates have their `eventDate` synchronized with their corresponding event's `eventStartAt`, ensuring accurate retroactive presidential signatures.
+
+### Consequences
+
+**Pros:**
+- Complete accuracy of historical certificates: certificates always display the executive signatories from the tenure when the event actually took place.
+- Eliminates manual signatory input for admins during single or bulk certificate generation.
+- Full flexibility: admins can adjust committee dates directly from the admin panel if club records are revised.
+
+**Cons:**
+- Requires events to have an established date and committees to have valid tenure date ranges recorded.
+
+---
+
+## ADR-020 — Event Chronological Sorting by Start Date Over Manual Display Order
+
+### Status
+
+Accepted
+
+### Context
+
+Events and contests historically depended on a manual integer `order` field to determine listing hierarchy across public and admin pages. Managing this order manually created friction for administrators and led to outdated events remaining prominently placed if their order was not manually adjusted.
+
+### Decision
+
+1. **Date-Based Automatic Sorting**: Both the public events feed (`GET /api/v1/content/events`) and admin event lists are sorted chronologically by `eventStartAt` descending (`sort({ eventStartAt: -1 })`).
+2. **Deprecation of Manual Display Order**: Manual input for event display order is removed from the admin interface. Newest events appear first automatically, while older events naturally move down the page.
+3. **Dhaka Timezone Preserved**: Admin event date-time inputs use Dhaka time utilities (`src/lib/dhaka-time.js`), ensuring accurate ISO timestamps without local device timezone drift.
+
+### Consequences
+
+**Pros:**
+- Zero maintenance: events are automatically organized in intuitive chronological order.
+- Eliminates sorting inconsistencies between public pages and admin management.
+- Streamlines the event creation form by removing unnecessary order inputs.
+
+---
+
 ## ADR-012 — Future Decisions (Planned, Not Implemented)
 
-> The following are **Planned** directions. None of them are implemented in the current codebase — treat them as proposals, not facts.
+> The following are **Planned** directions. None of them are implemented in the current codebase — treat them as proposals, not facts. **Exception: item 2 is implemented**; it stays in place so the numbering does not shift.
 
 ### 1. Notification System
 
 **Planned.** Notification *preference toggles* already exist in the admin System Settings (`system-settings-content.jsx`: `emailNewPost`, `emailProfileSubmission`, `browserNotifications`), but there is **no notification delivery engine** (no in-app inbox, no push/email sending) on the frontend.
 
-### 2. Certificate PDF Download
+### 2. Certificate PDF Download — IMPLEMENTED
 
-**Planned.** `src/lib/certificates/permissions.js` contains `canDownloadCertificate` / `canShareCertificate` / `canEditCertificate` / `canDeleteCertificate` **stubs that always return `false`**; the Download button in `CertificatesSection` is disabled with a "Coming Soon" tooltip.
+**Implemented.** A member downloads their own participation certificate as a PDF rendered in the browser (`DownloadCertificateButton` → `GET /certificates/:certificateId/download` → html2canvas + pdf-lib). The **button's visibility is the server's decision**: `canDownloadCertificate` (`src/lib/certificates/permissions.js`) reads the `canDownload` flag that `GET /certificates/me` stamps on each of the caller's own certificates — the client makes no ownership comparison of its own. See ARCHITECTURE.md §8.4 for the export flow.
 
 ### 3. Share Certificates
 
@@ -789,4 +849,5 @@ When issuing certificates, club administrators and event organizers require dive
 - ADR-013 to ADR-015 added in September 2026 (GitHub-synced contributors, derived statistics, backend-enforced email verification).
 - ADR-016 and ADR-017 added in September 2026 (hackathon reuses the `Event` model with dedicated public routes; fixed `frame-src` allowlist coupled to the embeddable host list).
 - ADR-018 added in November 2026 (dynamic certificate placement and contest type options persisted in MongoDB for multi-admin sync).
+- ADR-019 and ADR-020 added in November 2026 (committee tenures and event-date-based automatic signatory selection; event chronological sorting by start date over manual display order).
 - All "Accepted" ADRs verified against the current `cpccu-client` and `cpccu-server` codebases.

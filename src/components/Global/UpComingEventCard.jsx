@@ -5,6 +5,13 @@ import Link from "next/link";
 import cn from "@/lib/cn.js";
 
 const UpComingEventCard = ({ data, clName }) => {
+  // The Event schema defaults `image` to `''`, and the public projection passes
+  // it through unchanged, so `data.img` is often an empty string. React warns
+  // on `src=""`, and a broken image leaves the picture section blank, so the
+  // image is only rendered when there is a usable URL and a placeholder holds
+  // the slot otherwise.
+  const imageUrl = typeof data?.img === "string" ? data.img.trim() : "";
+
   return (
     <main
       className={cn(
@@ -14,11 +21,17 @@ const UpComingEventCard = ({ data, clName }) => {
     >
       {/* Picture Section */}
       <section className="md:col-span-3 lg:col-span-4 xl:col-span-3 mxl:col-span-3 mmmxl:col-span-3 overflow-hidden">
-        <img
-          className="h-auto max-h-[28rem] min-h-[14rem] w-full object-cover"
-          src={data?.img}
-          alt={data?.alt}
-        />
+        {imageUrl ? (
+          <img
+            className="h-auto max-h-[28rem] min-h-[14rem] w-full object-cover"
+            src={imageUrl}
+            alt={data?.alt}
+          />
+        ) : (
+          <div className="flex h-auto max-h-[28rem] min-h-[14rem] w-full items-center justify-center bg-black/30 text-sm font-bold uppercase tracking-wider text-white/60">
+            No image
+          </div>
+        )}
 
         <div className="h-[4%] bg-black/50"></div>
       </section>
@@ -68,101 +81,55 @@ const UpComingEventCard = ({ data, clName }) => {
         </p>
 
         {/*
-          ⚠️ THE PRIMARY BUTTON CHOOSES ITS DESTINATION FROM `participationEnabled`,
-          AND THAT IS THE ONE DECISION THIS CARD MAKES ABOUT PARTICIPATION.
-
-          Two shapes, and the reason they differ is a backwards-compatibility
-          requirement rather than a design preference:
-
-            participationEnabled → an INTERNAL `next/link` to `/event/[id]`, where
-              the registration call to action lives and where the "in-app or
-              external form" decision is made ONCE, by `resolveRegistrationTarget`.
-
-            otherwise             → the admin's external `btnLink`, exactly as
-              before this feature existed.
-
-          A card that always linked to the detail page would be tidier, and it
-          would also add a click to every event that still runs on a Google Form —
-          the majority of them, since participation is off by default and has to be
-          switched on per event. A card that always linked OUT would be the
-          opposite failure: an event whose admin has switched it onto the in-app
-          flow would keep advertising a stale external form on every list and on
-          the homepage carousel, which is the exact contradiction the mode flag
-          exists to prevent.
-
-          `participationEnabled` is a MODE, not a gate. This card never renders
-          "registration is open" from it — see the note on the field in
-          `toPublicEvent`. The button says "View details & register" precisely
-          because it cannot know whether the window is open.
+          Primary & Action Buttons:
+          "View details" is placed prominently on top as requested.
+          The two action buttons (btnLink and btnLink1) are placed underneath.
         */}
-        {data?.participationEnabled && data?.id ? (
-          <Link href={`/event/${data.id}`} className="inline-flex">
-            <button className="bg-black/30 text-white font-bold uppercase px-5 py-2 
-          hover:text-gray-600 hover:bg-white border-[3px] border-white trans">
-              View details &amp; register
-            </button>
-          </Link>
-        ) : data?.btnLink ? (
-          /*
-            ⚠️ KNOWN DEFECT, DELIBERATELY NOT FIXED HERE — read before "fixing" it.
-
-            `next/link` is the WRONG component for this href. The house rule for
-            admin-supplied, outbound links is a PLAIN ANCHOR
-            (`<a target="_blank" rel="noopener noreferrer">`, see the
-            EXTERNAL LINK RULE block in `src/lib/hackathon.js:11-33`):
-            `next/link` client-navigates, so an external target is pulled through
-            our own router instead of handed to the browser, and a non-http scheme
-            can break the router outright.
-
-            Why it is still here: this predates the hackathon feature and is
-            unrelated to it. Swapping the component changes client-navigation
-            behaviour for EVERY existing event link on `/event` and the homepage
-            carousel, which is a behaviour change that deserves its own review and
-            its own verification — not a drive-by edit inside a security fix. It
-            is also currently a *latent* bug rather than a live one, because the
-            href now arrives already filtered: `toPublicEvent` runs it through
-            `toSafeHref`, so by the time it reaches this line only http/https
-            URLs can be present, and `rel="noopener noreferrer"` is already set.
-
-            ⚠️ IT IS ALSO NOW THE MINORITY BRANCH. Since `participationEnabled`
-            routes to the detail page instead, this anchor is reached only by
-            events with no in-app participation configured — so fixing it later
-            has a smaller blast radius than it had before, not a larger one.
-
-            Logged as follow-up. Do not copy this pattern into new code.
-          */
-          <Link href={data?.btnLink} target="_blank" rel="noopener noreferrer">
-            <button
-              className="bg-black/30 text-white font-bold uppercase px-5 py-2 
-          hover:text-gray-600 hover:bg-white border-[3px] border-white trans"
-            >
-              {data?.btnText}
-            </button>
-          </Link>
-        ) : null}
-
-        {/* Always reachable, whether or not the primary button goes anywhere
-            useful. An event with no links at all still has a detail page, and a
-            card that renders no way into it is a dead end. `next/link` is
-            correct: this is an internal route. */}
         {data?.id ? (
-          <Link
-            href={`/event/${data.id}`}
-            className="text-sm font-semibold text-white/85 underline underline-offset-4 hover:text-white"
-          >
-            View details
+          <Link href={`/event/${data.id}`} className="inline-flex">
+            <button
+              type="button"
+              className="bg-black/30 text-white font-bold uppercase px-4 sm:px-5 py-2 text-sm sm:text-base hover:text-gray-600 hover:bg-white border-[2.5px] sm:border-[3px] border-white transition-all duration-300 shadow-md"
+            >
+              {data?.participationEnabled ? "View details & register" : "View details"}
+            </button>
           </Link>
         ) : null}
 
-        {data?.btnLink1 ? (
-          <Link href={data?.btnLink1} target="_blank" rel="noopener noreferrer">
-            <button
-              className="bg-black/30 text-white font-bold uppercase px-5 py-2 
-          hover:text-gray-600 hover:bg-white border-[3px] border-white trans"
-            >
-              {data?.btnText1}
-            </button>
-          </Link>
+        {(data?.btnLink || data?.btnLink1) ? (
+          <div className="flex flex-wrap items-center gap-3">
+            {data?.btnLink ? (
+              <a
+                href={data.btnLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex"
+              >
+                <button
+                  type="button"
+                  className="bg-black/30 text-white font-bold uppercase px-4 sm:px-5 py-2 text-sm sm:text-base hover:text-gray-600 hover:bg-white border-[2.5px] sm:border-[3px] border-white transition-all duration-300 shadow-md"
+                >
+                  {data?.btnText || "Learn More"}
+                </button>
+              </a>
+            ) : null}
+
+            {data?.btnLink1 ? (
+              <a
+                href={data.btnLink1}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex"
+              >
+                <button
+                  type="button"
+                  className="bg-black/30 text-white font-bold uppercase px-4 sm:px-5 py-2 text-sm sm:text-base hover:text-gray-600 hover:bg-white border-[2.5px] sm:border-[3px] border-white transition-all duration-300 shadow-md"
+                >
+                  {data?.btnText1 || "More Info"}
+                </button>
+              </a>
+            ) : null}
+          </div>
         ) : null}
       </section>
 
@@ -274,36 +241,36 @@ function TimeBox({ startAt, endAt }) {
   const phaseLabel = status.phase === "running" ? "Running" : "Remaining";
 
   return (
-    <main className="flex gap-5">
+    <main className="flex flex-wrap items-center gap-2 sm:gap-4 md:gap-5">
       <section className="flex flex-col items-center font-bold gap-1">
-        <div>Days</div>
-        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
+        <div className="text-xs sm:text-sm">Days</div>
+        <div className="border text-center px-2.5 sm:px-3 py-1 font-bold text-base sm:text-xl bg-black/70">
           {days}
         </div>
       </section>
 
       <section className="flex flex-col items-center font-bold gap-1">
-        <div>Hr</div>
-        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
+        <div className="text-xs sm:text-sm">Hr</div>
+        <div className="border text-center px-2.5 sm:px-3 py-1 font-bold text-base sm:text-xl bg-black/70">
           {hours}
         </div>
       </section>
 
       <section className="flex flex-col items-center font-bold gap-1">
-        <div>Min</div>
-        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
+        <div className="text-xs sm:text-sm">Min</div>
+        <div className="border text-center px-2.5 sm:px-3 py-1 font-bold text-base sm:text-xl bg-black/70">
           {minutes}
         </div>
       </section>
 
       <section className="flex flex-col items-center font-bold gap-1">
-        <div>Sec</div>
-        <div className="border text-center px-3 py-1 font-bold text-xl bg-black/70">
+        <div className="text-xs sm:text-sm">Sec</div>
+        <div className="border text-center px-2.5 sm:px-3 py-1 font-bold text-base sm:text-xl bg-black/70">
           {seconds}
         </div>
       </section>
 
-      <p className="self-end font-bold text-xl hidden lg:block">{phaseLabel}</p>
+      <p className="self-end font-bold text-sm sm:text-lg lg:text-xl hidden sm:block">{phaseLabel}</p>
     </main>
   );
 }

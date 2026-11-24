@@ -19,9 +19,10 @@ Defined in `src/services/baseApi.js`.
   - `uploadAdminImage`
 - **Tag Types**:
   ```
-  Auth, Users, Posts, Projects, PublicContent, AdminOverview, AdminMembers,
-  AdminContent, AdminContributors, AdminStatistics, AdminCertificates,
-  AdminCertificateOptions, AdminSystemSettings, AdminRoles, Participation
+  Auth, Users, Posts, Projects, PublicContent, Participation, AdminOverview,
+  AdminMembers, AdminContent, AdminContributors, AdminStatistics,
+  AdminCertificates, AdminEventRankings, CertificateTemplates, MyCertificates,
+  AdminCertificateOptions, AdminSystemSettings, AdminRoles
   ```
 
 > ⚠️ `memberApi.js` provides a `Members` tag for `fetchMemberById`, but `Members` is **not** registered in `baseApi.tagTypes`.
@@ -91,17 +92,22 @@ Tag: `Projects`.
 
 | Endpoint | Method | Purpose | Params |
 | :--- | :--- | :--- | :--- |
-| `/certificates/verify` | `GET` | Search/verify certificates | Query params built from non-empty values: `certificateId`, `recipientName`, `recipientId` |
+| `/certificates/verify` | `GET` | Search/verify certificates | Query params built from non-empty values: `certificateId`, `recipientName`, `recipientId`, `source` (e.g. `source=profile` to bypass verification logging) |
 | `/certificates/stats` | `GET` | Fetch certificate statistics | None |
 | `/certificates/recent` | `GET` | Fetch recently issued certificates | None |
+| `/certificates/templates` | `GET` | Fetch the five template definitions + the default key | None |
+| `/certificates/me` | `GET` | Fetch the signed-in member's own certificates (requires a token) | None |
+| `/certificates/:certificateId/download` | `GET` | Fetch the PDF **credentials** for the member's own participation certificate: `{ certificate, template, pdf: { userPassword, ownerPassword }, fileName }` | Path param `certificateId`; 403 for a non-owner (an **admin** may download any certificate) or a non-participation certificate; 503 when the server has no `CERTIFICATE_PDF_PASSWORD` configured |
 
 **Certificate search behavior:**
 - `certificateId` — exact match search
-- `recipientName` — partial, case-insensitive match
-- `recipientId` — case-insensitive match (used by the profile Certificates section with the member's `uniID`)
+- `recipientName` — anchored to the **prefix** of the name, case-insensitive, and rejected under **3 characters** (400). The verify form enforces the same minimum per mode: a name search needs 3 characters, a certificate id and a student id need 2.
+- `recipientId` — anchored to the whole value, case-insensitive match (used by the profile Certificates section with the member's `uniID`)
 - Name and student ID searches can return multiple certificates.
 
 The same `/certificates/verify?certificateId=...` endpoint is called server-side by `src/lib/certificate-metadata.js` to generate dynamic metadata for `/certificate/[certificateId]` pages.
+
+`downloadCertificateCredentials` is implemented as a `queryFn` rather than a plain `query`: the endpoint answers with JSON credentials, not a file, and the `queryFn` unwraps the `data.data` envelope so the caller receives the payload directly. The owner password it carries is never cached for a later click (`preferCacheValue` is deliberately not used). The user password is empty by design — it is what lets the member open the PDF with no prompt — so the client only requires the owner password to be present.
 
 ### 5.2 Public (`publicApi`, unauthenticated)
 
@@ -118,7 +124,7 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 | `/content/hackathon` | `GET` | Fetch the current hackathon | Provides `PublicContent:'hackathon'` tag. **404** when no hackathon is enabled — that 404 *is* the "not available" signal, which is why the nav bar needs no separate status endpoint |
 | `/content/hackathon/problem-set` | `GET` | Fetch the problem-set URL | Provides `PublicContent:'hackathon-problem-set'` tag. Behind the backend's `verifyToken` **and** its start-time gate: `403` before the start, `404` when off or unset. Never part of the payload above |
 
-**Supported public resources** (backend `content.controller.js` `publicModels`): `alumni`, `committees`, `contributors`, `donators`, `events`, `gallery`, `gallery-events`, `profiles` (only **approved** developer profiles are returned)
+**Supported public resources** (backend `content.controller.js` `publicModels`): `alumni`, `committees`, `contributors`, `donators`, `events` (sorted by `eventStartAt` descending so newest events appear first), `gallery`, `gallery-events`, `profiles` (only **approved** developer profiles are returned)
 
 > ⚠️ **`hackathon` is NOT a `:resource` value.** It is not a key of the backend's `publicModels` map, and `GET /content/hackathon` is a dedicated fixed route on the content router (declared **above** the single-segment `/:resource` catch-all, which would otherwise swallow it and 404 from the wrong handler). The tag id is `'hackathon'`, not `'events'`: the record is an `Event`, but it is served over its own route with its own payload shape, so it gets its own cache entry.
 >
@@ -158,6 +164,9 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 
 **Supported generic content resources** (used by admin modules): `committees`, `contributors`, `donators`, `events`, `gallery`, `gallery-events`, `messages`, `posts`, `profiles`, `alumni`, `audit-logs`
 
+Specialized committee tenure route:
+| `/admin/committees/:key/tenure` | `PATCH` | Update committee tenure (`startDate`, `endDate`) | Path param `key`, `{ startDate, endDate }` | Invalidates `AdminContent:committees`, `PublicContent:committees` |
+
 ### 8.4 Role Management (dynamic official roles)
 
 | Endpoint | Method | Purpose | Notes |
@@ -172,13 +181,13 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `/admin/uploads/image` | `POST` | Upload admin image asset to Cloudinary | Multipart `body` | Used by gallery, events, committees, contributors, donators, alumni, posts |
+| `/admin/uploads/image` | `POST` | Upload admin image asset to Cloudinary | Multipart `body` | Used by gallery, events, contributors, donators, alumni, posts. NOT used by the committee panel: a committee member's picture is derived from the linked user account. |
 
 ### 8.6 Statistics
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `/admin/statistics` | `GET` | Fetch live derived site statistics — `{ members, photos, events, totalVisitors, certificatesIssued, certificateVerifications, failedCertificateVerifications, contestsHeld, winnersRecognized }` — computed server-side from real data (members, gallery, events, visitor counter, certificates, verification logs). Read-only; there is no `PATCH /admin/statistics`. | None | Provides `AdminStatistics` tag |
+| `/admin/statistics` | `GET` | Fetch live derived site statistics — `{ members, photos, events, totalVisitors, certificatesIssued, certificateVerifications, failedCertificateVerifications, contestsHeld, winnersRecognized, totalParticipants, projects, posts, hackathons }` — computed server-side from real data (members, gallery, events, visitor counter, certificates, verification logs, projects, posts). Read-only; there is no `PATCH /admin/statistics`. | None | Provides `AdminStatistics` tag |
 | `/content/statistics` | `GET` | Public site statistics — same live values as the admin endpoint | None | Public |
 
 ### 8.7 GitHub-Synced Contributors (admin)
@@ -205,9 +214,17 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 | `/admin/certificates/options` | `POST` | Create/upsert new custom placement or contest type option | `{ category, label, value }` | Invalidates `AdminCertificateOptions` |
 | `/admin/certificates/options/:id` | `DELETE` | Remove custom certificate option | Path param `id` | Invalidates `AdminCertificateOptions` |
 | `/admin/certificates` | `GET` | Fetch certificates for admin panel | None | Provides `AdminCertificates` tag |
-| `/admin/certificates` | `POST` | Create certificate (custom types auto-sync to DB) | `body` | Invalidates `AdminCertificates`, `AdminOverview`, `AdminCertificateOptions` |
-| `/admin/certificates/:id` | `PATCH` | Update certificate | Path param `id`, `body` | Invalidates `AdminCertificates` |
+| `/admin/certificates` | `POST` | Create certificate (optionally `eventId`, `templateKey`, `rank`, custom types auto-sync) | `body` | Invalidates `AdminCertificates`, `AdminOverview`, `AdminCertificateOptions` |
+| `/admin/certificates/:id` | `PATCH` | Update certificate | Path param `id`, `body` (optionally `eventId`, `templateKey`, `rank`) | Invalidates `AdminCertificates` |
 | `/admin/certificates/:id` | `DELETE` | Delete certificate | Path param `id` | Invalidates `AdminCertificates`, `AdminOverview` |
+| `/admin/certificate-templates` | `GET` | Fetch the template list + default key | None | Provides `CertificateTemplates` tag |
+| `/admin/certificates/bulk` | `POST` | Issue a whole uploaded sheet in one request | `{ eventId?, templateKey?, contestType?, issueDate?, rows: [{ recipientName, recipientId, certificateType?, rank?, batch?, contestName?, description? }] }` → `201 { created, skipped }` | Invalidates `AdminCertificates`, `AdminOverview`, `MyCertificates` |
+| `/admin/certificates/bulk-update` | `PATCH` | Bulk update matching certificates | `{ ids?, filter?, data: { eventDate?, templateKey?, signatories?, ... } }` | Invalidates `AdminCertificates`, `AdminOverview`, `MyCertificates` |
+| `/admin/certificates/bulk-delete` | `POST` | Bulk delete matching certificates | `{ ids?, filter? }` | Invalidates `AdminCertificates`, `AdminOverview`, `MyCertificates` |
+| `/admin/events/:eventId/rankings` | `GET` | Load an event's recorded placings | Path param `eventId` | Provides `AdminEventRankings` tag (per event id) |
+| `/admin/events/:eventId/rankings` | `POST` | Record placings and generate/update the certificates behind them | `{ templateKey, rankings: [{ rank, recipientName, recipientUniId, certificateType }] }` → `201 { event, rankings, certificates }` | Invalidates `AdminCertificates`, `AdminOverview`, `MyCertificates`, `AdminEventRankings:eventId` |
+
+Duplicate ranks are a validation error on the rankings endpoint, and re-submitting an existing rank updates that certificate instead of issuing a second one.
 
 ## 9. Direct Fetch Integrations (Non-RTK Query)
 
@@ -220,10 +237,12 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 
 ## 10. Certificate Verification Logs
 
-Certificate verification attempts (both public and authenticated) are logged server-side to `CertificateVerificationLog`. The statistics include:
+Certificate verification attempts (both public and authenticated via the verification portal or direct detail pages) are logged server-side to `CertificateVerificationLog`. The statistics include:
 
 - `certificateVerifications` — total successful verifications
 - `failedCertificateVerifications` — failed verification attempts
+
+> ⚠️ **Profile fetch isolation:** When member profiles fetch certificates dynamically (`/certificates/verify?recipientId=...`), the request passes `source=profile` (or `X-Verify-Source: profile`). The backend checks this flag and skips logging to `CertificateVerificationLog`. This prevents normal profile views (even for members without certificates that return 404) from polluting verification metrics.
 
 ## 11. Admin Audit Logs
 

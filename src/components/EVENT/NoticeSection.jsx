@@ -89,7 +89,7 @@ function NoticeSectionContent({ eventsResponse }) {
   // competing rule — it is the client half of the same decision, expressed so
   // that either side being fixed independently leaves the behaviour identical.
   const events = useMemo(
-    () => allEvents.filter((event) => !event.isHackathon),
+    () => [...allEvents].sort((a, b) => new Date(b.startAt || 0) - new Date(a.startAt || 0)),
     [allEvents]
   );
 

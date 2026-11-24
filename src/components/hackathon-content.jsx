@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { AlertTriangle, CalendarDays, ExternalLink, MapPin, MoreHorizontal, Pencil, Plus, Trash2, Trophy } from 'lucide-react';
+import { AlertTriangle, CalendarDays, CheckCircle2, ExternalLink, MapPin, MoreHorizontal, Pencil, Plus, Trash2, Trophy, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -58,9 +59,18 @@ import { isSafeHttpUrl, toSafeHref } from '@/lib/hackathon';
  * every historical event.
  */
 
+const statusStyles = {
+    upcoming: 'bg-primary/15 text-primary border-primary/30',
+    ongoing: 'bg-success/15 text-success border-success/30',
+    completed: 'bg-muted text-muted-foreground border-border',
+    cancelled: 'bg-destructive/15 text-destructive border-destructive/30',
+};
+
 const emptyForm = {
     title: '',
     description: '',
+    status: 'upcoming',
+    totalParticipants: '',
     // ⚠️ `startAt`/`endAt` ARE THIS FORM'S OWN KEYS, NOT THE SCHEMA'S. The document
     // calls them `eventStartAt`/`eventEndAt`; the schema names are reserved for the
     // wire payload, where `hackathon-content.jsx` and `events-content.jsx` have to
@@ -192,6 +202,8 @@ export function HackathonContent() {
             startAt,
             endAt,
             location: hackathon.location || '',
+            status: hackathon.status || 'upcoming',
+            totalParticipants: hackathon.totalParticipants !== undefined && hackathon.totalParticipants !== null ? hackathon.totalParticipants : '',
             organizer: hackathon.organizer || 'CPCCU',
             image: hackathon.image || '',
             ctaLabel: hackathon.hackathonCtaLabel || 'Register Now',
@@ -224,6 +236,15 @@ export function HackathonContent() {
                     ? `"${hackathon.title}" is now live on the website.`
                     : `"${hackathon.title}" is no longer shown to visitors.`
             );
+        } catch (error) {
+            showErrorAlert('Update failed', getErrorMessage(error));
+        }
+    };
+
+    const handleQuickStatusChange = async (hackathon, nextStatus) => {
+        try {
+            await updateItem(hackathon.id, { status: nextStatus });
+            showSuccessAlert('Status updated', `"${hackathon.title}" is now marked as ${nextStatus}.`);
         } catch (error) {
             showErrorAlert('Update failed', getErrorMessage(error));
         }
@@ -299,7 +320,8 @@ export function HackathonContent() {
             // free-text `status` can permanently disagree with it. Do not wire it
             // into any public component, and do not delete it on the assumption it
             // is vestigial — that is what a `$set` save would do.
-            status: editingHackathon?.status || 'upcoming',
+            status: formData.status || editingHackathon?.status || 'upcoming',
+            totalParticipants: formData.totalParticipants === '' ? 0 : Number(formData.totalParticipants) || 0,
             hackathonCtaLabel: formData.ctaLabel || 'Register Now',
             // ⚠️ THE TWELVE SCHEDULE FIELDS ARE SPREAD INTO THE PAYLOAD, NOT SET
             // INDIVIDUALLY. This form builds a full replacement — the same hazard as
@@ -471,7 +493,7 @@ export function HackathonContent() {
                                                 `useAdminContent('events')` — it is
                                                 NOT in the public payload and must
                                                 never be used to decide the phase. */}
-                                            <Badge variant="outline" className="text-xs capitalize">
+                                            <Badge variant="outline" className={`text-xs capitalize ${statusStyles[hackathon.status] || ''}`}>
                                                 {hackathon.status || 'upcoming'}
                                             </Badge>
                                             {hackathon.hackathonEnabled ? (
@@ -502,6 +524,10 @@ export function HackathonContent() {
                                             <DropdownMenuItem onClick={() => openEdit(hackathon)}>
                                                 <Pencil className="mr-2 size-4" /> Edit
                                             </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleQuickStatusChange(hackathon, hackathon.status === 'completed' ? 'upcoming' : 'completed')}>
+                                                <CheckCircle2 className="mr-2 size-4" />
+                                                {hackathon.status === 'completed' ? 'Mark as Upcoming' : 'Mark as Completed'}
+                                            </DropdownMenuItem>
                                             <DropdownMenuItem
                                                 onClick={() => handleDelete(hackathon)}
                                                 className="text-destructive"
@@ -527,6 +553,12 @@ export function HackathonContent() {
                                             <MapPin className="size-3.5 shrink-0" />
                                             <span className="truncate">{hackathon.location || '—'}</span>
                                         </div>
+                                        {hackathon.totalParticipants ? (
+                                            <div className="flex items-center gap-2 text-primary font-medium">
+                                                <Users className="size-3.5 shrink-0" />
+                                                <span>Total Participants: {hackathon.totalParticipants}</span>
+                                            </div>
+                                        ) : null}
                                         {hackathon.hackathonRuleBookUrl ? (
                                             <div className="flex items-center gap-2">
                                                 <ExternalLink className="size-3.5 shrink-0" />
@@ -619,6 +651,37 @@ export function HackathonContent() {
                                 onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                                 placeholder="What is this hackathon about?"
                             />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="hackathon-status">Status</Label>
+                                <Select
+                                    value={formData.status || 'upcoming'}
+                                    onValueChange={(val) => setFormData((prev) => ({ ...prev, status: val }))}
+                                >
+                                    <SelectTrigger id="hackathon-status">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="upcoming">Upcoming</SelectItem>
+                                        <SelectItem value="ongoing">Ongoing</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="hackathon-total-participants">Total Participants (Optional)</Label>
+                                <Input
+                                    id="hackathon-total-participants"
+                                    type="number"
+                                    min="0"
+                                    placeholder="e.g. 150"
+                                    value={formData.totalParticipants}
+                                    onChange={(e) => setFormData((prev) => ({ ...prev, totalParticipants: e.target.value }))}
+                                />
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

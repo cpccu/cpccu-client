@@ -17,7 +17,7 @@ import { baseApi } from "@/services/baseApi";
 export const certificateApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     verifyCertificate: build.query({
-      query: ({ certificateId, recipientName, recipientId }) => {
+      query: ({ certificateId, recipientName, recipientId, source }) => {
         const params = new URLSearchParams();
 
         if (certificateId?.trim()) {
@@ -32,6 +32,10 @@ export const certificateApi = baseApi.injectEndpoints({
           params.append("recipientId", recipientId.trim());
         }
 
+        if (source?.trim()) {
+          params.append("source", source.trim());
+        }
+
         return `/certificates/verify?${params.toString()}`;
       },
     }),
@@ -40,6 +44,70 @@ export const certificateApi = baseApi.injectEndpoints({
     }),
     getRecentCertificates: build.query({
       query: () => "/certificates/recent",
+    }),
+    getCertificateTemplates: build.query({
+      query: () => "/certificates/templates",
+      providesTags: ["CertificateTemplates"],
+    }),
+    getCertificateSignatories: build.query({
+      query: () => "/certificates/signatories",
+      providesTags: ["Signatories"],
+    }),
+    getMyCertificates: build.query({
+      query: () => "/certificates/me",
+      providesTags: ["MyCertificates"],
+    }),
+    // Returns the JSON credentials the browser needs to render the PDF itself
+    // (certificate, template, the two PDF passwords, file name) — not a PDF. A
+    // `queryFn` unwraps the envelope once so callers get `data.data` directly.
+    downloadCertificateCredentials: build.query({
+      queryFn: async (certificateId, _api, _extraOptions, baseQuery) => {
+        if (!certificateId) {
+          return {
+            error: {
+              status: 'CUSTOM_ERROR',
+              error: 'A certificate id is required.',
+            },
+          };
+        }
+
+        const result = await baseQuery(
+          `/certificates/${encodeURIComponent(certificateId)}/download`
+        );
+
+        if (result.error) return { error: result.error };
+
+        const payload = result.data?.data;
+        const pdf = payload?.pdf;
+
+        if (!pdf) {
+          return {
+            error: {
+              status: 'CUSTOM_ERROR',
+              error: 'The server did not return download credentials.',
+            },
+          };
+        }
+
+        // ⚠️ THE USER PASSWORD IS EMPTY BY DESIGN — it is what lets the member
+        // open the PDF with no prompt — so it only has to be a string. The
+        // OWNER password is what locks the file against editing, so it has to be
+        // there and it has to be non-empty.
+        if (
+          typeof pdf.userPassword !== 'string' ||
+          typeof pdf.ownerPassword !== 'string' ||
+          !pdf.ownerPassword
+        ) {
+          return {
+            error: {
+              status: 'CUSTOM_ERROR',
+              error: 'The server did not return the PDF owner password.',
+            },
+          };
+        }
+
+        return { data: payload };
+      },
     }),
   }),
 });
@@ -55,4 +123,8 @@ export const {
   useVerifyCertificateQuery,
   useGetCertificateStatsQuery,
   useGetRecentCertificatesQuery,
+  useGetCertificateTemplatesQuery,
+  useGetCertificateSignatoriesQuery,
+  useGetMyCertificatesQuery,
+  useLazyDownloadCertificateCredentialsQuery,
 } = certificateApi;

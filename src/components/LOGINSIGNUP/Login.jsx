@@ -133,7 +133,7 @@ export default function Login() {
   return (
     <div>
       <Link href="/">
-        <button className="bg-header absolute z-50 right-[2rem] mdd:right-[6rem] mt-[5rem] flex items-center justify-center h-10 rounded-lg lg:w-[10rem] gap-3 px-3 py-2 hover:bg-header-hover trans">
+        <button className="bg-header absolute z-50 right-4 top-4 md:right-[6rem] md:mt-[5rem] flex items-center justify-center h-10 rounded-lg lg:w-[10rem] gap-3 px-3 py-2 hover:bg-header-hover trans shadow-md">
           <FontAwesomeIcon
             className=" text-white font-extrabold text-2xl"
             icon={faArrowLeftLong}
@@ -142,7 +142,7 @@ export default function Login() {
         </button>
       </Link>
 
-      <div className={`h-svh padding flex px-3 pb-12`}>
+      <div className="min-h-svh padding flex px-3 py-16 md:py-12 items-center justify-center">
         <main className="mx-auto lg:min-w-[30rem] lg:w-[60rem] lg:max-w-[70rem] flex flex-col gap-14 items-start justify-center padding">
           <section className="flex flex-col self-center items-center justify-center gap-2">
             <Image

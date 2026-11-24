@@ -143,7 +143,7 @@ export default function Signup() {
   return (
     <>
       <Link href="/">
-        <button className="bg-header absolute z-30 left-[2rem] mdd:left-[6rem] top-10 md:top-16 flex items-center justify-center h-10 rounded-lg lg:w-[10rem] gap-3 px-3 py-2 hover:bg-header-hover trans">
+        <button className="bg-header absolute z-30 left-4 top-4 md:left-[6rem] md:top-16 flex items-center justify-center h-10 rounded-lg lg:w-[10rem] gap-3 px-3 py-2 hover:bg-header-hover trans shadow-md">
           <FontAwesomeIcon
             className=" text-white font-extrabold text-2xl"
             icon={faArrowLeftLong}
@@ -152,7 +152,7 @@ export default function Signup() {
         </button>
       </Link>
 
-      <div className={`bg-white h-screen padding flex px-3 `}>
+      <div className="bg-white min-h-screen padding flex px-3 py-16 md:py-0">
         <section
           className="w-full items-center justify-center hidden lg:flex relative"
           style={{
@@ -180,12 +180,12 @@ export default function Signup() {
             </h2>
           </section>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
-            <section className="grid grid-cols-12 gap-5">
+            <section className="grid grid-cols-12 gap-4 sm:gap-5">
               <InputBox
                 type={"email"}
                 title={"Email"}
                 id={"userEmail"}
-                clName={"col-span-6"}
+                clName={"col-span-12 sm:col-span-6"}
                 placeholder={"dipty123@mail.com"}
                 data={email}
                 setData={setEmail}
@@ -193,7 +193,7 @@ export default function Signup() {
                 onBlur={handleEmailBlur}
               />
               {emailFieldError && (
-                <p className="text-xs font-semibold text-red-600 mt-1 col-span-6">
+                <p className="text-xs font-semibold text-red-600 mt-1 col-span-12 sm:col-span-6">
                   {emailFieldError}
                 </p>
               )}
@@ -202,25 +202,25 @@ export default function Signup() {
                 title={"Full name"}
                 id={"userName"}
                 placeholder={"Dipty Sorkar"}
-                clName={"col-span-6"}
+                clName={"col-span-12 sm:col-span-6"}
                 data={fullName}
                 setData={setFullName}
               />
             </section>
-            <section className=" grid md:grid-cols-12 gap-5">
+            <section className="grid grid-cols-12 gap-4 sm:gap-5">
               <InputBox
                 type={"text"}
                 inputMode={"numeric"}
                 title={"CITY UNIVERSITY ID"}
                 id={"userUniID"}
                 placeholder={"027250******"}
-                clName={"md:col-span-9"}
+                clName={"col-span-12 md:col-span-9"}
                 data={uniID}
                 setData={setUniID}
                 onBlur={handleUniIDBlur}
               />
               {uniIDFieldError && (
-                <p className="text-xs font-semibold text-red-600 mt-1 md:col-span-9">
+                <p className="text-xs font-semibold text-red-600 mt-1 col-span-12 md:col-span-9">
                   {uniIDFieldError}
                 </p>
               )}
@@ -230,7 +230,7 @@ export default function Signup() {
                 title={"BATCH NO."}
                 id={"userBatch"}
                 placeholder={"60"}
-                clName={"md:col-span-3"}
+                clName={"col-span-12 md:col-span-3"}
                 data={batch}
                 setData={setBatch}
               />

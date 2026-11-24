@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, MapPin, CalendarDays, Gift, ExternalLink, Link2, ListOrdered, Settings2 } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, MapPin, CalendarDays, Gift, ExternalLink, Link2, ListOrdered, Settings2, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { showSuccessAlert, showDeleteConfirm } from '@/lib/alerts';
 import { formatDate } from '@/lib/format-date';
+import { toDhakaInputValue, utcIsoFromDhakaInput } from '@/lib/dhaka-time';
 import useAdminContent from '@/hooks/use-admin-content';
 import { AdminImageUploadField } from '@/components/admin-image-upload-field';
 import { ScheduleInstantField } from '@/components/event-schedule';
@@ -97,10 +98,8 @@ export function EventsContent() {
     // in a diff of this file, which is exactly why it is stated in both places:
     // inheriting Dhaka here would have quietly shifted every event by six hours
     // the first time someone reused the shared field, with no error anywhere.
-    const toBrowserInputValue = (value) =>
-        typeof value === 'string' ? value.slice(0, 16) : '';
-    const fromBrowserInputValue = (value) =>
-        value ? new Date(value).toISOString() : null;
+    const toBrowserInputValue = (value) => toDhakaInputValue(value);
+    const fromBrowserInputValue = (value) => utcIsoFromDhakaInput(value);
     // ⚠️ THE HACKATHON IS NOT EDITED HERE. `/admin/events` and
     // `/admin/hackathon` are two editors for the SAME record with DIFFERENT
     // date rules, which is a trap rather than a convenience:
@@ -129,7 +128,7 @@ export function EventsContent() {
             const matchesStatus = statusFilter === 'all' || e.status === statusFilter;
             const matchesType = typeFilter === 'all' || e.type === typeFilter;
             return matchesSearch && matchesStatus && matchesType;
-        });
+        }).sort((a, b) => new Date(b.eventStartAt || b.createdAt || 0) - new Date(a.eventStartAt || a.createdAt || 0));
     }, [events, search, statusFilter, typeFilter]);
     const openCreate = () => {
         setEditingEvent(null);
@@ -153,7 +152,8 @@ export function EventsContent() {
             btnLink: '',
             btnText1: '',
             btnLink1: '',
-            order: events.length,
+            order: 0,
+            totalParticipants: '',
             image: '',
             ...EMPTY_PARTICIPATION_FORM,
         });
@@ -170,8 +170,8 @@ export function EventsContent() {
         // understood when the admin typed it, which is what re-saving must show.
         // Routing it through the Dhaka formatter instead would shift every existing
         // event by six hours the first time an admin opened and saved it.
-        eventStartAt: event.eventStartAt ? toBrowserInputValue(event.eventStartAt) : '',
-        eventEndAt: event.eventEndAt ? toBrowserInputValue(event.eventEndAt) : '',
+        eventStartAt: event.eventStartAt || '',
+        eventEndAt: event.eventEndAt || '',
             location: event.location,
             type: event.type,
             status: event.status,
@@ -188,6 +188,7 @@ export function EventsContent() {
             btnText1: event.btnText1 || event.contestText || '',
             btnLink1: event.btnLink1 || event.contestLink || '',
             order: Number(event.order) || 0,
+            totalParticipants: event.totalParticipants !== undefined && event.totalParticipants !== null ? event.totalParticipants : '',
             image: event.image || '',
             ...participationFromEvent(event),
         });
@@ -211,27 +212,27 @@ export function EventsContent() {
                 btnText1: formData.btnText1 || '',
                 btnLink1: formData.btnLink1 || '',
                 order: Number(formData.order) || 0,
+                totalParticipants: formData.totalParticipants === '' ? 0 : Number(formData.totalParticipants) || 0,
                 image: formData.image || '',
                 ...participationToPayload(formData),
-                // ⚠️ AFTER THE SPREAD, AND THAT ORDER IS LOAD-BEARING.
-                // `participationToPayload` carries all twelve schedule fields,
-                // `eventStartAt` and `eventEndAt` included, and it emits them as
-                // they sit in `formData` — which for this form is the BROWSER
-                // wall-clock string `2026-10-01T09:30`, not an instant. Putting
-                // these two lines before the spread would let that wall-clock
-                // overwrite the ISO below and Mongoose would cast it in the
-                // server's own timezone, shifting every save by the server's UTC
-                // offset. They go last, they carry the `|| Date.now()` fallback
-                // this form has always had, and the `eventEndAt` fallback still
-                // reads the start so a half-filled form can never be saved
-                // inverted.
-                eventStartAt: fromBrowserInputValue(formData.eventStartAt) || new Date().toISOString(),
-                eventEndAt: fromBrowserInputValue(formData.eventEndAt) || fromBrowserInputValue(formData.eventStartAt) || new Date().toISOString(),
+                eventStartAt: formData.eventStartAt
+                    ? (formData.eventStartAt.endsWith('Z') ? formData.eventStartAt : utcIsoFromDhakaInput(formData.eventStartAt)) || new Date().toISOString()
+                    : new Date().toISOString(),
+                eventEndAt: formData.eventEndAt
+                    ? (formData.eventEndAt.endsWith('Z') ? formData.eventEndAt : utcIsoFromDhakaInput(formData.eventEndAt)) || (formData.eventStartAt ? (formData.eventStartAt.endsWith('Z') ? formData.eventStartAt : utcIsoFromDhakaInput(formData.eventStartAt)) : new Date().toISOString())
+                    : (formData.eventStartAt ? (formData.eventStartAt.endsWith('Z') ? formData.eventStartAt : utcIsoFromDhakaInput(formData.eventStartAt)) : new Date().toISOString()),
             };
             await updateItem(editingEvent.id, updatedEvent);
             showSuccessAlert('Event Updated', `"${formData.title}" has been updated.`);
         }
         else {
+            const startIso = formData.eventStartAt
+                ? (formData.eventStartAt.endsWith('Z') ? formData.eventStartAt : utcIsoFromDhakaInput(formData.eventStartAt)) || new Date().toISOString()
+                : new Date().toISOString();
+            const endIso = formData.eventEndAt
+                ? (formData.eventEndAt.endsWith('Z') ? formData.eventEndAt : utcIsoFromDhakaInput(formData.eventEndAt)) || startIso
+                : startIso;
+
             const newEvent = {
                 title: formData.title,
                 description: formData.description,
@@ -252,14 +253,11 @@ export function EventsContent() {
                 btnText1: formData.btnText1 || '',
                 btnLink1: formData.btnLink1 || '',
                 order: Number(formData.order) || 0,
+                totalParticipants: formData.totalParticipants === '' ? 0 : Number(formData.totalParticipants) || 0,
                 image: formData.image || '',
                 ...participationToPayload(formData),
-                // ⚠️ AFTER THE SPREAD — same reason as the update branch above, and
-                // the same two lines, because the two branches have to stay in step
-                // or a create and an edit would save different shapes of the same
-                // record.
-                eventStartAt: fromBrowserInputValue(formData.eventStartAt) || new Date().toISOString(),
-                eventEndAt: fromBrowserInputValue(formData.eventEndAt) || fromBrowserInputValue(formData.eventStartAt) || new Date().toISOString(),
+                eventStartAt: startIso,
+                eventEndAt: endIso,
             };
             await createItem(newEvent);
             showSuccessAlert('Event Created', `"${formData.title}" has been created.`);
@@ -442,10 +440,12 @@ export function EventsContent() {
                       <MapPin className="size-3.5 shrink-0"/>
                       <span className="truncate">{event.location}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <ListOrdered className="size-3.5 shrink-0"/>
-                      <span>Display order: {Number(event.order) || 0}</span>
-                    </div>
+                    {event.totalParticipants ? (
+                      <div className="flex items-center gap-2 text-primary font-medium">
+                        <Users className="size-3.5 shrink-0"/>
+                        <span>Total Participants: {event.totalParticipants}</span>
+                      </div>
+                    ) : null}
                     {event.reward && (<div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                         <Gift className="size-3.5 shrink-0"/>
                         <span className="truncate">{event.reward}</span>
@@ -565,8 +565,18 @@ export function EventsContent() {
                   </Select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="event-order">Display Order</Label>
-                  <Input id="event-order" type="number" value={formData.order} onChange={(e) => setFormData(prev => ({ ...prev, order: parseInt(e.target.value) || 0 }))}/>
+                  <Label htmlFor="event-total-participants">Total Participants (Optional)</Label>
+                  <Input
+                    id="event-total-participants"
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 150"
+                    value={formData.totalParticipants}
+                    onChange={(e) => setFormData(prev => ({ ...prev, totalParticipants: e.target.value }))}
+                  />
+                  {/* <p className="text-xs text-muted-foreground">
+                    Actual total event participant count. Included in public certificate stats.
+                  </p> */}
                 </div>
               </div>
             </TabsContent>
