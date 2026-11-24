@@ -41,22 +41,22 @@ export default function ContactMain() {
     >
       <section className="w-full">
         <iframe
-          className="w-full min-h-[500px] border lg:min-h-full shadow-lg"
+          className="w-full min-h-[280px] sm:min-h-[400px] lg:min-h-full border shadow-lg rounded-xl overflow-hidden"
           src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3648.4657014916597!2d90.30716657483124!3d23.873099478586848!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755c2102dc1cd51%3A0x6f95e92193fc8978!2sCity%20University%20Bangladesh!5e0!3m2!1sen!2sbd!4v1715442173691!5m2!1sen!2sbd"
           allowFullScreen={true}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
         ></iframe>
       </section>
-      <section className="w-full border bg-white">
-        <form onSubmit={handleSubmit} className="p-5 lg:p-8 xl:p-12 flex flex-col gap-5 ">
-          <section className="flex items-center gap-2">
+      <section className="w-full border bg-white rounded-xl shadow-sm overflow-hidden">
+        <form onSubmit={handleSubmit} className="p-5 lg:p-8 xl:p-12 flex flex-col gap-5">
+          <section className="flex flex-col sm:flex-row items-center gap-4">
             <div className="w-full">
-              <label htmlFor="name" className="font-semibold">
+              <label htmlFor="name" className="font-semibold block mb-1">
                 Name
               </label>
               <input
-                className="border px-4 py-3 w-full bg-header/10 "
+                className="border px-4 py-3 w-full bg-header/10 rounded-md"
                 type="text"
                 id="name"
                 name="name"
@@ -68,11 +68,11 @@ export default function ContactMain() {
             </div>
 
             <div className="w-full">
-              <label htmlFor="email" className="font-semibold">
+              <label htmlFor="email" className="font-semibold block mb-1">
                 Email
               </label>
               <input
-                className="border px-4 py-3 w-full bg-header/10 "
+                className="border px-4 py-3 w-full bg-header/10 rounded-md"
                 type="email"
                 id="email"
                 name="email"

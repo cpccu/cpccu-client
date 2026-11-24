@@ -94,15 +94,15 @@ export function Touch() {
 
         <form
           onSubmit={(e) => e.preventDefault()}
-          className="ring-1 ring-header h-12 flex"
+          className="ring-1 ring-header h-12 flex w-full rounded-md overflow-hidden"
         >
           <input
-            className="w-[80%] bg-header/10 placeholder:capitalize outline-none p-3 placeholder:font-semibold"
+            className="flex-1 min-w-0 bg-header/10 placeholder:capitalize outline-none px-3 text-sm placeholder:font-semibold text-white"
             type="email"
             placeholder="Enter your email"
             required
           />
-          <button className="bg-header hover:bg-header-hover w-[21%] trans" aria-label="Subscribe to newsletter">
+          <button className="bg-header hover:bg-header-hover px-4 flex items-center justify-center shrink-0 trans" aria-label="Subscribe to newsletter">
             <FontAwesomeIcon className="h-5" icon={faPaperPlane} aria-hidden="true" />
           </button>
         </form>          <section className="flex gap-3 flex-wrap sm:gap-5">

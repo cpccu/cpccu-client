@@ -15,24 +15,26 @@ export default function AboutCard({ Data }) {
 	          alt={Data?.fullName || Data?.name || "Profile Picture"}
 	        />
 	      </section>
-	      <section className="flex flex-col items-center text-center justify-center gap-1">
-	        <h1 className="text-2xl font-semibold capitalize text-p-text">
-	          {Data?.fullName || Data?.name}
+      <section className="flex flex-col items-center text-center justify-center gap-1 w-full min-w-0 px-2">
+        <h1 className="text-xl sm:text-2xl font-semibold capitalize text-p-text break-words max-w-full">
+          {Data?.fullName || Data?.name}
         </h1>
-        <p className="italic capitalize text-xl text-muted-foreground">
+        <p className="italic capitalize text-base sm:text-xl text-muted-foreground break-words max-w-full">
           {Data?.displayPosition || Data?.roles?.role || Data?.position}
         </p>
         {Data?.batch && (
           <p className="text-sm font-medium text-primary">Batch {Data.batch}</p>
         )}
 
-        <Link
-          href={`mailto:${Data?.email}`}
-          className="italic flex items-center justify-center gap-1 flex-wrap"
-        >
-          <MdOutlineEmail size={20} />
-          <span>{Data?.email}</span>
-        </Link>
+        {Data?.email ? (
+          <Link
+            href={`mailto:${Data.email}`}
+            className="italic flex items-center justify-center gap-1 flex-wrap break-all text-xs sm:text-sm text-gray-600 hover:text-header transition-colors max-w-full mt-1"
+          >
+            <MdOutlineEmail size={18} className="shrink-0" />
+            <span className="break-all">{Data.email}</span>
+          </Link>
+        ) : null}
       </section>
 
       <section>

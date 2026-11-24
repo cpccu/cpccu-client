@@ -132,7 +132,7 @@ function EventLayoutContent({ eventsResponse, clName }) {
   return events.length ? (
     <div
       className={cn(
-        "text-white bg-header relative z-30 p-5 md:p-10 lg:p-12",
+        "text-white bg-header relative z-30 p-4 sm:p-5 md:p-10 lg:p-12 pb-16 md:pb-12",
         clName
       )}
     >

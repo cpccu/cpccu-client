@@ -63,7 +63,7 @@ export default function BlogPostLayout() {
       {/* filter data end */}
 
       {/* card start */}
-      <main className="py-5 md:py-10 px-[.5em] md:px-[1.5em] lg:px-[2.9em] xl:px-[7em] grid md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-7">
+      <main className="py-5 md:py-10 px-3 sm:px-[1.5em] lg:px-[2.9em] xl:px-[7em] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {rows.map((item, index) => (
           <BlogMainCard key={index} Data={item} />
         ))}

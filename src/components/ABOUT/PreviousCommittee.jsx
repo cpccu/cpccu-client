@@ -40,17 +40,17 @@ export default function PreviousCommittee({ data = PreviousCommitteeData }) {
               {/* Year Header */}
               <button
                 onClick={() => toggleYear(yearData.year)}
-                className="w-full bg-gradient-to-r from-header/5 to-blue-50 hover:from-header/10 hover:to-blue-100 px-8 py-6 flex items-center justify-between transition-all duration-300"
+                className="w-full bg-gradient-to-r from-header/5 to-blue-50 hover:from-header/10 hover:to-blue-100 px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-between transition-all duration-300 gap-3"
               >
-                <div className="flex items-center gap-6">
-                  <div className="w-30 h-25 rounded-2xl bg-header/20 flex items-center justify-center">
-                    <span className="text-header font-bold text-lg">
+                <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+                  <div className="w-16 sm:w-24 h-14 sm:h-20 shrink-0 rounded-xl sm:rounded-2xl bg-header/20 flex items-center justify-center">
+                    <span className="text-header font-bold text-sm sm:text-lg">
                       {yearData.startYear || String(yearData.year || "").split("-")[0]}
                     </span>
                   </div>
-                  <div className="text-left">
-                    <p className="text-2xl font-bold text-gray-900">{yearData.year}</p>
-                    <p className="text-base text-gray-500">
+                  <div className="text-left min-w-0">
+                    <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{yearData.year}</p>
+                    <p className="text-xs sm:text-base text-gray-500">
                       {yearData.members?.length
                         ? `${yearData.members.length} members`
                         : "No members listed"}
@@ -58,18 +58,18 @@ export default function PreviousCommittee({ data = PreviousCommitteeData }) {
                   </div>
                 </div>
                 <FaChevronDown
-                  className={`text-header transition-transform duration-300 ${
+                  className={`text-header shrink-0 transition-transform duration-300 ${
                     expandedYear === yearData.year ? "rotate-180" : ""
                   }`}
-                  size={24}
+                  size={20}
                 />
               </button>
 
               {/* Members Grid - Expandable */}
               {expandedYear === yearData.year && (
-                <div className="bg-gray-50 px-8 py-12 border-t border-gray-200">
+                <div className="bg-gray-50 px-4 sm:px-8 py-6 sm:py-12 border-t border-gray-200">
                   {yearData.members?.length ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-10">
                       {yearData.members.map((member, memberIndex) => (
                         <div
                           key={memberIndex}
@@ -78,9 +78,9 @@ export default function PreviousCommittee({ data = PreviousCommitteeData }) {
                           {/* Top accent bar */}
                           <div className="h-2 w-full bg-gradient-to-r from-header to-blue-400" />
 
-                          <div className="p-8 flex flex-col items-center gap-6 text-center">
+                          <div className="p-5 sm:p-8 flex flex-col items-center gap-4 sm:gap-6 text-center">
                             {/* Avatar */}
-                            <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-header/10 group-hover:ring-header/40 transition-all duration-500 shadow-inner">
+                            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden ring-4 ring-header/10 group-hover:ring-header/40 transition-all duration-500 shadow-inner shrink-0">
                               <img
                                 src={member?.avatar}
                                 alt={member?.fullName}

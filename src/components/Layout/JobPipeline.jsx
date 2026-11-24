@@ -14,7 +14,7 @@ export default function JobPipeline() {
     return (
       <div className="flex grow min-h-[50svh] flex-col pt-8 pb-12">
         <JobPipelineHeader />
-        <section className="mx-auto grid w-full max-w-[100rem] grid-cols-1 gap-6 px-8 py-2 lg:grid-cols-2 lg:gap-10">
+        <section className="mx-auto grid w-full max-w-[100rem] grid-cols-1 gap-6 px-4 sm:px-8 py-2 lg:grid-cols-2 lg:gap-10">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
               <div className="flex gap-4">
@@ -83,7 +83,7 @@ export default function JobPipeline() {
   return (
     <div className="flex grow min-h-[50svh] flex-col pt-8 pb-12">
       <JobPipelineHeader />
-      <section className="mx-auto grid w-full max-w-[100rem] grid-cols-1 gap-6 px-8 py-2 lg:grid-cols-2 lg:gap-10">
+      <section className="mx-auto grid w-full max-w-[100rem] grid-cols-1 gap-6 px-4 sm:px-8 py-2 lg:grid-cols-2 lg:gap-10">
         {profiles.map((profile) => (
           <JobPipelineCard key={profile.id || profile.email} data={profile} />
         ))}
