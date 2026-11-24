@@ -780,6 +780,7 @@ export default function Profile({ user, isOwnProfile }) {
       contestName: cert.contestName || "",
       contestType: cert.contestType || "",
       issueDate: cert.issueDate || "",
+      eventDate: cert.eventDate || cert.issueDate || "",
       description: cert.description || "",
       batch: cert.batch || "",
       rank: cert.rank ?? null,

@@ -164,7 +164,7 @@ export function CertificateAchievementOverlay({
   const ordinal = resolveOrdinal(certificate);
   const signatoryKeys = Array.isArray(certificate.signatories)
     ? certificate.signatories
-    : ['president', 'coordinator'];
+    : ['president', 'vicePresident'];
   const selectedSignatories = signatoryKeys
     .map((key) => ({
       key,

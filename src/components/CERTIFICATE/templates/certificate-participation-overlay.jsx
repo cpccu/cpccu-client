@@ -145,7 +145,7 @@ export const CertificateParticipationOverlay = forwardRef(
       .filter(({ role }) => role);
 
     const issueDateText = formatParticipationDate(
-      certificate.issueDate || certificate.eventDate
+      certificate.eventDate || certificate.issueDate
     );
     const clubName =
       [InstitudeInfo.fullName, InstitudeInfo.uniName].filter(Boolean).join(' ') ||

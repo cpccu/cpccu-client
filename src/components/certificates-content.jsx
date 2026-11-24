@@ -134,7 +134,7 @@ const SIGNATORY_OPTIONS = [
 ];
 
 function SignatorySelector({ value, onChange, maxSignatories = 3 }) {
-    const selected = Array.isArray(value) ? value : ['president', 'coordinator'];
+    const selected = Array.isArray(value) ? value : ['president', 'vicePresident'];
     const toggle = (key) => {
         if (selected.includes(key)) {
             if (selected.length <= 1) return;
@@ -344,11 +344,12 @@ export function CertificatesContent() {
                 certificateType: certificate.certificateType,
                 templateKey: certificate.templateKey || DEFAULT_CERTIFICATE_TEMPLATE_KEY,
                 committee: certificate.committee || '',
-                signatories: certificate.signatories || ['president', 'coordinator'],
+                signatories: certificate.signatories || ['president', 'vicePresident'],
                 rank: certificate.rank ?? null,
                 description: certificate.description || '',
                 issuedBy: certificate.issuedBy || '',
                 issueDate: certificate.issueDate,
+                eventDate: certificate.eventDate,
                 batch: certificate.batch || '',
                 placement: certificate.certificateType === 'runner-up'
                     ? '2nd'
@@ -646,7 +647,7 @@ export function CertificatesContent() {
                 eventId: cert.eventId || '',
                 templateKey: cert.templateKey || defaultTemplateKey,
                 committee: cert.committee || '',
-                signatories: cert.signatories || ['president', 'coordinator'],
+                signatories: cert.signatories || ['president', 'vicePresident'],
             });
         }
         else {
@@ -661,7 +662,7 @@ export function CertificatesContent() {
                 eventId: '',
                 templateKey: defaultTemplateKey,
                 committee: '',
-                signatories: ['president', 'coordinator'],
+                signatories: ['president', 'vicePresident'],
             });
         }
         setIdValidationError('');
@@ -865,7 +866,7 @@ export function CertificatesContent() {
         setBulkEventId('');
         setBulkTemplateKey(defaultTemplateKey);
         setBulkCommitteeKey('');
-        setBulkSignatories(['president', 'coordinator']);
+        setBulkSignatories(['president', 'vicePresident']);
     };
 
     // ===== Event rankings → certificates =====

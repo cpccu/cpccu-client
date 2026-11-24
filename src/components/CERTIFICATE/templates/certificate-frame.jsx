@@ -209,13 +209,13 @@ export function resolveCertificateView(certificate = {}, signatory = null) {
       (isParticipation
         ? `for active participation in ${contestName || 'this event'} organised by the Competitive Programming Camp, City University.`
         : `in recognition of an outstanding performance in ${contestName || 'this event'} organised by the Competitive Programming Camp, City University.`),
-    issueDate: formatCertificateDate(certificate.issueDate),
+    issueDate: formatCertificateDate(certificate.eventDate || certificate.issueDate),
     issuedBy:
       clampText(certificate.issuedBy, 60) || DEFAULT_CERTIFICATE_ISSUER,
     batch: clampText(certificate.batch, 24),
     verifyUrl: getCertificateVerifyUrl(certificateId),
     signatory: signatory || certificate?.signatory || null,
-    signatories: certificate?.signatories || ['president', 'coordinator'],
+    signatories: certificate?.signatories || ['president', 'vicePresident'],
   };
 }
 
@@ -491,7 +491,7 @@ export function SignatureLine({ name, title, theme, width = 240, style, imageUrl
 }
 
 export function SignatureRow({ view, theme, style, left, right, signatory }) {
-  const signatoryKeys = view?.signatories || ['president', 'coordinator'];
+  const signatoryKeys = view?.signatories || ['president', 'vicePresident'];
   const resolved = signatory || view?.signatory || null;
 
   // Render the selected signatory roles whenever any are selected. Committee
