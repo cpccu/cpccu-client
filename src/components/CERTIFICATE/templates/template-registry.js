@@ -13,17 +13,19 @@
  */
 
 export const CERTIFICATE_TEMPLATE_KEYS = [
+  'platinum-participation',
+  /* Temporarily commented out per user request:
   'classic',
   'modern',
   'tech',
   'elegant',
   'vibrant',
   'platinum',
-  'platinum-participation',
   'platinum-achievement',
+  */
 ];
 
-export const DEFAULT_CERTIFICATE_TEMPLATE_KEY = 'classic';
+export const DEFAULT_CERTIFICATE_TEMPLATE_KEY = 'platinum-participation';
 
 /**
  * The only font stacks a template may use.
@@ -38,6 +40,19 @@ export const CERTIFICATE_FONT_STACKS = {
 };
 
 export const CERTIFICATE_TEMPLATES = [
+  {
+    key: 'platinum-participation',
+    label: 'Platinum Participation',
+    description:
+      'Curved navy wave with CPCCU emblem, quote pill card and QR verification.',
+    accent: '#0B1B3D',
+    accentSoft: '#EFF6FF',
+    ink: '#0B1B3D',
+    paper: '#FFFFFF',
+    fontDisplay: 'serif',
+    fontBody: 'sans',
+  },
+  /* Temporarily commented out per user request:
   {
     key: 'classic',
     label: 'Classic Blue',
@@ -106,18 +121,6 @@ export const CERTIFICATE_TEMPLATES = [
     fontBody: 'sans',
   },
   {
-    key: 'platinum-participation',
-    label: 'Platinum Participation',
-    description:
-      'Curved navy wave with CPCCU emblem, quote pill card and QR verification.',
-    accent: '#0B1B3D',
-    accentSoft: '#EFF6FF',
-    ink: '#0B1B3D',
-    paper: '#FFFFFF',
-    fontDisplay: 'serif',
-    fontBody: 'sans',
-  },
-  {
     key: 'platinum-achievement',
     label: 'Platinum Achievement',
     description:
@@ -129,6 +132,7 @@ export const CERTIFICATE_TEMPLATES = [
     fontDisplay: 'serif',
     fontBody: 'sans',
   },
+  */
 ];
 
 /**

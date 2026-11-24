@@ -7,11 +7,13 @@ import { Button } from '@/components/ui/button';
 import { showErrorAlert, showSuccessAlert } from '@/lib/alerts';
 import {
   downloadCertificateAchievementPdf,
+  downloadCertificateParticipationPdf,
   downloadCertificatePdf,
 } from '@/lib/certificate-pdf';
 import { useLazyDownloadCertificateCredentialsQuery, useGetCertificateSignatoriesQuery } from '@/features/certificate/certificateApi';
 import { CertificateDocument } from './templates/certificate-document';
 import { CertificateAchievementOverlay } from './templates/certificate-achievement-overlay';
+import { CertificateParticipationOverlay } from './templates/certificate-participation-overlay';
 import { resolveSignatory } from '@/lib/certificate-signatories';
 
 const toExportNodeId = (certificateId) =>
@@ -187,13 +189,14 @@ export function DownloadCertificateButton({
           throw new Error('The certificate has not finished rendering. Please try again.');
         }
 
+        const isParticipation =
+          exportPayload.certificate?.certificateType === 'participation';
         const templateKey =
           exportPayload.template?.key ||
           exportPayload.certificate?.templateKey;
-        const downloadPdf = usesAchievementArtwork(
-          exportPayload.certificate,
-          templateKey
-        )
+        const downloadPdf = isParticipation
+          ? downloadCertificateParticipationPdf
+          : usesAchievementArtwork(exportPayload.certificate, templateKey)
           ? downloadCertificateAchievementPdf
           : downloadCertificatePdf;
 
@@ -263,7 +266,14 @@ export function DownloadCertificateButton({
                 pointerEvents: 'none',
               }}
             >
-              {usesAchievementArtwork(
+              {exportPayload.certificate?.certificateType === 'participation' ? (
+                <CertificateParticipationOverlay
+                  ref={exportRef}
+                  certificate={exportPayload.certificate}
+                  signatory={resolvedSignatory}
+                  exportId={toExportNodeId(certificate?.certificateId)}
+                />
+              ) : usesAchievementArtwork(
                 exportPayload.certificate,
                 exportPayload.template?.key ||
                   exportPayload.certificate?.templateKey

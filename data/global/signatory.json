@@ -1,0 +1,178 @@
+{
+  "committees": [
+    {
+      "key": "founding-committee-2022-2023",
+      "label": "Founding Committee 2022-2023",
+      "president": {
+        "name": "Md Shoriful Islam Ashiq",
+        "title": "President",
+        "signatureUrl": "/signatures/founding-committee-2022-2023/ashiq.png"
+      },
+      "vicePresident": {
+        "name": "Imrul Hasan Rafi",
+        "title": "Vice President",
+        "signatureUrl": "/signatures/founding-committee-2022-2023/rafi.png"
+      },
+      "generalSecretary": {
+        "name": "Md. Anisur Rahman Anik",
+        "title": "General Secretary",
+        "signatureUrl": "/signatures/founding-committee-2022-2023/general-secretary.png"
+      },
+      "treasurer": {
+        "name": "Mashroor Ahmed",
+        "title": "Treasurer",
+        "signatureUrl": "/signatures/founding-committee-2022-2023/treasurer.png"
+      },
+      "coordinator": {
+        "name": "Contest and Event Coordinator",
+        "title": "Contest and Event Coordinator",
+        "signatureUrl": "/signatures/founding-committee-2022-2023/coordinator.png"
+      }
+    },
+    {
+      "key": "committee-2023-2024",
+      "label": "Committee 2023-2024",
+      "president": {
+        "name": "Md Shoriful Islam Ashiq",
+        "title": "President",
+        "signatureUrl": "/signatures/committee-2023-2024/ashiq.png"
+      },
+      "vicePresident": {
+        "name": "Imrul Hasan Rafi",
+        "title": "Vice President",
+        "signatureUrl": "/signatures/committee-2023-2024/rafi.png"
+      },
+      "generalSecretary": {
+        "name": "General Secretary",
+        "title": "General Secretary",
+        "signatureUrl": "/signatures/committee-2023-2024/general-secretary.png"
+      },
+      "treasurer": {
+        "name": "Treasurer",
+        "title": "Treasurer",
+        "signatureUrl": "/signatures/committee-2023-2024/treasurer.png"
+      },
+      "coordinator": {
+        "name": "Contest and Event Coordinator",
+        "title": "Contest and Event Coordinator",
+        "signatureUrl": "/signatures/committee-2023-2024/coordinator.png"
+      }
+    },
+    {
+      "key": "committee-2024-2025",
+      "label": "Committee 2024-2025",
+      "president": {
+        "name": "Md Shoriful Islam Ashiq",
+        "title": "President",
+        "signatureUrl": "/signatures/committee-2024-2025/ashiq.png"
+      },
+      "vicePresident": {
+        "name": "Imrul Hasan Rafi",
+        "title": "Vice President",
+        "signatureUrl": "/signatures/committee-2024-2025/rafi.png"
+      },
+      "generalSecretary": {
+        "name": "General Secretary",
+        "title": "General Secretary",
+        "signatureUrl": "/signatures/committee-2024-2025/general-secretary.png"
+      },
+      "treasurer": {
+        "name": "Treasurer",
+        "title": "Treasurer",
+        "signatureUrl": "/signatures/committee-2024-2025/treasurer.png"
+      },
+      "coordinator": {
+        "name": "Contest and Event Coordinator",
+        "title": "Contest and Event Coordinator",
+        "signatureUrl": "/signatures/committee-2024-2025/coordinator.png"
+      }
+    },
+    {
+      "key": "committee-2025-2026",
+      "label": "Committee 2025-2026",
+      "president": {
+        "name": "Zahin Abdullah",
+        "title": "President",
+        "signatureUrl": "/signatures/committee-2025-2026/zahin.png"
+      },
+      "vicePresident": {
+        "name": "Md. Rihad Hasan Rasin",
+        "title": "Vice President",
+        "signatureUrl": "/signatures/committee-2025-2026/rihad.png"
+      },
+      "generalSecretary": {
+        "name": "Md.Rangu Mia",
+        "title": "General Secretary",
+        "signatureUrl": "/signatures/committee-2025-2026/general-secretary.png"
+      },
+      "treasurer": {
+        "name": "Mohammad Sohag Mia",
+        "title": "Treasurer",
+        "signatureUrl": "/signatures/committee-2025-2026/treasurer.png"
+      },
+      "coordinator": {
+        "name": "Md. Maruf",
+        "title": "Contest and Event Coordinator",
+        "signatureUrl": "/signatures/maruf.png"
+      }
+    },
+    {
+      "key": "interim-committee-2026-2026",
+      "label": "Interim Committee 2026-2026",
+      "president": {
+        "name": "Md. Atif Hassan Saumik",
+        "title": "President",
+        "signatureUrl": "/signatures/interim-committee-2026-2026/president.png"
+      },
+      "vicePresident": {
+        "name": "Vice President",
+        "title": "Vice President",
+        "signatureUrl": "/signatures/interim-committee-2026-2026/vice-president.png"
+      },
+      "generalSecretary": {
+        "name": "General Secretary",
+        "title": "General Secretary",
+        "signatureUrl": "/signatures/interim-committee-2026-2026/general-secretary.png"
+      },
+      "treasurer": {
+        "name": "Treasurer",
+        "title": "Treasurer",
+        "signatureUrl": "/signatures/interim-committee-2026-2026/treasurer.png"
+      },
+      "coordinator": {
+        "name": "Contest and Event Coordinator",
+        "title": "Contest and Event Coordinator",
+        "signatureUrl": "/signatures/interim-committee-2026-2026/coordinator.png"
+      }
+    },
+    {
+      "key": "committee-2026-2027",
+      "label": "Committee 2026-2027",
+      "president": {
+        "name": "MD Labib Ibnus salam",
+        "title": "President",
+        "signatureUrl": "/signatures/committee-2026-2027/labib.png"
+      },
+      "vicePresident": {
+        "name": "Md. Maruf",
+        "title": "Vice President",
+        "signatureUrl": "/signatures/committee-2026-2027/maruf.png"
+      },
+      "generalSecretary": {
+        "name": "Anisur Rahman Farazi",
+        "title": "General Secretary",
+        "signatureUrl": "/signatures/committee-2026-2027/anisur.png"
+      },
+      "treasurer": {
+        "name": "Sheikh Washe-Ul-Haque Utshav",
+        "title": "Treasurer",
+        "signatureUrl": "/signatures/committee-2026-2027/treasurer.png"
+      },
+      "coordinator": {
+        "name": "MD. Sanwar Hosen",
+        "title": "Contest and Event Coordinator",
+        "signatureUrl": "/signatures/committee-2026-2027/coordinator.png"
+      }
+    }
+  ]
+}
