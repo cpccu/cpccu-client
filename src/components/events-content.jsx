@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, MapPin, CalendarDays, Gift, ExternalLink, Link2, ListOrdered, Settings2 } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, MapPin, CalendarDays, Gift, ExternalLink, Link2, ListOrdered, Settings2, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -129,7 +129,7 @@ export function EventsContent() {
             const matchesStatus = statusFilter === 'all' || e.status === statusFilter;
             const matchesType = typeFilter === 'all' || e.type === typeFilter;
             return matchesSearch && matchesStatus && matchesType;
-        });
+        }).sort((a, b) => new Date(b.eventStartAt || b.createdAt || 0) - new Date(a.eventStartAt || a.createdAt || 0));
     }, [events, search, statusFilter, typeFilter]);
     const openCreate = () => {
         setEditingEvent(null);
@@ -153,7 +153,8 @@ export function EventsContent() {
             btnLink: '',
             btnText1: '',
             btnLink1: '',
-            order: events.length,
+            order: 0,
+            totalParticipants: '',
             image: '',
             ...EMPTY_PARTICIPATION_FORM,
         });
@@ -188,6 +189,7 @@ export function EventsContent() {
             btnText1: event.btnText1 || event.contestText || '',
             btnLink1: event.btnLink1 || event.contestLink || '',
             order: Number(event.order) || 0,
+            totalParticipants: event.totalParticipants !== undefined && event.totalParticipants !== null ? event.totalParticipants : '',
             image: event.image || '',
             ...participationFromEvent(event),
         });
@@ -211,6 +213,7 @@ export function EventsContent() {
                 btnText1: formData.btnText1 || '',
                 btnLink1: formData.btnLink1 || '',
                 order: Number(formData.order) || 0,
+                totalParticipants: formData.totalParticipants === '' ? 0 : Number(formData.totalParticipants) || 0,
                 image: formData.image || '',
                 ...participationToPayload(formData),
                 // ⚠️ AFTER THE SPREAD, AND THAT ORDER IS LOAD-BEARING.
@@ -252,6 +255,7 @@ export function EventsContent() {
                 btnText1: formData.btnText1 || '',
                 btnLink1: formData.btnLink1 || '',
                 order: Number(formData.order) || 0,
+                totalParticipants: formData.totalParticipants === '' ? 0 : Number(formData.totalParticipants) || 0,
                 image: formData.image || '',
                 ...participationToPayload(formData),
                 // ⚠️ AFTER THE SPREAD — same reason as the update branch above, and
@@ -442,10 +446,12 @@ export function EventsContent() {
                       <MapPin className="size-3.5 shrink-0"/>
                       <span className="truncate">{event.location}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <ListOrdered className="size-3.5 shrink-0"/>
-                      <span>Display order: {Number(event.order) || 0}</span>
-                    </div>
+                    {event.totalParticipants ? (
+                      <div className="flex items-center gap-2 text-primary font-medium">
+                        <Users className="size-3.5 shrink-0"/>
+                        <span>Total Participants: {event.totalParticipants}</span>
+                      </div>
+                    ) : null}
                     {event.reward && (<div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                         <Gift className="size-3.5 shrink-0"/>
                         <span className="truncate">{event.reward}</span>
@@ -565,8 +571,18 @@ export function EventsContent() {
                   </Select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="event-order">Display Order</Label>
-                  <Input id="event-order" type="number" value={formData.order} onChange={(e) => setFormData(prev => ({ ...prev, order: parseInt(e.target.value) || 0 }))}/>
+                  <Label htmlFor="event-total-participants">Total Participants (Optional)</Label>
+                  <Input
+                    id="event-total-participants"
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 150"
+                    value={formData.totalParticipants}
+                    onChange={(e) => setFormData(prev => ({ ...prev, totalParticipants: e.target.value }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Actual total event participant count. Included in public certificate stats.
+                  </p>
                 </div>
               </div>
             </TabsContent>
