@@ -54,7 +54,9 @@ export default function History() {
     }
   ];
 
-  return (<main className="padding py-20 bg-white min-h-screen"> <section className="max-w-5xl mx-auto">
+  return (
+    <main className="padding py-12 md:py-20 bg-white min-h-screen overflow-x-hidden">
+      <section className="max-w-5xl mx-auto">
 
     {/* Title */}
     <h1 className="text-4xl md:text-5xl font-bold text-header mb-12 text-center">
@@ -150,7 +152,7 @@ export default function History() {
         Milestones
       </h2>
 
-      <div className="relative">
+      <div className="relative overflow-hidden py-4">
 
         {/* Vertical timeline line */}
         <div className="absolute left-6 md:left-1/2 md:-translate-x-1/2 top-0 h-full w-1 bg-header"></div>

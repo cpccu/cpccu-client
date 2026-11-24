@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPCCU Certificate Position & Coordinate Inspector</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      background: #1e293b;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #334155;
+      z-index: 20;
+    }
+    header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #38bdf8;
+    }
+    .status-badge {
+      font-size: 13px;
+      background: #0284c7;
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-family: monospace;
+    }
+    .main-container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 50px);
+      overflow: hidden;
+    }
+    /* Control Sidebar */
+    .sidebar {
+      width: 360px;
+      background: #1e293b;
+      border-right: 1px solid #334155;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      z-index: 10;
+    }
+    .panel {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .preset-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    button.btn-preset {
+      background: #334155;
+      color: #f1f5f9;
+      border: 1px solid #475569;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+    }
+    button.btn-preset:hover {
+      background: #0284c7;
+      border-color: #38bdf8;
+    }
+    button.btn-preset.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      font-weight: 600;
+    }
+    .field-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .field-row label {
+      color: #cbd5e1;
+      width: 80px;
+    }
+    .field-row input[type="number"] {
+      width: 80px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 4px;
+      color: #f8fafc;
+      padding: 4px 6px;
+      font-size: 12px;
+      font-family: monospace;
+      text-align: right;
+    }
+    .field-row input[type="range"] {
+      flex: 1;
+      margin: 0 8px;
+      accent-color: #38bdf8;
+    }
+    .field-row input[type="text"] {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 4px;
+      color: #f8fafc;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-family: monospace;
+      margin-bottom: 4px;
+    }
+    .stat-val {
+      color: #38bdf8;
+      font-weight: 600;
+    }
+    /* Workspace Area */
+    .workspace {
+      flex: 1;
+      background: #090d16;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      position: relative;
+    }
+    .stage-wrapper {
+      position: relative;
+      width: 1491px;
+      height: 1055px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      border: 1px solid #334155;
+      background-image: url('./assets/certificates/participation_blank_preview.png');
+      background-size: 1491px 1055px;
+      background-repeat: no-repeat;
+      cursor: crosshair;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    /* Crosshair lines */
+    .crosshair-x {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(56, 189, 248, 0.4);
+      pointer-events: none;
+      z-index: 100;
+      display: none;
+    }
+    .crosshair-y {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(56, 189, 248, 0.4);
+      pointer-events: none;
+      z-index: 100;
+      display: none;
+    }
+    /* Interactive Highlight Box */
+    .inspector-box {
+      position: absolute;
+      border: 2px dashed #ef4444;
+      background: rgba(239, 68, 68, 0.15);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: move;
+      color: #c80b0b;
+      font-weight: bold;
+      transition: background 0.15s ease;
+    }
+    .inspector-box:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+    .box-badge {
+      position: absolute;
+      top: -24px;
+      left: 0;
+      background: #ef4444;
+      color: #fff;
+      font-size: 11px;
+      font-family: monospace;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .box-text {
+      width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      pointer-events: none;
+    }
+    .zoom-controls {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 6px;
+      display: flex;
+      gap: 6px;
+      z-index: 15;
+    }
+    .zoom-btn {
+      background: #334155;
+      color: #fff;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .zoom-btn:hover {
+      background: #0284c7;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CPCCU Certificate Layout & Coordinate Inspector</h1>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <span class="status-badge" id="mouseCoord">Cursor: X: 0px, Y: 0px (0.0 pt, 0.0 pt)</span>
+      <span class="status-badge" style="background:#475569">Canva Blank (1491 &times; 1055 px)</span>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <!-- Sidebar Controls -->
+    <div class="sidebar">
+      <div class="panel">
+        <div class="panel-title">Presets (পূর্বনির্ধারিত বক্স)</div>
+        <div class="preset-buttons">
+          <button class="btn-preset active" onclick="applyPreset('contest')">Contest Name</button>
+          <button class="btn-preset" onclick="applyPreset('recipient')">Recipient Name</button>
+          <button class="btn-preset" onclick="applyPreset('date')">Issue Date</button>
+          <button class="btn-preset" onclick="applyPreset('pres')">President</button>
+          <button class="btn-preset" onclick="applyPreset('vp')">Vice President</button>
+          <button class="btn-preset" onclick="applyPreset('cid')">Certificate ID</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Position Controls (পজিশন ও সাইজ)</div>
+        <div class="field-row">
+          <label>Top (Y):</label>
+          <input type="range" id="rangeTop" min="0" max="1055" value="598" oninput="updateFromRange('top')">
+          <input type="number" id="numTop" value="598" oninput="updateFromNum('top')">
+        </div>
+        <div class="field-row">
+          <label>Left (X):</label>
+          <input type="range" id="rangeLeft" min="0" max="1491" value="513.5" step="0.5" oninput="updateFromRange('left')">
+          <input type="number" id="numLeft" value="513.5" step="0.5" oninput="updateFromNum('left')">
+        </div>
+        <div class="field-row">
+          <label>Width:</label>
+          <input type="range" id="rangeWidth" min="20" max="1400" value="650" oninput="updateFromRange('width')">
+          <input type="number" id="numWidth" value="650" oninput="updateFromNum('width')">
+        </div>
+        <div class="field-row">
+          <label>Height:</label>
+          <input type="range" id="rangeHeight" min="10" max="300" value="74" oninput="updateFromRange('height')">
+          <input type="number" id="numHeight" value="74" oninput="updateFromNum('height')">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Text & Styling Test</div>
+        <div style="margin-bottom:8px;">
+          <input type="text" id="boxTextInput" value="AI-POWERED WEB APP BUILDING & DEPLOYMENT HACKATHON 2026" oninput="updateText()">
+        </div>
+        <div class="field-row">
+          <label>Font Size:</label>
+          <input type="number" id="numFontSize" value="24.9" step="0.5" oninput="updateStyle()">
+          <span style="font-size:11px; color:#94a3b8; margin-left:6px;">px</span>
+        </div>
+        <div class="field-row">
+          <label>Line Height:</label>
+          <input type="number" id="numLineHeight" value="1.20" step="0.05" oninput="updateStyle()">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Measurement Info</div>
+        <div class="stat-row">
+          <span>DOM Box Center X:</span>
+          <span class="stat-val" id="statCenterX">838.5 px</span>
+        </div>
+        <div class="stat-row">
+          <span>DOM Box Center Y:</span>
+          <span class="stat-val" id="statCenterY">651.0 px</span>
+        </div>
+        <div class="stat-row">
+          <span>PDF Point Eqv:</span>
+          <span class="stat-val" id="statPdfEqv">X: 385.1 pt, Y: 460.5 pt</span>
+        </div>
+        <div style="margin-top:10px; font-size:11px; color:#94a3b8; line-height:1.4;">
+          * টিপস: মাউস দিয়ে লাল বক্সটি টেনে যেকোনো জায়গায় সরাতে পারবেন। কোঅর্ডিনেট লাইভ আপডেট হবে!
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Canvas -->
+    <div class="workspace" id="workspace">
+      <div class="stage-wrapper" id="stage">
+        <div class="crosshair-x" id="crossX"></div>
+        <div class="crosshair-y" id="crossY"></div>
+
+        <div class="inspector-box" id="inspectBox" style="top:598px; left:513.5px; width:650px; height:74px;">
+          <div class="box-badge" id="boxBadge">Top: 598px | Left: 513.5px</div>
+          <div class="box-text" id="boxText" style="font-family:'TeX Gyre Termes',serif; font-size:24.9px; line-height:1.2; text-transform:uppercase;">
+            AI-POWERED WEB APP BUILDING & DEPLOYMENT HACKATHON 2026
+          </div>
+        </div>
+      </div>
+
+      <div class="zoom-controls">
+        <button class="zoom-btn" onclick="setZoom(0.6)">60%</button>
+        <button class="zoom-btn" onclick="setZoom(0.8)">80%</button>
+        <button class="zoom-btn" onclick="setZoom(1.0)">100%</button>
+        <button class="zoom-btn" onclick="setZoom(1.2)">120%</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const stage = document.getElementById('stage');
+    const inspectBox = document.getElementById('inspectBox');
+    const boxBadge = document.getElementById('boxBadge');
+    const boxText = document.getElementById('boxText');
+    const crossX = document.getElementById('crossX');
+    const crossY = document.getElementById('crossY');
+    const mouseCoord = document.getElementById('mouseCoord');
+
+    let currentZoom = 0.8;
+    setZoom(0.8);
+
+    const presets = {
+      contest: {
+        top: 598, left: 513.5, width: 650, height: 74,
+        fontSize: 24.9, lineHeight: 1.20,
+        text: 'AI-POWERED WEB APP BUILDING & DEPLOYMENT HACKATHON 2026',
+        color: '#c80b0b', font: "'TeX Gyre Termes', 'Times New Roman', serif"
+      },
+      recipient: {
+        top: 430, left: 371.4, width: 900, height: 96,
+        fontSize: 71.7, lineHeight: 1.0,
+        text: 'Rihad Hasan Rasin',
+        color: '#000000', font: "'Great Vibes', cursive"
+      },
+      date: {
+        top: 705, left: 787.2, width: 250, height: 34,
+        fontSize: 28.0, lineHeight: 1.0,
+        text: '07 October 2026',
+        color: '#2b2e37', font: "'TeX Gyre Termes', serif"
+      },
+      pres: {
+        top: 910, left: 406, width: 200, height: 26,
+        fontSize: 25.8, lineHeight: 1.0,
+        text: 'President',
+        color: '#000000', font: "'TeX Gyre Termes', serif"
+      },
+      vp: {
+        top: 910, left: 1121, width: 200, height: 26,
+        fontSize: 25.8, lineHeight: 1.0,
+        text: 'Vice President',
+        color: '#000000', font: "'TeX Gyre Termes', serif"
+      },
+      cid: {
+        top: 955, left: 824.0, width: 250, height: 27,
+        fontSize: 22.4, lineHeight: 1.0,
+        text: 'CPCCU-2026-00123',
+        color: '#2b2e37', font: "'TeX Gyre Termes', serif"
+      }
+    };
+
+    function setZoom(val) {
+      currentZoom = val;
+      stage.style.transform = `scale(${val})`;
+      stage.style.transformOrigin = 'center center';
+    }
+
+    // Cursor tracking
+    stage.addEventListener('mousemove', (e) => {
+      const rect = stage.getBoundingClientRect();
+      const x = Math.max(0, Math.min(1491, (e.clientX - rect.left) / currentZoom));
+      const y = Math.max(0, Math.min(1055, (e.clientY - rect.top) / currentZoom));
+
+      crossX.style.display = 'block';
+      crossY.style.display = 'block';
+      crossX.style.left = `${x}px`;
+      crossY.style.top = `${y}px`;
+
+      const ptX = (x * 0.75).toFixed(1);
+      const ptY = (y * 0.75).toFixed(1);
+      mouseCoord.textContent = `Cursor: X: ${x.toFixed(1)}px, Y: ${y.toFixed(1)}px (${ptX} pt, ${ptY} pt)`;
+    });
+
+    stage.addEventListener('mouseleave', () => {
+      crossX.style.display = 'none';
+      crossY.style.display = 'none';
+    });
+
+    function applyPreset(key) {
+      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const p = presets[key];
+      document.getElementById('numTop').value = p.top;
+      document.getElementById('rangeTop').value = p.top;
+      document.getElementById('numLeft').value = p.left;
+      document.getElementById('rangeLeft').value = p.left;
+      document.getElementById('numWidth').value = p.width;
+      document.getElementById('rangeWidth').value = p.width;
+      document.getElementById('numHeight').value = p.height;
+      document.getElementById('rangeHeight').value = p.height;
+
+      document.getElementById('boxTextInput').value = p.text;
+      document.getElementById('numFontSize').value = p.fontSize;
+      document.getElementById('numLineHeight').value = p.lineHeight;
+
+      boxText.style.fontFamily = p.font;
+      boxText.style.color = p.color;
+
+      syncUI();
+    }
+
+    function updateFromRange(type) {
+      const cap = type.charAt(0).toUpperCase() + type.slice(1);
+      document.getElementById('num' + cap).value = document.getElementById('range' + cap).value;
+      syncUI();
+    }
+
+    function updateFromNum(type) {
+      const cap = type.charAt(0).toUpperCase() + type.slice(1);
+      document.getElementById('range' + cap).value = document.getElementById('num' + cap).value;
+      syncUI();
+    }
+
+    function updateText() {
+      boxText.textContent = document.getElementById('boxTextInput').value;
+    }
+
+    function updateStyle() {
+      boxText.style.fontSize = document.getElementById('numFontSize').value + 'px';
+      boxText.style.lineHeight = document.getElementById('numLineHeight').value;
+    }
+
+    function syncUI() {
+      const top = parseFloat(document.getElementById('numTop').value);
+      const left = parseFloat(document.getElementById('numLeft').value);
+      const width = parseFloat(document.getElementById('numWidth').value);
+      const height = parseFloat(document.getElementById('numHeight').value);
+
+      inspectBox.style.top = `${top}px`;
+      inspectBox.style.left = `${left}px`;
+      inspectBox.style.width = `${width}px`;
+      inspectBox.style.height = `${height}px`;
+
+      boxBadge.textContent = `Top: ${top}px | Left: ${left}px | W: ${width}px | H: ${height}px`;
+
+      const centerX = (left + width / 2).toFixed(1);
+      const centerY = (top + height / 2).toFixed(1);
+      document.getElementById('statCenterX').textContent = `${centerX} px`;
+      document.getElementById('statCenterY').textContent = `${centerY} px`;
+
+      const pdfX = (left * 0.75).toFixed(1);
+      const pdfY = (top * 0.75).toFixed(1);
+      document.getElementById('statPdfEqv').textContent = `X: ${pdfX} pt, Y: ${pdfY} pt`;
+
+      updateText();
+      updateStyle();
+    }
+
+    // Drag to move
+    let isDragging = false;
+    let dragStartX, dragStartY, boxStartLeft, boxStartTop;
+
+    inspectBox.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      boxStartLeft = parseFloat(document.getElementById('numLeft').value);
+      boxStartTop = parseFloat(document.getElementById('numTop').value);
+      e.stopPropagation();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const dx = (e.clientX - dragStartX) / currentZoom;
+      const dy = (e.clientY - dragStartY) / currentZoom;
+
+      const newLeft = Math.round((boxStartLeft + dx) * 2) / 2;
+      const newTop = Math.round(boxStartTop + dy);
+
+      document.getElementById('numLeft').value = newLeft;
+      document.getElementById('rangeLeft').value = newLeft;
+      document.getElementById('numTop').value = newTop;
+      document.getElementById('rangeTop').value = newTop;
+
+      syncUI();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    syncUI();
+  </script>
+</body>
+</html>

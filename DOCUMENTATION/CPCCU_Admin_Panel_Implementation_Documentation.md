@@ -61,7 +61,7 @@ There is **no dedicated `/admin/roles` page**. Role management UI (role dropdown
 | `/admin/events` | Event, contest, link, and reward management |
 | `/admin/gallery` | Gallery and featured media management |
 | `/admin/hackathon` | Hackathon publication toggle, rule book, problem set, CTA label, schedule |
-| `/admin/certificates` | Certificate issue, bulk issue, view, and export |
+| `/admin/certificates` | Certificate issue, bulk issue, event rankings → certificates, view, and export |
 | `/admin/contributors` | Website contributor records |
 | `/admin/donators` | Donator recognition records |
 | `/admin/jobs` | Developer profile/job pipeline management |
@@ -97,9 +97,13 @@ Specialized admin endpoints (not generic content):
 - `PATCH /api/v1/admin/members/:id` — update member
 - `DELETE /api/v1/admin/members/:id` — delete member
 - `GET /api/v1/admin/certificates` — certificate list
-- `POST /api/v1/admin/certificates` — create certificate
-- `PATCH /api/v1/admin/certificates/:id` — update certificate
+- `POST /api/v1/admin/certificates` — create certificate (may link an `eventId`, a `templateKey`, a `rank`)
+- `PATCH /api/v1/admin/certificates/:id` — update certificate (may link an `eventId`, a `templateKey`, a `rank`)
 - `DELETE /api/v1/admin/certificates/:id` — delete certificate
+- `GET /api/v1/admin/certificate-templates` — the five certificate templates + the default key
+- `POST /api/v1/admin/certificates/bulk` — issue a whole uploaded sheet in one request; answers `{ created, skipped }`
+- `GET /api/v1/admin/events/:eventId/rankings` — an event's recorded placings
+- `POST /api/v1/admin/events/:eventId/rankings` — record placings and generate/update the certificates behind them
 - `GET /api/v1/admin/statistics` — live site statistics (computed from the real data sources; **read-only** — there is no `PATCH /admin/statistics`)
 - `GET /api/v1/admin/system-settings` — system settings
 - `PATCH /api/v1/admin/system-settings` — update system settings
@@ -138,17 +142,76 @@ Admin writes to `events` invalidate both hackathon cache entries as well as the 
 
 Committee management is available at `/admin/committees`.
 
-Each committee member stores:
-- Name
-- Email
-- Phone
-- Position
-- Image URL
-- Committee type: `running` or `previous`
-- Term, such as `Running Committee` or `Founding Committee 2022-2024`
-- Sort order
+### The panel is organised BY COMMITTEE
 
-The public `/committee` page groups previous committee members by `term`.
+The admin panel shows one section per committee, NEWEST FIRST, and the LAST
+committee of the registry is badged **Current**. Each section lists that
+committee's members (avatar, name, email, position, linked account, order) and
+has its own "Add member" action, which opens the add dialog pre-set to that
+committee. A committee with no members shows an empty state. The search box
+filters the MEMBERS across every committee — the sections themselves always
+stay visible.
+
+The grouping is `groupCommitteeMembers(members, canonicalCommittees, { order:
+'desc' })` from `src/lib/committee.js`: every canonical committee appears as a
+group even when it has no members, and the members of a group are ordered by
+`order`. The `order` option only flips the OUTPUT order — the current
+committee is still identified by the LAST entry of the canonical registry list,
+so it is unaffected by the display order. The public committee page
+(`src/components/Layout/AboutLayout/Committee.jsx`) keeps the default
+ascending order, which reads as a chronological history.
+
+### A committee member IS a registered user
+
+The admin does not type a member's name, email, phone or picture. The admin
+PICKS the account from the site's registered members
+(`useGetAdminMembersQuery()`, searchable by name, email or uniID) and the
+server DERIVES the identity from that account. The admin panel therefore sends
+exactly four fields on a create or update:
+
+- `userId` — the linked account's id (required for a create, and for an
+  executive)
+- `position` — free text, required
+- `committeeKey` — the committee serial, or empty to clear it
+- `order` — a whole number of 0 or more
+
+`name`, `fullName`, `email`, `phone`, `avatar`, `img`, `term` and `group` are
+NOT sent: the server drops them and derives them instead.
+
+A member with no linked account shows a **Link account** button in its row;
+picking an account PATCHes the member with that `userId` and its existing
+position, keeping its committee and order. A linked member gets **Reassign
+account** from the row menu, which opens the account picker alone.
+
+### Committee serials & tenures
+
+The committee serials come from the server's registry, served by
+`GET /api/v1/certificates/signatories` — the client never repeats the list.
+The admin panel reads it with `useGetCertificateSignatoriesQuery()` and offers
+every committee in the "Committee" select; the public `/committee` page uses
+the same list to order the committees chronologically.
+
+Each committee also maintains tenure dates (`startDate` and `endDate`) persisted in the `Committee` model. Administrators can edit tenure boundaries via `PATCH /api/v1/admin/committees/:key/tenure`. These dates power automatic signatory detection (President & Vice President) when issuing or updating certificates for events that occurred during that committee's term.
+
+### Executives must have a user account
+
+The executive positions (President, Vice President, General Secretary,
+Treasurer, Joint Secretary, Organizing Secretary, Club Manager, Assistant Club
+Manager, Joint Treasurer, Media Executive, Joint Media Executive, Creative
+Executive, Joint Creative Executive, Content Writer, Contest & Events
+Operations Team, Web Developer, Social Media Manager, Event Organizer,
+Contest Support Lead) require a linked user account: when one of those
+positions is selected, the account picker is highlighted, the panel shows "A
+committee executive must be linked to a user account." and the Save button
+stays disabled until an account is picked. Every other position may be saved
+without a linked account. The positions live in `src/lib/committee.js`
+(`isExecutivePosition`, `COMMITTEE_POSITIONS`); no executive NAME is
+hardcoded in the client — the executives are entered by an admin.
+
+The public `/committee` page groups members by `committeeKey` (falling back to
+`term` for legacy members) and shows the LAST committee of the registry as the
+"Current Committee"; every other committee is listed under "Previous
+Committees", including committees that have no members yet.
 
 ## Alumni Management
 
@@ -172,18 +235,21 @@ The public `/alumni` page reads live data from `/api/v1/content/alumni` and fall
 
 Events are managed at `/admin/events` and shown publicly with the same `UpComingEventCard` structure used by the previous JSON data.
 
+**Automated Date-Based Sorting:**
+Events are sorted chronologically by `eventStartAt` in descending order (newest events first, older events behind) across both the public events page and the admin panel. Explicit manual display ordering (`order`) is deprecated and no longer required.
+
 Important event fields:
 - `eventHeadLine1`: public card headline
 - `description`: public card body text
-- `eventStartAt`: event start time
+- `eventStartAt`: event start time (stored as ISO UTC, edited in Dhaka time UTC+6)
 - `eventEndAt`: event end time
+- `totalParticipants`: aggregate or recorded participant count
 - `eventHeadLine2`: reward heading
 - `reward`: reward/prize details
 - `eventHeadLine3`: rules heading
 - `rules1`, `rules2`, `rules3`, `rules4`: public card rules
 - `btnText`, `btnLink`: first public card button
 - `btnText1`, `btnLink1`: second public card button
-- `order`: page display order
 
 The public card still computes the three phases from `eventStartAt` and `eventEndAt` (mapped to `startAt`/`endAt` by `toPublicEvent`, which is what the card actually reads):
 - `remaining`
@@ -191,6 +257,8 @@ The public card still computes the three phases from `eventStartAt` and `eventEn
 - `ended`
 
 The public events list **excludes `type: 'hackathon'` rows**. A hackathon is published only on `/hackathon` (see [Hackathon Management](#hackathon-management)), which renders a server-derived lifecycle phase rather than the hand-set `status` this card reads. The admin Events page is intentionally **not** filtered — an admin must still be able to see that a hackathon exists.
+
+> ℹ️ **Date & Time Input Fix:** `events-content.jsx` utilizes `toDhakaInputValue` and `utcIsoFromDhakaInput` from `src/lib/dhaka-time.js` to parse and format `datetime-local` inputs in Asia/Dhaka time without cyclic offset shifts when picking or editing hours.
 
 ⚠️ The server now validates all eight admin-writable event URL fields (`registrationLink`, `btnLink`, `btnLink1`, `contestLink`, `meetLink`, `vjudgeGroupLink`, and the two hackathon URLs) as absolute `http(s)` URLs, and rejects a hackathon whose `eventEndAt` is not strictly after its `eventStartAt`.
 
@@ -386,8 +454,12 @@ All statistics are **calculated automatically** from the real CPCCU data sources
 - Contests held — events classified as `type: "contest"`
 - Total visitors — the same visitor counter record the homepage uses
 - Certificates issued — `Certificate` collection count
-- Certificate verifications / failed verifications — `CertificateVerificationLog` counts
+- Certificate verifications / failed verifications — `CertificateVerificationLog` counts (profile certificate lookups are excluded via `source=profile` to prevent stats pollution)
 - Winners recognized — certificates with a winner certificate type (same definition as the public certificate page)
+- Total participants — aggregate participants from certificates and events
+- Projects — `Project` collection count
+- Posts — `Post` collection count
+- Hackathons — events classified as `type: "hackathon"`
 
 There is no manual edit form: values are derived from the data and cannot be overridden (there is no `PATCH /admin/statistics` route). There is intentionally **no "Total Awards" statistic** — that feature was removed. The public `/api/v1/content/statistics` endpoint serves the same live values as the admin endpoint.
 
@@ -428,15 +500,23 @@ The certificate management interface (`src/components/certificates-content.jsx`)
 - **Bulk Creation (XLSX) Compatibility**:
   - Bulk certificate uploads via Excel preserve custom placements and contest types without forcing them into default categories.
   - Novel types encountered during bulk uploads are automatically recorded into the database so they appear in future dropdown options.
+- **Bulk Edit & Bulk Delete Operations**:
+  - Admins can select multiple certificates to update properties (e.g., `eventDate`, `templateKey`, `signatories`) simultaneously using `PATCH /api/v1/admin/certificates/bulk-update`.
+  - Multiple certificates can be removed in a single operation using `POST /api/v1/admin/certificates/bulk-delete`.
+- **Event Date & Automatic Signatory Detection**:
+  - Certificates store an `eventDate` representing the actual date of the event/contest.
+  - When selecting an event or setting an event date, the system queries the committee tenures (`startDate` to `endDate`) and automatically sets the default President and Vice-President signatories of the active committee for that period.
 
 ## Certificate Verification Logs
 
-Certificate verification attempts write to `CertificateVerificationLog`.
+Certificate verification attempts from the public verification portal and direct certificate pages write to `CertificateVerificationLog`.
 
 Statistics now include:
 
 - `certificateVerifications`
 - `failedCertificateVerifications`
+
+> ℹ️ **Decoupled Profile Requests:** Profile fetches from `Profile.jsx` pass `source=profile` when querying certificates. These calls are deliberately ignored by the verification logger, ensuring profile visits do not distort verification statistics.
 
 The public certificate search supports:
 - Exact certificate ID search

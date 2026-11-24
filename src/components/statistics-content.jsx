@@ -1,5 +1,5 @@
 'use client';
-import { Users, Image, Calendar, Eye, FileCheck, Trophy, BarChart3, Info, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Users, Image, Calendar, Eye, FileCheck, Trophy, BarChart3, Info, RefreshCw, ShieldCheck, FileText, Layers } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,10 @@ const statConfigs = [
     { key: 'failedCertificateVerifications', label: 'Failed Verifications', icon: Eye, color: 'text-red-500', bgColor: 'bg-red-500/10' },
     { key: 'contestsHeld', label: 'Contests Held', icon: Trophy, color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
     { key: 'winnersRecognized', label: 'Winners Recognized', icon: BarChart3, color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
+    { key: 'totalParticipants', label: 'Total Participants', icon: Users, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
+    { key: 'projects', label: 'Member Projects', icon: Layers, color: 'text-violet-500', bgColor: 'bg-violet-500/10' },
+    { key: 'posts', label: 'Posts & Articles', icon: FileText, color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
+    { key: 'hackathons', label: 'Hackathons', icon: Trophy, color: 'text-rose-500', bgColor: 'bg-rose-500/10' },
 ];
 export function StatisticsContent() {
     const { data: statisticsResponse, isLoading, isError, refetch, isFetching } = useGetAdminStatisticsQuery();
@@ -22,7 +26,7 @@ export function StatisticsContent() {
     const renderStatGrid = (showSkeleton = false) => (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {showSkeleton
-                ? Array.from({ length: 8 }).map((_, i) => (
+                ? Array.from({ length: statConfigs.length }).map((_, i) => (
                     <Card key={i}>
                         <CardContent className="pt-6">
                             <div className="flex items-start justify-between">

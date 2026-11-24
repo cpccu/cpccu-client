@@ -25,10 +25,10 @@ export default function DonatorsPage() {
             <p className="text-header font-mono text-sm font-semibold mb-2 tracking-wide uppercase">
               // our supporters
             </p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 flex items-center justify-center gap-2">
-              <FaHeart className="text-red-500" size={32} />
-              Our Generous Donators
-              <FaHeart className="text-red-500" size={32} />
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 flex flex-wrap items-center justify-center gap-2">
+              <FaHeart className="text-red-500 shrink-0" size={26} />
+              <span>Our Generous Donators</span>
+              <FaHeart className="text-red-500 shrink-0" size={26} />
             </h2>
             <p className="text-gray-500 max-w-2xl mx-auto">
               We are grateful to these organizations and individuals who have generously
@@ -64,10 +64,10 @@ export default function DonatorsPage() {
           <p className="text-header font-mono text-sm font-semibold mb-2 tracking-wide uppercase">
             // our supporters
           </p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 flex items-center justify-center gap-2">
-            <FaHeart className="text-red-500" size={32} />
-            Our Generous Donators
-            <FaHeart className="text-red-500" size={32} />
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 flex flex-wrap items-center justify-center gap-2">
+            <FaHeart className="text-red-500 shrink-0" size={26} />
+            <span>Our Generous Donators</span>
+            <FaHeart className="text-red-500 shrink-0" size={26} />
           </h2>
           <p className="text-gray-500 max-w-2xl mx-auto">
             We are grateful to these organizations and individuals who have generously 

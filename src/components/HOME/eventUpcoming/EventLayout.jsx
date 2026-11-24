@@ -88,7 +88,8 @@ function EventLayoutContent({ eventsResponse, clName }) {
   //
   // The static fallback (`data/upcomingEvent.json`) carries no `type` field,
   // so it passes through untouched — `!undefined` is true, i.e. kept.
-  const events = allEvents.filter((event) => !event.isHackathon);
+  // All events (including hackathons) are shown, sorted newest first
+  const events = [...allEvents].sort((a, b) => new Date(b.startAt || 0) - new Date(a.startAt || 0));
 
   // Derived from the FILTERED list on purpose: the label ("Upcoming" vs
   // "Recent") describes what the carousel is actually showing, so it must not
@@ -131,7 +132,7 @@ function EventLayoutContent({ eventsResponse, clName }) {
   return events.length ? (
     <div
       className={cn(
-        "text-white bg-header relative z-30 p-5 md:p-10 lg:p-12",
+        "text-white bg-header relative z-30 p-4 sm:p-5 md:p-10 lg:p-12 pb-16 md:pb-12",
         clName
       )}
     >

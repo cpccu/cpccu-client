@@ -1,13 +1,20 @@
 "use client";
 
-import { CertificateBadge } from "./certificate-badge";
+import { useSelector } from "react-redux";
 import {
   CalendarDays,
-  User,
-  Hash,
-  Code2,
   CheckCircle2,
+  Code2,
+  Hash,
+  Info,
+  User,
 } from "lucide-react";
+import { canDownloadCertificate, getCertificatesFromResponse } from "@/lib/certificates";
+import { useGetMyCertificatesQuery, useGetCertificateSignatoriesQuery } from "@/features/certificate/certificateApi";
+import { CertificateBadge } from "./certificate-badge";
+import { CertificatePreview } from "./templates/certificate-document";
+import { DownloadCertificateButton } from "./download-certificate-button";
+import { resolveSignatory } from "@/lib/certificate-signatories";
 
 const CONTEST_TYPE_LABELS = {
   "programming-contest": "Programming Contest",
@@ -17,14 +24,33 @@ const CONTEST_TYPE_LABELS = {
 };
 
 export function CertificateCard({ certificate }) {
-  const formattedDate = new Date(certificate.issueDate).toLocaleDateString(
-    "en-US",
-    {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    },
+  const token = useSelector((state) => state.auth.token);
+  const isSignedIn = Boolean(token);
+
+  // ⚠️ THE SERVER SAYS WHO MAY DOWNLOAD. This card renders a certificate
+  // from the PUBLIC verify endpoint, which carries no `canDownload` flag, so
+  // the client asks `GET /certificates/me` — the one list the server scopes
+  // to the signed-in member. Every card on the page shares that one query.
+  const { data: myCertificates } = useGetMyCertificatesQuery(undefined, {
+    skip: !isSignedIn,
+  });
+  const { data: signatoriesResponse } = useGetCertificateSignatoriesQuery();
+
+  const ownCertificate = getCertificatesFromResponse(myCertificates).find(
+    (mine) => mine.certificateId === certificate.certificateId,
   );
+  const canDownload = canDownloadCertificate(ownCertificate);
+  const signatory = resolveSignatory(signatoriesResponse, certificate?.committee);
+
+  const formattedDate = certificate.issueDate
+    ? new Date(certificate.issueDate).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "";
+
+  const isParticipation = certificate.certificateType === "participation";
 
   return (
     <div className="relative w-full max-w-full overflow-hidden rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-card to-card/80 shadow-xl shadow-primary/10">
@@ -139,6 +165,47 @@ export function CertificateCard({ certificate }) {
               </p>
             </div>
           </div>
+        </div>
+
+        {CONTEST_TYPE_LABELS[certificate.contestType] && (
+          <span className="text-xs text-primary font-semibold inline-block px-2 py-1 bg-primary/10 rounded-md">
+            {CONTEST_TYPE_LABELS[certificate.contestType]}
+          </span>
+        )}
+
+        {/* Download — the server's own list decides, and it says no by default */}
+        <div className="pt-1">
+          {canDownload ? (
+            <DownloadCertificateButton
+              certificate={certificate}
+              signatory={signatory}
+              className="w-full rounded-xl py-5 text-sm font-bold"
+            />
+          ) : null}
+
+          {!isParticipation && (
+            <p className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+              Winners&apos; certificates are verified online; PDF download is
+              available for participation certificates only.
+            </p>
+          )}
+
+          {isParticipation && isSignedIn && !canDownload && (
+            <p className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+              Only the certificate holder can download this certificate as a
+              PDF.
+            </p>
+          )}
+
+          {isParticipation && !isSignedIn && (
+            <p className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+              Signed in as this certificate&apos;s holder? Sign in to download
+              your PDF.
+            </p>
+          )}
         </div>
 
         {/* Footer note */}

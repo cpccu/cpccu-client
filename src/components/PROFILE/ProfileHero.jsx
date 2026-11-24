@@ -114,11 +114,11 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, jobPipeli
             </div>
 
             {isOwner && (
-              <div className="flex w-full flex-wrap gap-2 md:w-48 md:shrink-0 md:flex-col">
+              <div className="flex w-full flex-col sm:flex-row sm:flex-wrap gap-2 md:w-48 md:shrink-0 md:flex-col">
                 <button
                   type="button"
                   onClick={() => onEditToggle && onEditToggle()}
-                  className="inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-full"
+                  className="inline-flex h-10 w-full sm:w-auto sm:min-w-40 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-full"
                 >
                   <Edit3 className="size-4" aria-hidden="true" />
                   {editMode ? "Cancel Editing" : "Edit Profile"}
@@ -127,14 +127,14 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, jobPipeli
                   <button
                     type="button"
                     disabled
-                    className="inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 text-sm font-bold text-amber-700 md:w-full cursor-not-allowed opacity-80"
+                    className="inline-flex h-10 w-full sm:w-auto sm:min-w-40 items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 text-sm font-bold text-amber-700 md:w-full cursor-not-allowed opacity-80"
                   >
                     <BriefcaseBusiness className="size-4" aria-hidden="true" />
                     Requested for Job Pipeline
                   </button>
                 ) : jobPipelineStatus === "approved" ? (
                   <>
-                    <span className="inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-bold text-emerald-700 md:w-full">
+                    <span className="inline-flex h-10 w-full sm:w-auto sm:min-w-40 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-bold text-emerald-700 md:w-full">
                       <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                       </svg>
@@ -144,7 +144,7 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, jobPipeli
                       type="button"
                       onClick={onJobPipelineRemove}
                       disabled={isRemovingJobPipeline}
-                      className="inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-bold text-foreground transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-full disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-10 w-full sm:w-auto sm:min-w-40 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-bold text-foreground transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-full disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isRemovingJobPipeline ? "Removing..." : "Remove from Job Pipeline"}
                     </button>
@@ -154,7 +154,7 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, jobPipeli
                     type="button"
                     onClick={onJobPipelineOpen}
                     disabled={isRequestingJobPipeline}
-                    className="inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-bold text-foreground transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-full disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-10 w-full sm:w-auto sm:min-w-40 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-bold text-foreground transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-full disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <BriefcaseBusiness className="size-4" aria-hidden="true" />
                     {isRequestingJobPipeline ? "Requesting..." : "Show in Job Pipeline"}
@@ -163,7 +163,7 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, jobPipeli
                 <button
                   type="button"
                   onClick={onLogout}
-                  className="inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-lg border border-red-200 bg-card px-4 text-sm font-bold text-red-600 transition-colors hover:border-red-300 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-full"
+                  className="inline-flex h-10 w-full sm:w-auto sm:min-w-40 items-center justify-center gap-2 rounded-lg border border-red-200 bg-card px-4 text-sm font-bold text-red-600 transition-colors hover:border-red-300 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:w-full"
                 >
                   <LogOut className="size-4" aria-hidden="true" />
                   Logout

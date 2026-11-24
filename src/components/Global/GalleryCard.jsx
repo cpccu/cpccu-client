@@ -24,10 +24,11 @@ export default function GalleryCard({ Data }) {
 
   return Data ? (
     <>
-      <section className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {Data.map((item, index) => (
           <div
             key={index}
+            onClick={() => FullSize(item?.img)}
             className="w-full h-64 relative group cursor-pointer overflow-hidden rounded-lg shadow-custom hover:shadow-lg trans"
           >
             <img
