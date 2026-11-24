@@ -223,19 +223,19 @@ export function CertificatesContent() {
         recipientName: '',
         recipientStudentId: '',
         eventName: '',
-        placement: '1st',
+        placement: 'participant',
         contestType: 'programming-contest',
         batch: '',
         eventId: '',
-        templateKey: 'platinum-achievement',
+        templateKey: DEFAULT_CERTIFICATE_TEMPLATE_KEY,
         committee: '',
-        signatories: ['president', 'coordinator'],
+        signatories: ['president', 'vicePresident'],
     });
 
     const [bulkTemplateKey, setBulkTemplateKey] = useState(DEFAULT_CERTIFICATE_TEMPLATE_KEY);
     const [bulkCommitteeKey, setBulkCommitteeKey] = useState('');
-    const [bulkSignatories, setBulkSignatories] = useState(['president', 'coordinator']);
-    const [rankingsSignatories, setRankingsSignatories] = useState(['president', 'coordinator']);
+    const [bulkSignatories, setBulkSignatories] = useState(['president', 'vicePresident']);
+    const [rankingsSignatories, setRankingsSignatories] = useState(['president', 'vicePresident']);
 
     // The default template is only known after the template list arrives.
     useEffect(() => {

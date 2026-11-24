@@ -5,14 +5,8 @@ import { createPortal } from 'react-dom';
 import { Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { showErrorAlert, showSuccessAlert } from '@/lib/alerts';
-import {
-  downloadCertificateAchievementPdf,
-  downloadCertificateParticipationPdf,
-  downloadCertificatePdf,
-} from '@/lib/certificate-pdf';
+import { downloadCertificateParticipationPdf } from '@/lib/certificate-pdf';
 import { useLazyDownloadCertificateCredentialsQuery, useGetCertificateSignatoriesQuery } from '@/features/certificate/certificateApi';
-import { CertificateDocument } from './templates/certificate-document';
-import { CertificateAchievementOverlay } from './templates/certificate-achievement-overlay';
 import { CertificateParticipationOverlay } from './templates/certificate-participation-overlay';
 import { resolveSignatory } from '@/lib/certificate-signatories';
 
@@ -28,11 +22,6 @@ const WINNER_CERTIFICATE_TYPES = new Set([
   '2nd-runner-up',
 ]);
 
-const usesAchievementArtwork = (certificate, templateKey) =>
-  WINNER_CERTIFICATE_TYPES.has(certificate?.certificateType) &&
-  (templateKey === 'platinum-achievement' ||
-    (templateKey === 'platinum' &&
-      String(certificate?.contestName || '').includes('Beat the vibe')));
 
 /**
  * Turns an RTK Query rejection into a message a member can act on.
@@ -189,16 +178,7 @@ export function DownloadCertificateButton({
           throw new Error('The certificate has not finished rendering. Please try again.');
         }
 
-        const isParticipation =
-          exportPayload.certificate?.certificateType === 'participation';
-        const templateKey =
-          exportPayload.template?.key ||
-          exportPayload.certificate?.templateKey;
-        const downloadPdf = isParticipation
-          ? downloadCertificateParticipationPdf
-          : usesAchievementArtwork(exportPayload.certificate, templateKey)
-          ? downloadCertificateAchievementPdf
-          : downloadCertificatePdf;
+        const downloadPdf = downloadCertificateParticipationPdf;
 
         await downloadPdf(node, {
           fileName: exportPayload.fileName,
@@ -266,37 +246,12 @@ export function DownloadCertificateButton({
                 pointerEvents: 'none',
               }}
             >
-              {exportPayload.certificate?.certificateType === 'participation' ? (
-                <CertificateParticipationOverlay
-                  ref={exportRef}
-                  certificate={exportPayload.certificate}
-                  signatory={resolvedSignatory}
-                  exportId={toExportNodeId(certificate?.certificateId)}
-                />
-              ) : usesAchievementArtwork(
-                exportPayload.certificate,
-                exportPayload.template?.key ||
-                  exportPayload.certificate?.templateKey
-              ) ? (
-                <CertificateAchievementOverlay
-                  ref={exportRef}
-                  certificate={exportPayload.certificate}
-                  eventDate={exportPayload.eventDate}
-                  signatory={resolvedSignatory}
-                  exportId={toExportNodeId(certificate?.certificateId)}
-                />
-              ) : (
-                <CertificateDocument
-                  ref={exportRef}
-                  certificate={exportPayload.certificate}
-                  templateKey={
-                    exportPayload.template?.key ||
-                    exportPayload.certificate?.templateKey
-                  }
-                  signatory={resolvedSignatory}
-                  exportId={toExportNodeId(certificate?.certificateId)}
-                />
-              )}
+              <CertificateParticipationOverlay
+                ref={exportRef}
+                certificate={exportPayload.certificate}
+                signatory={resolvedSignatory}
+                exportId={toExportNodeId(certificate?.certificateId)}
+              />
             </div>,
             document.body
           )
