@@ -37,6 +37,25 @@ const formatParticipationDate = (value) => {
   }).format(date);
 };
 
+const getContestStyle = (name = '') => {
+  const len = name.length;
+  // Standard Canva size is 18.66 pt = 24.88 px (~24.9 px)
+  // For names like 'AI-POWERED WEB APP BUILDING & DEPLOYMENT HACKATHON 2026' (56 chars),
+  // a 660px container width wraps it cleanly into 2 lines.
+  // For extra-long contest names (> 58 or > 75 chars), the font size automatically
+  // steps down so it always stays strictly within the allotted 70px vertical space.
+  let fontSize = 24.9;
+  let lineHeight = 1.15;
+  if (len > 75) {
+    fontSize = 17.5;
+    lineHeight = 1.1;
+  } else if (len > 58) {
+    fontSize = 20.5;
+    lineHeight = 1.12;
+  }
+  return { fontSize, lineHeight };
+};
+
 function SignatoryBlock({ signatory, role, sigLeft, textLeft }) {
   const imageUrl = getSignatureImageUrl(signatory?.signatureUrl);
   const title = signatory?.title || role?.title || 'Signatory';
@@ -71,11 +90,11 @@ function SignatoryBlock({ signatory, role, sigLeft, textLeft }) {
         ) : null}
       </div>
 
-      {/* Designation under the signature line (Line at Y = 912, CPCCU at Y = 960) */}
+      {/* Designation under the signature line (moved down to top: 910px for balanced breathing room) */}
       <div
         style={{
           position: 'absolute',
-          top: 902,
+          top: 910,
           left: textLeft,
           width: 220,
           height: 32,
@@ -132,10 +151,7 @@ export const CertificateParticipationOverlay = forwardRef(
       [InstitudeInfo.fullName, InstitudeInfo.uniName].filter(Boolean).join(' ') ||
       'Competitive Programming Camp City University';
 
-    // Dynamic contest font size clamp so long titles never overflow into 'organized by...'
-    const contestLen = (view.contestName || '').length;
-    const contestFontSize =
-      contestLen <= 38 ? 24.9 : contestLen <= 52 ? 21.5 : 18.5;
+    const contestStyle = getContestStyle(view.contestName || '');
 
     return (
       <div
@@ -166,11 +182,11 @@ export const CertificateParticipationOverlay = forwardRef(
           }}
         />
 
-        {/* 2. Club Name: Poppins, 21.6 pt (28.8 px), color #101010, centered at X: 821.4 */}
+        {/* 2. Club Name: Poppins, 21.6 pt (28.8 px), color #000000, centered at X: 821.4 */}
         <div
           style={{
             position: 'absolute',
-            top: 160.5,
+            top: 150.5,
             left: 371.4,
             width: 900,
             height: 35,
@@ -180,7 +196,7 @@ export const CertificateParticipationOverlay = forwardRef(
             fontFamily: "'Poppins', sans-serif",
             fontSize: 28.8,
             fontWeight: 400,
-            color: '#101010',
+            color: '#000000',
             textAlign: 'center',
             whiteSpace: 'nowrap',
           }}
@@ -192,7 +208,7 @@ export const CertificateParticipationOverlay = forwardRef(
         <div
           style={{
             position: 'absolute',
-            top: 424,
+            top: 430,
             left: 371.4,
             width: 900,
             height: 96,
@@ -205,7 +221,7 @@ export const CertificateParticipationOverlay = forwardRef(
               max: 71.7,
               min: 44,
             }),
-            color: '#101010',
+            color: '#000000',
             lineHeight: 1,
             whiteSpace: 'nowrap',
           }}
@@ -213,26 +229,28 @@ export const CertificateParticipationOverlay = forwardRef(
           {view.recipientName}
         </div>
 
-        {/* 4. Contest Name: TeX Gyre Termes Bold, color #C80B0B, positioned cleanly above 'organized by...' */}
+        {/* 4. Contest Name: TeX Gyre Termes Bold, color #C80B0B, 2 lines wrapped, constrained within 70px height */}
         <div
           style={{
             position: 'absolute',
-            top: 616,
-            left: 341.4,
-            width: 960,
+            top: 618,
+            left: 508.5,
+            width: 660,
             height: 70,
+            maxHeight: 70,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
             fontFamily: "'TeX Gyre Termes', 'Times New Roman', Times, serif",
-            fontSize: contestFontSize,
+            fontSize: contestStyle.fontSize,
             fontWeight: 700,
             color: '#C80B0B',
-            lineHeight: 1.15,
+            lineHeight: contestStyle.lineHeight,
             textAlign: 'center',
             textTransform: 'uppercase',
+            wordWrap: 'break-word',
           }}
         >
           {view.contestName}
@@ -243,7 +261,7 @@ export const CertificateParticipationOverlay = forwardRef(
           <div
             style={{
               position: 'absolute',
-              top: 706,
+              top: 705,
               left: 787.2,
               width: 250,
               height: 34,
@@ -290,7 +308,7 @@ export const CertificateParticipationOverlay = forwardRef(
         <div
           style={{
             position: 'absolute',
-            top: 958,
+            top: 955,
             left: 824.0,
             width: 250,
             height: 27,
