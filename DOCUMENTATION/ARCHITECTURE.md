@@ -190,7 +190,7 @@ flowchart TD
 Auth, Users, Posts, Projects, PublicContent, Participation,
 AdminOverview, AdminMembers, AdminContent, AdminContributors,
 AdminStatistics, AdminCertificates, AdminEventRankings,
-CertificateTemplates, MyCertificates, AdminSystemSettings, AdminRoles
+CertificateTemplates, MyCertificates, AdminCertificateOptions, AdminSystemSettings, AdminRoles
 ```
 
 > ⚠️ Code quirk: `memberApi.js` provides a `Members` tag, but `Members` is **not** declared in `baseApi.tagTypes`.
@@ -536,7 +536,7 @@ See [CPCCU_Admin_Panel_Implementation_Documentation.md](./CPCCU_Admin_Panel_Impl
 | `participation.js` | Event participation helpers (see §20): the client mirror of the server's window resolver (`resolveWindowAction`, `resolveTeamRules`, `resolveRegistrationTarget`, `resolveSubmissionTarget`), submission state (`isSubmissionEditable`, `describeSubmissionStatus`), form normalizers (`normalizeTeamName`, `normalizeTechnologies`, `parseTechnologies`), `findActiveRegistration`, and `getParticipationErrorMessage` |
 | `participation-routes.js` | `IS_EVENT_ID` — the event-id shape guard shared by the three participation pages |
 | `dhaka-time.js` | Asia/Dhaka conversion and formatting for admin-entered and displayed times (see §19) |
-| `certificates/` | Certificate parsing/sorting/badges/permissions (see §8.4) |
+| `certificates/` | Certificate parsing/sorting/badges/permissions (see §8.4); dynamic badge formatting & fallback |
 | `certificates-data.js` | Static demo certificate dataset (`CERTIFICATES`, `CONTEST_NAMES`, `STATS`) |
 | `public-content.js` | Public content mappers (`chooseLiveItems`, `toPublicContributor`, `toPublicEvent`, `groupGalleryItemsByEvent`, ...) + GitHub username extraction |
 | `certificate-metadata.js` | Server-side metadata generation for `/certificate/[certificateId]` |

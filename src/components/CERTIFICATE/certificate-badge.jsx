@@ -43,6 +43,14 @@ const BADGE_CONFIG = {
     glowClass: "shadow-emerald-400/20",
     Icon: BookOpen,
   },
+  organizer: {
+    label: "Organizer",
+    colorClass: "text-purple-300",
+    bgClass: "bg-gradient-to-r from-purple-400/15 to-indigo-400/15",
+    borderClass: "border-purple-400/50",
+    glowClass: "shadow-purple-400/20",
+    Icon: Award,
+  },
 };
 
 const FALLBACK_BADGE = {
@@ -58,14 +66,20 @@ export function CertificateBadge({ type, className = "" }) {
   const normalizedType = type?.trim()?.toLowerCase();
   const config = BADGE_CONFIG[normalizedType] || FALLBACK_BADGE;
 
-  const { label, colorClass, bgClass, borderClass, glowClass, Icon } = config;
+  const { colorClass, bgClass, borderClass, glowClass, Icon } = config;
+  const label = config === FALLBACK_BADGE && normalizedType
+    ? normalizedType
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')
+    : config.label;
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border shadow-md ${colorClass} ${bgClass} ${borderClass} ${glowClass} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold border shadow-md shrink-0 max-w-full ${colorClass} ${bgClass} ${borderClass} ${glowClass} ${className}`}
     >
-      <Icon className="w-3.5 h-3.5" />
-      {label}
+      <Icon className="w-3.5 h-3.5 shrink-0" />
+      <span className="truncate">{label}</span>
     </span>
   );
 }

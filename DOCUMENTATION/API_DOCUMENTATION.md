@@ -22,7 +22,7 @@ Defined in `src/services/baseApi.js`.
   Auth, Users, Posts, Projects, PublicContent, Participation, AdminOverview,
   AdminMembers, AdminContent, AdminContributors, AdminStatistics,
   AdminCertificates, AdminEventRankings, CertificateTemplates, MyCertificates,
-  AdminSystemSettings, AdminRoles
+  AdminCertificateOptions, AdminSystemSettings, AdminRoles
   ```
 
 > ⚠️ `memberApi.js` provides a `Members` tag for `fetchMemberById`, but `Members` is **not** registered in `baseApi.tagTypes`.
@@ -207,8 +207,11 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
+| `/admin/certificates/options` | `GET` | Fetch custom placement & contest type options from database + historical data | None | Provides `AdminCertificateOptions` tag |
+| `/admin/certificates/options` | `POST` | Create/upsert new custom placement or contest type option | `{ category, label, value }` | Invalidates `AdminCertificateOptions` |
+| `/admin/certificates/options/:id` | `DELETE` | Remove custom certificate option | Path param `id` | Invalidates `AdminCertificateOptions` |
 | `/admin/certificates` | `GET` | Fetch certificates for admin panel | None | Provides `AdminCertificates` tag |
-| `/admin/certificates` | `POST` | Create certificate | `body` (optionally `eventId`, `templateKey`, `rank`) | Invalidates `AdminCertificates`, `AdminOverview` |
+| `/admin/certificates` | `POST` | Create certificate (optionally `eventId`, `templateKey`, `rank`, custom types auto-sync) | `body` | Invalidates `AdminCertificates`, `AdminOverview`, `AdminCertificateOptions` |
 | `/admin/certificates/:id` | `PATCH` | Update certificate | Path param `id`, `body` (optionally `eventId`, `templateKey`, `rank`) | Invalidates `AdminCertificates` |
 | `/admin/certificates/:id` | `DELETE` | Delete certificate | Path param `id` | Invalidates `AdminCertificates`, `AdminOverview` |
 | `/admin/certificate-templates` | `GET` | Fetch the template list + default key | None | Provides `CertificateTemplates` tag |

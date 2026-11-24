@@ -256,6 +256,26 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["AdminRoles"],
     }),
+    // ===== Certificate Options =====
+    getAdminCertificateOptions: builder.query({
+      query: () => "/admin/certificates/options",
+      providesTags: ["AdminCertificateOptions"],
+    }),
+    createAdminCertificateOption: builder.mutation({
+      query: (body) => ({
+        url: "/admin/certificates/options",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AdminCertificateOptions"],
+    }),
+    deleteAdminCertificateOption: builder.mutation({
+      query: (id) => ({
+        url: `/admin/certificates/options/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["AdminCertificateOptions"],
+    }),
   }),
 });
 
@@ -289,4 +309,7 @@ export const {
   useCreateAdminRoleMutation,
   useUpdateAdminRoleMutation,
   useToggleAdminRoleMutation,
+  useGetAdminCertificateOptionsQuery,
+  useCreateAdminCertificateOptionMutation,
+  useDeleteAdminCertificateOptionMutation,
 } = adminApi;

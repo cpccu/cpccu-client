@@ -11,13 +11,19 @@ const FALLBACK_CERTIFICATE_DESCRIPTION = 'Verify certificates issued by Competit
 const CERTIFICATE_TYPE_LABELS = {
   winner: 'Winner',
   'runner-up': 'Runner Up',
+  '2nd-runner-up': '2nd Runner Up',
   'top-performer': 'Top Performer',
   participation: 'Participation',
+  organizer: 'Organizer',
 };
 
 function formatCertificateType(type) {
   if (!type) return '';
-  return CERTIFICATE_TYPE_LABELS[type] || type.replace(/-/g, ' ');
+  if (CERTIFICATE_TYPE_LABELS[type]) return CERTIFICATE_TYPE_LABELS[type];
+  return type
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
 
 function getCertificateTypeLabel(certificate) {
