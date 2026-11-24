@@ -40,18 +40,18 @@ const formatParticipationDate = (value) => {
 const getContestStyle = (name = '') => {
   const len = name.length;
   // Standard Canva size is 18.66 pt = 24.88 px (~24.9 px)
-  // For names like 'AI-POWERED WEB APP BUILDING & DEPLOYMENT HACKATHON 2026' (56 chars),
-  // a 660px container width wraps it cleanly into 2 lines.
-  // For extra-long contest names (> 58 or > 75 chars), the font size automatically
-  // steps down so it always stays strictly within the allotted 70px vertical space.
+  // For names up to 60 chars (e.g. 'AI-POWERED WEB APP BUILDING & DEPLOYMENT HACKATHON 2026', 55 chars),
+  // a 650px container width wraps it cleanly into 2 lines.
+  // When a name is even longer (> 60 or > 80 chars) and cannot fit in 2 lines at 24.9px,
+  // the font size automatically steps down so it always stays centered within the 74px container.
   let fontSize = 24.9;
-  let lineHeight = 1.15;
-  if (len > 75) {
-    fontSize = 17.5;
-    lineHeight = 1.1;
-  } else if (len > 58) {
-    fontSize = 20.5;
-    lineHeight = 1.12;
+  let lineHeight = 1.20;
+  if (len > 80) {
+    fontSize = 16.5;
+    lineHeight = 1.10;
+  } else if (len > 60) {
+    fontSize = 20.0;
+    lineHeight = 1.15;
   }
   return { fontSize, lineHeight };
 };
@@ -90,7 +90,7 @@ function SignatoryBlock({ signatory, role, sigLeft, textLeft }) {
         ) : null}
       </div>
 
-      {/* Designation under the signature line (moved down to top: 910px for balanced breathing room) */}
+      {/* Designation under the signature line (Line at Y = 912, CPCCU at Y = 960) */}
       <div
         style={{
           position: 'absolute',
@@ -204,7 +204,7 @@ export const CertificateParticipationOverlay = forwardRef(
           {clubName}
         </div>
 
-        {/* 3. Recipient Name: Great Vibes, 53.8 pt (71.7 px), color #101010, resting on line at Y: 568 */}
+        {/* 3. Recipient Name: Great Vibes, 53.8 pt (71.7 px), color #000000, resting on line at Y: 568 */}
         <div
           style={{
             position: 'absolute',
@@ -229,31 +229,39 @@ export const CertificateParticipationOverlay = forwardRef(
           {view.recipientName}
         </div>
 
-        {/* 4. Contest Name: TeX Gyre Termes Bold, color #C80B0B, 2 lines wrapped, constrained within 70px height */}
+        {/* 4. Contest Name: Centered between 'has successfully participated in the' (ends at Y=614) and 'organized by...' (starts at Y=699).
+            Gap is 85px, text height is ~45px. With top: 598, text renders from Y=634 to Y=679, leaving exactly 20px gap above and 20px below. */}
         <div
           style={{
             position: 'absolute',
-            top: 618,
-            left: 508.5,
-            width: 660,
-            height: 70,
-            maxHeight: 70,
+            top: 598,
+            left: 513.5,
+            width: 650,
+            height: 74,
+            maxHeight: 74,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
-            fontFamily: "'TeX Gyre Termes', 'Times New Roman', Times, serif",
-            fontSize: contestStyle.fontSize,
-            fontWeight: 700,
-            color: '#C80B0B',
-            lineHeight: contestStyle.lineHeight,
-            textAlign: 'center',
-            textTransform: 'uppercase',
-            wordWrap: 'break-word',
           }}
         >
-          {view.contestName}
+          <div
+            style={{
+              width: '100%',
+              fontFamily: "'TeX Gyre Termes', 'Times New Roman', Times, serif",
+              fontSize: contestStyle.fontSize,
+              fontWeight: 700,
+              color: '#C80B0B',
+              lineHeight: contestStyle.lineHeight,
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+            }}
+          >
+            {view.contestName}
+          </div>
         </div>
 
         {/* 5. Issue Date: TeX Gyre Termes Regular, 21.0 pt (28.0 px), color #2B2E37, right after 'held on ' */}
