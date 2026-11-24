@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Link2, MoreHorizontal, Pencil, Plus, Search, Trash2, UserCog, Users, X } from 'lucide-react';
+import { Calendar, CalendarDays, Link2, MoreHorizontal, Pencil, Plus, Search, Trash2, UserCog, Users, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,9 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { showDeleteConfirm, showErrorAlert, showSuccessAlert } from '@/lib/alerts';
 import useAdminContent from '@/hooks/use-admin-content';
-import { useGetAdminMembersQuery } from '@/features/admin/adminApi';
+import { useGetAdminMembersQuery, useUpdateAdminCommitteeTenureMutation } from '@/features/admin/adminApi';
 import { useGetCertificateSignatoriesQuery } from '@/features/certificate/certificateApi';
 import { COMMITTEE_POSITIONS, getCommitteeStartYear, groupCommitteeMembers, isExecutivePosition } from '@/lib/committee';
+import { formatTenureRange, DEFAULT_COMMITTEE_TENURES } from '@/lib/committeeTenure';
 
 // The committee list is the server's registry, served by the signatories
 // endpoint — the client never repeats the six serials itself.
@@ -119,6 +120,12 @@ export function CommitteeContent() {
   const [accountTarget, setAccountTarget] = useState(null);
   const [accountSearch, setAccountSearch] = useState('');
   const [accountUserId, setAccountUserId] = useState('');
+  const [updateTenure, { isLoading: isUpdatingTenure }] = useUpdateAdminCommitteeTenureMutation();
+  const [tenureDialogOpen, setTenureDialogOpen] = useState(false);
+  const [tenureTarget, setTenureTarget] = useState(null);
+  const [tenureStartDate, setTenureStartDate] = useState('');
+  const [tenureEndDate, setTenureEndDate] = useState('');
+  const [tenureIsPresent, setTenureIsPresent] = useState(false);
 
   const committeeOptions = signatoriesResponse?.data?.committees || [];
   const siteMembers = membersResponse?.data || [];
@@ -334,6 +341,36 @@ export function CommitteeContent() {
     needsAccount ||
     !orderValid;
 
+  const openEditTenure = (group) => {
+    const fallback = DEFAULT_COMMITTEE_TENURES.find((d) => d.key === group.key);
+    const start = group.startDate || fallback?.startDate;
+    const end = group.endDate !== undefined ? group.endDate : fallback?.endDate;
+
+    setTenureTarget(group);
+    setTenureStartDate(start ? new Date(start).toISOString().split('T')[0] : '');
+    setTenureEndDate(end ? new Date(end).toISOString().split('T')[0] : '');
+    setTenureIsPresent(!end);
+    setTenureDialogOpen(true);
+  };
+
+  const handleSaveTenure = async () => {
+    if (!tenureTarget || !tenureStartDate) {
+      showErrorAlert('Invalid Date', 'Please provide a valid start date.');
+      return;
+    }
+    try {
+      await updateTenure({
+        key: tenureTarget.key,
+        startDate: tenureStartDate,
+        endDate: tenureIsPresent ? null : (tenureEndDate || null),
+      }).unwrap();
+      showSuccessAlert('Tenure Updated', `${tenureTarget.label} tenure period has been updated.`);
+      setTenureDialogOpen(false);
+    } catch (err) {
+      showErrorAlert('Update Failed', getErrorMessage(err));
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -398,17 +435,32 @@ export function CommitteeContent() {
             <Card key={group.key}>
               <CardContent className="p-0">
                 <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <h2 className="text-lg font-semibold tracking-tight">{group.label}</h2>
                     {isCurrent && <Badge>Current</Badge>}
                     <span className="text-sm text-muted-foreground">
                       {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
                     </span>
+                    <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
+                      <CalendarDays className="size-3.5 text-primary" />
+                      <span>
+                        {formatTenureRange(
+                          group.startDate || DEFAULT_COMMITTEE_TENURES.find((d) => d.key === group.key)?.startDate,
+                          group.endDate !== undefined ? group.endDate : DEFAULT_COMMITTEE_TENURES.find((d) => d.key === group.key)?.endDate
+                        )}
+                      </span>
+                    </div>
                   </div>
-                  <Button variant="outline" size="sm" className="gap-2" onClick={() => openCreate(group.key)}>
-                    <Plus className="size-4" />
-                    Add member
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openEditTenure(group)}>
+                      <Calendar className="size-3.5" />
+                      Edit Tenure
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-2" onClick={() => openCreate(group.key)}>
+                      <Plus className="size-4" />
+                      Add member
+                    </Button>
+                  </div>
                 </div>
 
                 {group.members.length === 0 ? (
@@ -636,6 +688,61 @@ export function CommitteeContent() {
             <Button variant="outline" onClick={() => setAccountDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAccountSave} disabled={!accountUserId}>
               {accountTarget && getLinkedUserId(accountTarget) ? 'Reassign account' : 'Link account'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={tenureDialogOpen} onOpenChange={setTenureDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="size-5 text-primary" />
+              Edit Committee Tenure
+            </DialogTitle>
+            <DialogDescription>
+              Set the tenure period for <strong>{tenureTarget?.label}</strong>. These dates determine which certificates automatically carry this committee&apos;s signatures based on the event date.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="tenure-start">Start Date (শুরুর তারিখ)</Label>
+              <Input
+                id="tenure-start"
+                type="date"
+                value={tenureStartDate}
+                onChange={(e) => setTenureStartDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="tenure-end">End Date (মেয়াদ শেষ)</Label>
+              <Input
+                id="tenure-end"
+                type="date"
+                disabled={tenureIsPresent}
+                value={tenureIsPresent ? '' : tenureEndDate}
+                onChange={(e) => setTenureEndDate(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                id="tenure-present"
+                type="checkbox"
+                className="size-4 rounded border-gray-300 text-primary focus:ring-primary"
+                checked={tenureIsPresent}
+                onChange={(e) => setTenureIsPresent(e.target.checked)}
+              />
+              <Label htmlFor="tenure-present" className="cursor-pointer text-sm font-normal">
+                Currently running / Present (বর্তমান রানিং কমিটি)
+              </Label>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setTenureDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTenure} disabled={isUpdatingTenure || !tenureStartDate}>
+              {isUpdatingTenure ? 'Saving...' : 'Save Tenure'}
             </Button>
           </DialogFooter>
         </DialogContent>

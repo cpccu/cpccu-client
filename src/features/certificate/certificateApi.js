@@ -47,6 +47,7 @@ export const certificateApi = baseApi.injectEndpoints({
     }),
     getCertificateSignatories: build.query({
       query: () => "/certificates/signatories",
+      providesTags: ["Signatories"],
     }),
     getMyCertificates: build.query({
       query: () => "/certificates/me",

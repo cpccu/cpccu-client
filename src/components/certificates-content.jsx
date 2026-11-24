@@ -18,7 +18,9 @@ import { isValidStudentId, detectScientificNotation, normalizeStudentId } from '
 import { getCertificatesFromResponse } from '@/lib/certificates';
 import * as XLSX from 'xlsx';
 import {
+    useBulkDeleteAdminCertificatesMutation,
     useBulkIssueAdminCertificatesMutation,
+    useBulkUpdateAdminCertificatesMutation,
     useCreateAdminCertificateMutation,
     useCreateAdminCertificateOptionMutation,
     useDeleteAdminCertificateMutation,
@@ -30,6 +32,7 @@ import {
     useUpdateAdminCertificateMutation
 } from '@/features/admin/adminApi';
 import { useGetCertificateSignatoriesQuery } from '@/features/certificate/certificateApi';
+import { resolveCommitteeKeyByDate, DEFAULT_COMMITTEE_TENURES } from '@/lib/committeeTenure';
 import { AdminDataTable } from '@/components/admin-data-table';
 import useAdminContent from '@/hooks/use-admin-content';
 import { CertificateTemplatePicker } from '@/components/CERTIFICATE/certificate-template-preview';
@@ -191,6 +194,8 @@ export function CertificatesContent() {
     const [createCertificate] = useCreateAdminCertificateMutation();
     const [updateCertificate] = useUpdateAdminCertificateMutation();
     const [deleteCertificate] = useDeleteAdminCertificateMutation();
+    const [bulkUpdateCertificates, { isLoading: isBulkUpdating }] = useBulkUpdateAdminCertificatesMutation();
+    const [bulkDeleteCertificates, { isLoading: isBulkDeleting }] = useBulkDeleteAdminCertificatesMutation();
     const [bulkIssueCertificates, { isLoading: isBulkIssuing }] = useBulkIssueAdminCertificatesMutation();
     const [loadEventRankings, { isFetching: isLoadingRankings }] = useLazyGetAdminEventRankingsQuery();
     const [submitEventRankings, { isLoading: isSubmittingRankings }] = useSubmitAdminEventRankingsMutation();
@@ -199,6 +204,24 @@ export function CertificatesContent() {
     const { data: templatesResponse } = useGetAdminCertificateTemplatesQuery();
     const { data: signatoriesResponse } = useGetCertificateSignatoriesQuery();
     const committeeOptions = signatoriesResponse?.data?.committees || [];
+    const [selectedCertIds, setSelectedCertIds] = useState([]);
+    const [bulkEditDialogOpen, setBulkEditDialogOpen] = useState(false);
+    const [bulkEditFields, setBulkEditFields] = useState({
+        contestName: false,
+        placement: false,
+        contestType: false,
+        eventDate: false,
+        batch: false,
+        committee: false,
+    });
+    const [bulkEditForm, setBulkEditForm] = useState({
+        contestName: '',
+        placement: 'participation',
+        contestType: 'programming-contest',
+        eventDate: '',
+        batch: '',
+        committee: '',
+    });
     const [searchQuery, setSearchQuery] = useState('');
     const [placementFilter, setPlacementFilter] = useState('all');
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -677,11 +700,16 @@ export function CertificatesContent() {
      */
     const handleFormEventChange = (eventId) => {
         const event = eventsById.get(eventId);
+        const autoComm = event?.eventStartAt
+            ? resolveCommitteeKeyByDate(event.eventStartAt, committeeOptions)
+            : '';
         setFormData((prev) => ({
             ...prev,
             eventId,
             eventName: event?.title || prev.eventName,
             contestType: event ? contestTypeForEvent(event) : prev.contestType,
+            committee: autoComm || prev.committee,
+            eventDate: event?.eventStartAt ? new Date(event.eventStartAt).toISOString().split('T')[0] : prev.eventDate,
         }));
     };
     const handleSave = async () => {
@@ -869,6 +897,19 @@ export function CertificatesContent() {
         setBulkSignatories(['president', 'vicePresident']);
     };
 
+    const handleBulkEventChange = (id) => {
+        setBulkEventId(id);
+        if (id) {
+            const event = eventsById.get(id);
+            if (event?.eventStartAt) {
+                const autoComm = resolveCommitteeKeyByDate(event.eventStartAt, committeeOptions);
+                if (autoComm) {
+                    setBulkCommitteeKey(autoComm);
+                }
+            }
+        }
+    };
+
     // ===== Event rankings → certificates =====
 
     const selectedRankingsEvent = rankingsEventId
@@ -1030,7 +1071,123 @@ export function CertificatesContent() {
         }
     };
 
+    const handleToggleSelect = (certId) => {
+        setSelectedCertIds((prev) =>
+            prev.includes(certId) ? prev.filter((id) => id !== certId) : [...prev, certId]
+        );
+    };
+
+    const handleToggleSelectAll = () => {
+        if (selectedCertIds.length === filteredCerts.length) {
+            setSelectedCertIds([]);
+        } else {
+            setSelectedCertIds(filteredCerts.map((c) => c.id));
+        }
+    };
+
+    const handleOpenBulkEdit = () => {
+        setBulkEditFields({
+            contestName: false,
+            placement: false,
+            contestType: false,
+            eventDate: false,
+            batch: false,
+            committee: false,
+        });
+        setBulkEditForm({
+            contestName: '',
+            placement: 'participation',
+            contestType: 'programming-contest',
+            eventDate: '',
+            batch: '',
+            committee: '',
+        });
+        setBulkEditDialogOpen(true);
+    };
+
+    const handleSaveBulkEdit = async () => {
+        const anyFieldSelected = Object.values(bulkEditFields).some(Boolean);
+        if (!anyFieldSelected) {
+            showErrorAlert('No Fields Selected', 'Please check at least one field to update across selected certificates.');
+            return;
+        }
+
+        const updates = {};
+        if (bulkEditFields.contestName) updates.contestName = bulkEditForm.contestName.trim();
+        if (bulkEditFields.placement) {
+            updates.certificateType = bulkEditForm.placement;
+            updates.placement = bulkEditForm.placement;
+        }
+        if (bulkEditFields.contestType) updates.contestType = bulkEditForm.contestType;
+        if (bulkEditFields.eventDate) updates.eventDate = bulkEditForm.eventDate;
+        if (bulkEditFields.batch) updates.batch = bulkEditForm.batch.trim();
+        if (bulkEditFields.committee) updates.committee = bulkEditForm.committee;
+
+        try {
+            const res = await bulkUpdateCertificates({
+                ids: selectedCertIds,
+                updates,
+            }).unwrap();
+            showSuccessAlert(
+                'Bulk Update Completed',
+                `${res.data?.modified ?? selectedCertIds.length} certificate(s) updated successfully.`
+            );
+            setSelectedCertIds([]);
+            setBulkEditDialogOpen(false);
+        } catch (err) {
+            console.error('Bulk update error:', err);
+            showErrorAlert('Bulk Update Failed', err?.data?.message || err?.message || 'Could not update certificates.');
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedCertIds.length === 0) return;
+
+        const result = await showDeleteConfirm(`${selectedCertIds.length} selected certificate(s)`);
+        if (result.isConfirmed) {
+            try {
+                const res = await bulkDeleteCertificates({ ids: selectedCertIds }).unwrap();
+                showSuccessAlert(
+                    'Deleted',
+                    `${res.data?.deletedCount ?? selectedCertIds.length} certificate(s) permanently deleted.`
+                );
+                setSelectedCertIds([]);
+            } catch (err) {
+                console.error('Bulk delete error:', err);
+                showErrorAlert('Delete Failed', err?.data?.message || err?.message || 'Could not delete certificates.');
+            }
+        }
+    };
+
     const columns = [
+        {
+            key: 'select',
+            header: (
+                <div className="flex items-center justify-center px-1">
+                    <input
+                        type="checkbox"
+                        className="size-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        checked={filteredCerts.length > 0 && selectedCertIds.length === filteredCerts.length}
+                        onChange={handleToggleSelectAll}
+                        aria-label="Select all certificates"
+                    />
+                </div>
+            ),
+            export: false,
+            className: 'w-10 px-2 text-center',
+            cellClassName: 'w-10 px-2 text-center',
+            cell: (cert) => (
+                <div className="flex items-center justify-center">
+                    <input
+                        type="checkbox"
+                        className="size-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        checked={selectedCertIds.includes(cert.id)}
+                        onChange={() => handleToggleSelect(cert.id)}
+                        aria-label={`Select certificate ${cert.certificateId}`}
+                    />
+                </div>
+            ),
+        },
         {
             key: 'certificateId',
             header: 'Certificate ID',
@@ -1411,6 +1568,49 @@ export function CertificatesContent() {
             </Button>
           </div>
         </div>
+
+        {selectedCertIds.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3.5 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <Badge variant="default" className="px-2.5 py-0.5 text-xs font-semibold">
+                {selectedCertIds.length} Selected
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                ({selectedCertIds.length} টি সার্টিফিকেট নির্বাচন করা হয়েছে)
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-xs font-medium border-primary/30 hover:bg-primary/10"
+                onClick={handleOpenBulkEdit}
+              >
+                <Edit2 className="size-3.5 text-primary" />
+                Bulk Edit (বাল্ক এডিট)
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8 gap-1.5 text-xs font-medium"
+                onClick={handleBulkDelete}
+                disabled={isBulkDeleting}
+              >
+                <Trash2 className="size-3.5" />
+                {isBulkDeleting ? 'Deleting...' : 'Bulk Delete (মুছে ফেলুন)'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => setSelectedCertIds([])}
+              >
+                Deselect All
+              </Button>
+            </div>
+          </div>
+        )}
+
         <AdminDataTable
           columns={columns}
           rows={filteredCerts}
@@ -1746,7 +1946,7 @@ export function CertificatesContent() {
                 <EventCombobox
                   events={events}
                   value={bulkEventId}
-                  onChange={setBulkEventId}
+                  onChange={handleBulkEventChange}
                   placeholder="Link an event (optional)"
                   allowNone
                   noneLabel="No linked event"
@@ -1890,6 +2090,216 @@ export function CertificatesContent() {
             >
               {isBulkIssuing ? <Loader2 className="size-4 animate-spin"/> : null}
               {bulkSuccessSummary ? 'Issued' : isBulkIssuing ? 'Issuing…' : 'Issue Certificates'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== Bulk Edit Certificates Dialog ===== */}
+      <Dialog open={bulkEditDialogOpen} onOpenChange={setBulkEditDialogOpen}>
+        <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit2 className="size-5 text-primary" />
+              Bulk Edit Certificates ({selectedCertIds.length} Selected)
+            </DialogTitle>
+            <DialogDescription>
+              Check the fields you want to update across all {selectedCertIds.length} selected certificates. Only checked fields will be modified.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-4 py-3">
+            {/* 1. Contest Name */}
+            <div className="rounded-lg border p-3.5 space-y-2.5 bg-muted/10">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="bulk-edit-contestName"
+                  className="size-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  checked={bulkEditFields.contestName}
+                  onChange={(e) => setBulkEditFields((prev) => ({ ...prev, contestName: e.target.checked }))}
+                />
+                <Label htmlFor="bulk-edit-contestName" className="cursor-pointer font-medium text-sm">
+                  Update Event / Contest Name (ইভেন্টের নাম)
+                </Label>
+              </div>
+              {bulkEditFields.contestName && (
+                <Input
+                  value={bulkEditForm.contestName}
+                  onChange={(e) => setBulkEditForm((prev) => ({ ...prev, contestName: e.target.value }))}
+                  placeholder="e.g. AI-POWERED WEB APP BUILDING & DEPLOYMENT HACKATHON 2026"
+                  className="text-sm bg-background"
+                />
+              )}
+            </div>
+
+            {/* 2. Placement / Type */}
+            <div className="rounded-lg border p-3.5 space-y-2.5 bg-muted/10">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="bulk-edit-placement"
+                  className="size-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  checked={bulkEditFields.placement}
+                  onChange={(e) => setBulkEditFields((prev) => ({ ...prev, placement: e.target.checked }))}
+                />
+                <Label htmlFor="bulk-edit-placement" className="cursor-pointer font-medium text-sm">
+                  Update Placement / Certificate Type (প্লেসমেন্ট)
+                </Label>
+              </div>
+              {bulkEditFields.placement && (
+                <Select
+                  value={bulkEditForm.placement}
+                  onValueChange={(val) => setBulkEditForm((prev) => ({ ...prev, placement: val }))}
+                >
+                  <SelectTrigger className="text-sm bg-background">
+                    <SelectValue placeholder="Select placement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1st">1st Place</SelectItem>
+                    <SelectItem value="2nd">2nd Place</SelectItem>
+                    <SelectItem value="3rd">3rd Place</SelectItem>
+                    <SelectItem value="participant">Participant</SelectItem>
+                    <SelectItem value="completion">Completion</SelectItem>
+                    {customPlacements.map((cp) => (
+                      <SelectItem key={cp.value} value={cp.value}>
+                        {cp.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* 3. Contest Type */}
+            <div className="rounded-lg border p-3.5 space-y-2.5 bg-muted/10">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="bulk-edit-contestType"
+                  className="size-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  checked={bulkEditFields.contestType}
+                  onChange={(e) => setBulkEditFields((prev) => ({ ...prev, contestType: e.target.checked }))}
+                />
+                <Label htmlFor="bulk-edit-contestType" className="cursor-pointer font-medium text-sm">
+                  Update Contest Type (কন্টেস্ট টাইপ)
+                </Label>
+              </div>
+              {bulkEditFields.contestType && (
+                <Select
+                  value={bulkEditForm.contestType}
+                  onValueChange={(val) => setBulkEditForm((prev) => ({ ...prev, contestType: val }))}
+                >
+                  <SelectTrigger className="text-sm bg-background">
+                    <SelectValue placeholder="Select contest type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="programming-contest">Programming Contest</SelectItem>
+                    <SelectItem value="hackathon">Hackathon</SelectItem>
+                    <SelectItem value="workshop">Workshop</SelectItem>
+                    <SelectItem value="article-writing">Article Writing Contest</SelectItem>
+                    {customContestTypes.map((ct) => (
+                      <SelectItem key={ct.value} value={ct.value}>
+                        {ct.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* 4. Event Date */}
+            <div className="rounded-lg border p-3.5 space-y-2.5 bg-muted/10">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="bulk-edit-eventDate"
+                  className="size-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  checked={bulkEditFields.eventDate}
+                  onChange={(e) => setBulkEditFields((prev) => ({ ...prev, eventDate: e.target.checked }))}
+                />
+                <Label htmlFor="bulk-edit-eventDate" className="cursor-pointer font-medium text-sm">
+                  Update Event Date (ইভেন্টের তারিখ)
+                </Label>
+              </div>
+              {bulkEditFields.eventDate && (
+                <Input
+                  type="date"
+                  value={bulkEditForm.eventDate}
+                  onChange={(e) => setBulkEditForm((prev) => ({ ...prev, eventDate: e.target.value }))}
+                  className="text-sm bg-background"
+                />
+              )}
+            </div>
+
+            {/* 5. Batch */}
+            <div className="rounded-lg border p-3.5 space-y-2.5 bg-muted/10">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="bulk-edit-batch"
+                  className="size-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  checked={bulkEditFields.batch}
+                  onChange={(e) => setBulkEditFields((prev) => ({ ...prev, batch: e.target.checked }))}
+                />
+                <Label htmlFor="bulk-edit-batch" className="cursor-pointer font-medium text-sm">
+                  Update Batch (ব্যাচ)
+                </Label>
+              </div>
+              {bulkEditFields.batch && (
+                <Input
+                  value={bulkEditForm.batch}
+                  onChange={(e) => setBulkEditForm((prev) => ({ ...prev, batch: e.target.value }))}
+                  placeholder="e.g. 2022, 2023"
+                  className="text-sm bg-background"
+                />
+              )}
+            </div>
+
+            {/* 6. Committee */}
+            <div className="rounded-lg border p-3.5 space-y-2.5 bg-muted/10">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="bulk-edit-committee"
+                  className="size-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  checked={bulkEditFields.committee}
+                  onChange={(e) => setBulkEditFields((prev) => ({ ...prev, committee: e.target.checked }))}
+                />
+                <Label htmlFor="bulk-edit-committee" className="cursor-pointer font-medium text-sm">
+                  Update Committee (কমিটি)
+                </Label>
+              </div>
+              {bulkEditFields.committee && (
+                <Select
+                  value={bulkEditForm.committee || '__none__'}
+                  onValueChange={(val) => setBulkEditForm((prev) => ({ ...prev, committee: val === '__none__' ? '' : val }))}
+                >
+                  <SelectTrigger className="text-sm bg-background">
+                    <SelectValue placeholder="Select a committee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Default (Auto-detect by event date)</SelectItem>
+                    {committeeOptions.map((c) => (
+                      <SelectItem key={c.key} value={c.key}>
+                        {c.label || c.key}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setBulkEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveBulkEdit}
+              disabled={isBulkUpdating || !Object.values(bulkEditFields).some(Boolean)}
+            >
+              {isBulkUpdating ? 'Updating...' : `Update ${selectedCertIds.length} Certificates`}
             </Button>
           </DialogFooter>
         </DialogContent>

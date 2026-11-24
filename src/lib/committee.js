@@ -157,10 +157,13 @@ export function groupCommitteeMembers(
 
   const ensureGroup = (key, label) => {
     if (!groups.has(key)) {
+      const canonicalEntry = canonical.find((entry) => entry.key === key);
       groups.set(key, {
         key,
         label: label || labels.get(key) || key,
         startYear: getCommitteeStartYear(key),
+        startDate: canonicalEntry?.startDate || null,
+        endDate: canonicalEntry?.endDate !== undefined ? canonicalEntry.endDate : null,
         members: [],
       });
     }

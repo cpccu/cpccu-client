@@ -276,6 +276,38 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["AdminCertificateOptions"],
     }),
+    bulkUpdateAdminCertificates: builder.mutation({
+      query: (body) => ({
+        url: "/admin/certificates/bulk-update",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: [
+        "AdminCertificates",
+        "AdminOverview",
+        "MyCertificates",
+      ],
+    }),
+    bulkDeleteAdminCertificates: builder.mutation({
+      query: (body) => ({
+        url: "/admin/certificates/bulk-delete",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [
+        "AdminCertificates",
+        "AdminOverview",
+        "MyCertificates",
+      ],
+    }),
+    updateAdminCommitteeTenure: builder.mutation({
+      query: ({ key, ...body }) => ({
+        url: `/admin/committees/${key}/tenure`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Signatories", "AdminContent"],
+    }),
   }),
 });
 
@@ -298,6 +330,9 @@ export const {
   useUpdateAdminContentMutation,
   useGetAdminCertificateTemplatesQuery,
   useBulkIssueAdminCertificatesMutation,
+  useBulkUpdateAdminCertificatesMutation,
+  useBulkDeleteAdminCertificatesMutation,
+  useUpdateAdminCommitteeTenureMutation,
   useGetAdminEventRankingsQuery,
   useLazyGetAdminEventRankingsQuery,
   useSubmitAdminEventRankingsMutation,
