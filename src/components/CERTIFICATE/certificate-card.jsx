@@ -81,13 +81,28 @@ export function CertificateCard({ certificate }) {
       />
 
       <div className="relative p-4 sm:p-6 space-y-5">
-        {/* The certificate itself, scaled down to the card width */}
+        {/* Certificate Recipient & Contest Info (rendered in place of full preview) */}
+        <div className="space-y-1 min-w-0">
+          <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">
+            This certifies that
+          </p>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground break-words">
+            {certificate.recipientName}
+          </h2>
+          <p className="text-sm text-primary font-semibold break-words">
+            {certificate.contestName}
+          </p>
+        </div>
+
+        {/* The certificate preview is disabled per user requirements - direct download only */}
+        {/*
         <CertificatePreview
           certificate={certificate}
           templateKey={certificate.templateKey}
           signatory={signatory}
           className="rounded-xl border border-border/60 bg-white shadow-sm"
         />
+        */}
 
         {certificate.batch && (
           <span className="text-xs text-primary font-semibold inline-block px-2 py-1 bg-primary/10 rounded-md">
@@ -95,13 +110,13 @@ export function CertificateCard({ certificate }) {
           </span>
         )}
 
-        {/* Details grid */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Details grid - responsive grid-cols-1 on mobile to prevent data overflow */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/40">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Hash className="w-4 h-4 text-primary" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground">Certificate ID</p>
               <p className="text-sm font-mono font-bold text-foreground break-all">
                 {certificate.certificateId}
@@ -112,7 +127,7 @@ export function CertificateCard({ certificate }) {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <User className="w-4 h-4 text-primary" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground">Student ID</p>
               <p className="text-sm font-mono font-bold text-foreground break-all">
                 {certificate.recipientId}
@@ -123,7 +138,7 @@ export function CertificateCard({ certificate }) {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <CalendarDays className="w-4 h-4 text-primary" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground">Issue Date</p>
               <p className="text-sm font-bold text-foreground">
                 {formattedDate}
@@ -134,7 +149,7 @@ export function CertificateCard({ certificate }) {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Code2 className="w-4 h-4 text-primary" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground">Issued By</p>
               <p className="text-sm font-bold text-foreground">
                 {certificate.issuedBy}
