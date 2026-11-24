@@ -312,7 +312,7 @@ Visitors can view all sections; owner-only controls (edit, image upload, project
 
 | Endpoint | API | Auth |
 | --- | --- | --- |
-| `GET /certificates/verify?certificateId=&recipientName=&recipientId=` | `certificateApi.verifyCertificate` | No (public — backend attaches no auth requirement; a token is sent only if one exists) |
+| `GET /certificates/verify?certificateId=&recipientName=&recipientId=` | `certificateApi.verifyCertificate` | No (public — backend attaches no auth requirement; a token is sent only if one exists; supports `source=profile` to bypass verification logging) |
 | `GET /certificates/stats` | `certificateApi.getCertificateStats` | No (public) |
 | `GET /certificates/recent` | `certificateApi.getRecentCertificates` | No (public) |
 | `GET /certificates/templates` | `certificateApi.getCertificateTemplates` | No (public) |
@@ -321,6 +321,8 @@ Visitors can view all sections; owner-only controls (edit, image upload, project
 | `GET /verify/:certificateId` | `publicApi.verifyCertificatePublic` | No |
 | `GET /admin/certificate-templates` | `adminApi.getAdminCertificateTemplates` | Yes (admin) |
 | `POST /admin/certificates/bulk` | `adminApi.bulkIssueAdminCertificates` | Yes (admin) |
+| `PATCH /admin/certificates/bulk-update` | `adminApi.bulkUpdateAdminCertificates` | Yes (admin) |
+| `POST /admin/certificates/bulk-delete` | `adminApi.bulkDeleteAdminCertificates` | Yes (admin) |
 | `GET /admin/events/:eventId/rankings` | `adminApi.getAdminEventRankings` | Yes (admin) |
 | `POST /admin/events/:eventId/rankings` | `adminApi.submitAdminEventRankings` | Yes (admin) |
 
@@ -397,6 +399,8 @@ Ownership gate: **the server decides, and the client asks it.** The download but
 1. **Issue Certificate** — a single record; the dialog can link an Event (which fills the contest name/type) and pick a template.
 2. **Bulk Issue** — one XLSX upload, one `POST /admin/certificates/bulk` request for the whole batch. The response reports `{ created, skipped }` per row instead of failing the batch; the dialog shows the skipped count and reasons. With an event selected the sheet's contest columns are ignored and the event's title/type win.
 3. **Event Rankings → Certificates** — the placings of one event, submitted as `POST /admin/events/:eventId/rankings`. A rank maps to a certificate type by default (1 → winner, 2 → runner-up, 3 → 2nd-runner-up, 4+ → participation) with an admin override, and re-submitting updates the certificate behind an existing rank instead of duplicating it. Generating before the event has ended is allowed, but the section says so.
+4. **Bulk Update & Delete** — `PATCH /admin/certificates/bulk-update` and `POST /admin/certificates/bulk-delete` allow multi-certificate updates (e.g. event dates, template keys, signatories) and batch removals.
+5. **Event Date & Automatic Signatory Resolution** — Certificates record `eventDate` (the event day). The system queries committee tenures (`startDate` to `endDate`) and selects the active President and Vice-President as default signatories automatically.
 
 The per-row **Download** action is role-gated. A participation row downloads the member's encrypted PDF through the **member** endpoint (`GET /certificates/:certificateId/download`), which lets an **admin** download anybody's certificate but 403s a moderator or a mentor — so the entry is hidden for a non-admin and the page says in plain text that the download is admin-only. A non-participation row's Download is a different thing: it opens the public certificate page for printing, and that stays available to every admin-panel role.
 
@@ -507,17 +511,17 @@ flowchart LR
 | Dashboard | `GET /admin/overview` | Live stats + Recharts (area, bar, pie) |
 | Members | `GET/POST/PATCH/DELETE /admin/members` | Approval (`memberStatus` — see §20.5), status, official role assignment |
 | Posts | Generic content `posts` | Title, content, cover image, status |
-| Events | Generic content `events` | Date phases, rewards, rules, buttons. Excludes hackathon rows from the public list |
+| Events | Generic content `events` | Date phases, rewards, rules, buttons. Excludes hackathon rows from public list. Sorted automatically by `eventStartAt` desc (display order deprecated). Dhaka time input helper |
 | Hackathon | Generic content `events` (same endpoint, no new admin route) | Visibility toggle, rule book, problem set, CTA label, Dhaka-time schedule |
 | Participation | `GET /admin/participation/{registrations,submissions}` + `PATCH /admin/participation/submissions/:id` | Registration roster + submission review queue (per event), shortlist/reject with `reviewNote`. Admin reads+writes; moderator reads; the review action is gated on role in the component |
 | Gallery | Generic content `gallery` + `gallery-events` | Image upload, event grouping |
-| Certificates | `GET/POST/PATCH/DELETE /admin/certificates` | Issue, bulk issue, delete. The per-row **Download** of a participation certificate is admin-only (the member endpoint 403s a moderator or a mentor) |
+| Certificates | `GET/POST/PATCH/DELETE /admin/certificates` | Issue, bulk issue, bulk update, bulk delete. The per-row **Download** of a participation certificate is admin-only (the member endpoint 403s a moderator or a mentor) |
 | Jobs | `GET /admin/content/profiles` | Developer profile review |
 | Alumni | Generic content `alumni` | Alumni records with job history |
 | Contributors | `GET/PATCH /admin/contributors` (GitHub Contents API) | GitHub-synced records — read-only GitHub fields, edit `batch`/`linkedin`; role fixed as Contributor |
 | Donators | Generic content `donators` | Donator recognition |
-| Committees | Generic content `committees` | Committee members grouped by the committee serial (`committeeKey`); the committee list comes from `GET /certificates/signatories`, and an executive position requires a linked user account |
-| Statistics | `GET /admin/statistics` | Live stats aggregated from real data sources |
+| Committees | Generic content `committees` | Committee members grouped by committee serial (`committeeKey`). Committee tenures (`startDate`, `endDate`) stored and editable via `PATCH /admin/committees/:key/tenure`, powering automated event signatory matching |
+| Statistics | `GET /admin/statistics` | Live stats aggregated from real data sources (members, gallery, events, visitors, certificates, verifications, participants, projects, posts, hackathons). Verification logging excludes profile visits (`source=profile`) |
 | Audit Logs | Generic content `audit-logs` (read-only) | Admin action log |
 | Messages | Generic content `messages` | Contact message triage |
 | Account Settings | `userApi` + auth | Profile + password |

@@ -17,7 +17,7 @@ import { baseApi } from "@/services/baseApi";
 export const certificateApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     verifyCertificate: build.query({
-      query: ({ certificateId, recipientName, recipientId }) => {
+      query: ({ certificateId, recipientName, recipientId, source }) => {
         const params = new URLSearchParams();
 
         if (certificateId?.trim()) {
@@ -30,6 +30,10 @@ export const certificateApi = baseApi.injectEndpoints({
 
         if (recipientId?.trim()) {
           params.append("recipientId", recipientId.trim());
+        }
+
+        if (source?.trim()) {
+          params.append("source", source.trim());
         }
 
         return `/certificates/verify?${params.toString()}`;

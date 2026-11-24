@@ -183,13 +183,15 @@ picking an account PATCHes the member with that `userId` and its existing
 position, keeping its committee and order. A linked member gets **Reassign
 account** from the row menu, which opens the account picker alone.
 
-### Committee serials
+### Committee serials & tenures
 
 The committee serials come from the server's registry, served by
 `GET /api/v1/certificates/signatories` — the client never repeats the list.
 The admin panel reads it with `useGetCertificateSignatoriesQuery()` and offers
 every committee in the "Committee" select; the public `/committee` page uses
 the same list to order the committees chronologically.
+
+Each committee also maintains tenure dates (`startDate` and `endDate`) persisted in the `Committee` model. Administrators can edit tenure boundaries via `PATCH /api/v1/admin/committees/:key/tenure`. These dates power automatic signatory detection (President & Vice President) when issuing or updating certificates for events that occurred during that committee's term.
 
 ### Executives must have a user account
 
@@ -233,18 +235,21 @@ The public `/alumni` page reads live data from `/api/v1/content/alumni` and fall
 
 Events are managed at `/admin/events` and shown publicly with the same `UpComingEventCard` structure used by the previous JSON data.
 
+**Automated Date-Based Sorting:**
+Events are sorted chronologically by `eventStartAt` in descending order (newest events first, older events behind) across both the public events page and the admin panel. Explicit manual display ordering (`order`) is deprecated and no longer required.
+
 Important event fields:
 - `eventHeadLine1`: public card headline
 - `description`: public card body text
-- `eventStartAt`: event start time
+- `eventStartAt`: event start time (stored as ISO UTC, edited in Dhaka time UTC+6)
 - `eventEndAt`: event end time
+- `totalParticipants`: aggregate or recorded participant count
 - `eventHeadLine2`: reward heading
 - `reward`: reward/prize details
 - `eventHeadLine3`: rules heading
 - `rules1`, `rules2`, `rules3`, `rules4`: public card rules
 - `btnText`, `btnLink`: first public card button
 - `btnText1`, `btnLink1`: second public card button
-- `order`: page display order
 
 The public card still computes the three phases from `eventStartAt` and `eventEndAt` (mapped to `startAt`/`endAt` by `toPublicEvent`, which is what the card actually reads):
 - `remaining`
@@ -252,6 +257,8 @@ The public card still computes the three phases from `eventStartAt` and `eventEn
 - `ended`
 
 The public events list **excludes `type: 'hackathon'` rows**. A hackathon is published only on `/hackathon` (see [Hackathon Management](#hackathon-management)), which renders a server-derived lifecycle phase rather than the hand-set `status` this card reads. The admin Events page is intentionally **not** filtered — an admin must still be able to see that a hackathon exists.
+
+> ℹ️ **Date & Time Input Fix:** `events-content.jsx` utilizes `toDhakaInputValue` and `utcIsoFromDhakaInput` from `src/lib/dhaka-time.js` to parse and format `datetime-local` inputs in Asia/Dhaka time without cyclic offset shifts when picking or editing hours.
 
 ⚠️ The server now validates all eight admin-writable event URL fields (`registrationLink`, `btnLink`, `btnLink1`, `contestLink`, `meetLink`, `vjudgeGroupLink`, and the two hackathon URLs) as absolute `http(s)` URLs, and rejects a hackathon whose `eventEndAt` is not strictly after its `eventStartAt`.
 
@@ -447,8 +454,12 @@ All statistics are **calculated automatically** from the real CPCCU data sources
 - Contests held — events classified as `type: "contest"`
 - Total visitors — the same visitor counter record the homepage uses
 - Certificates issued — `Certificate` collection count
-- Certificate verifications / failed verifications — `CertificateVerificationLog` counts
+- Certificate verifications / failed verifications — `CertificateVerificationLog` counts (profile certificate lookups are excluded via `source=profile` to prevent stats pollution)
 - Winners recognized — certificates with a winner certificate type (same definition as the public certificate page)
+- Total participants — aggregate participants from certificates and events
+- Projects — `Project` collection count
+- Posts — `Post` collection count
+- Hackathons — events classified as `type: "hackathon"`
 
 There is no manual edit form: values are derived from the data and cannot be overridden (there is no `PATCH /admin/statistics` route). There is intentionally **no "Total Awards" statistic** — that feature was removed. The public `/api/v1/content/statistics` endpoint serves the same live values as the admin endpoint.
 
@@ -489,15 +500,23 @@ The certificate management interface (`src/components/certificates-content.jsx`)
 - **Bulk Creation (XLSX) Compatibility**:
   - Bulk certificate uploads via Excel preserve custom placements and contest types without forcing them into default categories.
   - Novel types encountered during bulk uploads are automatically recorded into the database so they appear in future dropdown options.
+- **Bulk Edit & Bulk Delete Operations**:
+  - Admins can select multiple certificates to update properties (e.g., `eventDate`, `templateKey`, `signatories`) simultaneously using `PATCH /api/v1/admin/certificates/bulk-update`.
+  - Multiple certificates can be removed in a single operation using `POST /api/v1/admin/certificates/bulk-delete`.
+- **Event Date & Automatic Signatory Detection**:
+  - Certificates store an `eventDate` representing the actual date of the event/contest.
+  - When selecting an event or setting an event date, the system queries the committee tenures (`startDate` to `endDate`) and automatically sets the default President and Vice-President signatories of the active committee for that period.
 
 ## Certificate Verification Logs
 
-Certificate verification attempts write to `CertificateVerificationLog`.
+Certificate verification attempts from the public verification portal and direct certificate pages write to `CertificateVerificationLog`.
 
 Statistics now include:
 
 - `certificateVerifications`
 - `failedCertificateVerifications`
+
+> ℹ️ **Decoupled Profile Requests:** Profile fetches from `Profile.jsx` pass `source=profile` when querying certificates. These calls are deliberately ignored by the verification logger, ensuring profile visits do not distort verification statistics.
 
 The public certificate search supports:
 - Exact certificate ID search

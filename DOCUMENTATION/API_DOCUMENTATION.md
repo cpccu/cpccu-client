@@ -92,7 +92,7 @@ Tag: `Projects`.
 
 | Endpoint | Method | Purpose | Params |
 | :--- | :--- | :--- | :--- |
-| `/certificates/verify` | `GET` | Search/verify certificates | Query params built from non-empty values: `certificateId`, `recipientName`, `recipientId` |
+| `/certificates/verify` | `GET` | Search/verify certificates | Query params built from non-empty values: `certificateId`, `recipientName`, `recipientId`, `source` (e.g. `source=profile` to bypass verification logging) |
 | `/certificates/stats` | `GET` | Fetch certificate statistics | None |
 | `/certificates/recent` | `GET` | Fetch recently issued certificates | None |
 | `/certificates/templates` | `GET` | Fetch the five template definitions + the default key | None |
@@ -124,7 +124,7 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 | `/content/hackathon` | `GET` | Fetch the current hackathon | Provides `PublicContent:'hackathon'` tag. **404** when no hackathon is enabled — that 404 *is* the "not available" signal, which is why the nav bar needs no separate status endpoint |
 | `/content/hackathon/problem-set` | `GET` | Fetch the problem-set URL | Provides `PublicContent:'hackathon-problem-set'` tag. Behind the backend's `verifyToken` **and** its start-time gate: `403` before the start, `404` when off or unset. Never part of the payload above |
 
-**Supported public resources** (backend `content.controller.js` `publicModels`): `alumni`, `committees`, `contributors`, `donators`, `events`, `gallery`, `gallery-events`, `profiles` (only **approved** developer profiles are returned)
+**Supported public resources** (backend `content.controller.js` `publicModels`): `alumni`, `committees`, `contributors`, `donators`, `events` (sorted by `eventStartAt` descending so newest events appear first), `gallery`, `gallery-events`, `profiles` (only **approved** developer profiles are returned)
 
 > ⚠️ **`hackathon` is NOT a `:resource` value.** It is not a key of the backend's `publicModels` map, and `GET /content/hackathon` is a dedicated fixed route on the content router (declared **above** the single-segment `/:resource` catch-all, which would otherwise swallow it and 404 from the wrong handler). The tag id is `'hackathon'`, not `'events'`: the record is an `Event`, but it is served over its own route with its own payload shape, so it gets its own cache entry.
 >
@@ -164,6 +164,9 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 
 **Supported generic content resources** (used by admin modules): `committees`, `contributors`, `donators`, `events`, `gallery`, `gallery-events`, `messages`, `posts`, `profiles`, `alumni`, `audit-logs`
 
+Specialized committee tenure route:
+| `/admin/committees/:key/tenure` | `PATCH` | Update committee tenure (`startDate`, `endDate`) | Path param `key`, `{ startDate, endDate }` | Invalidates `AdminContent:committees`, `PublicContent:committees` |
+
 ### 8.4 Role Management (dynamic official roles)
 
 | Endpoint | Method | Purpose | Notes |
@@ -184,7 +187,7 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 
 | Endpoint | Method | Purpose | Payload | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `/admin/statistics` | `GET` | Fetch live derived site statistics — `{ members, photos, events, totalVisitors, certificatesIssued, certificateVerifications, failedCertificateVerifications, contestsHeld, winnersRecognized }` — computed server-side from real data (members, gallery, events, visitor counter, certificates, verification logs). Read-only; there is no `PATCH /admin/statistics`. | None | Provides `AdminStatistics` tag |
+| `/admin/statistics` | `GET` | Fetch live derived site statistics — `{ members, photos, events, totalVisitors, certificatesIssued, certificateVerifications, failedCertificateVerifications, contestsHeld, winnersRecognized, totalParticipants, projects, posts, hackathons }` — computed server-side from real data (members, gallery, events, visitor counter, certificates, verification logs, projects, posts). Read-only; there is no `PATCH /admin/statistics`. | None | Provides `AdminStatistics` tag |
 | `/content/statistics` | `GET` | Public site statistics — same live values as the admin endpoint | None | Public |
 
 ### 8.7 GitHub-Synced Contributors (admin)
@@ -216,6 +219,8 @@ The same `/certificates/verify?certificateId=...` endpoint is called server-side
 | `/admin/certificates/:id` | `DELETE` | Delete certificate | Path param `id` | Invalidates `AdminCertificates`, `AdminOverview` |
 | `/admin/certificate-templates` | `GET` | Fetch the template list + default key | None | Provides `CertificateTemplates` tag |
 | `/admin/certificates/bulk` | `POST` | Issue a whole uploaded sheet in one request | `{ eventId?, templateKey?, contestType?, issueDate?, rows: [{ recipientName, recipientId, certificateType?, rank?, batch?, contestName?, description? }] }` → `201 { created, skipped }` | Invalidates `AdminCertificates`, `AdminOverview`, `MyCertificates` |
+| `/admin/certificates/bulk-update` | `PATCH` | Bulk update matching certificates | `{ ids?, filter?, data: { eventDate?, templateKey?, signatories?, ... } }` | Invalidates `AdminCertificates`, `AdminOverview`, `MyCertificates` |
+| `/admin/certificates/bulk-delete` | `POST` | Bulk delete matching certificates | `{ ids?, filter? }` | Invalidates `AdminCertificates`, `AdminOverview`, `MyCertificates` |
 | `/admin/events/:eventId/rankings` | `GET` | Load an event's recorded placings | Path param `eventId` | Provides `AdminEventRankings` tag (per event id) |
 | `/admin/events/:eventId/rankings` | `POST` | Record placings and generate/update the certificates behind them | `{ templateKey, rankings: [{ rank, recipientName, recipientUniId, certificateType }] }` → `201 { event, rankings, certificates }` | Invalidates `AdminCertificates`, `AdminOverview`, `MyCertificates`, `AdminEventRankings:eventId` |
 
@@ -232,10 +237,12 @@ Duplicate ranks are a validation error on the rankings endpoint, and re-submitti
 
 ## 10. Certificate Verification Logs
 
-Certificate verification attempts (both public and authenticated) are logged server-side to `CertificateVerificationLog`. The statistics include:
+Certificate verification attempts (both public and authenticated via the verification portal or direct detail pages) are logged server-side to `CertificateVerificationLog`. The statistics include:
 
 - `certificateVerifications` — total successful verifications
 - `failedCertificateVerifications` — failed verification attempts
+
+> ⚠️ **Profile fetch isolation:** When member profiles fetch certificates dynamically (`/certificates/verify?recipientId=...`), the request passes `source=profile` (or `X-Verify-Source: profile`). The backend checks this flag and skips logging to `CertificateVerificationLog`. This prevents normal profile views (even for members without certificates that return 404) from polluting verification metrics.
 
 ## 11. Admin Audit Logs
 

@@ -297,7 +297,7 @@ export default function Profile({ user, isOwnProfile }) {
     if (!studentId) return;
     setCertificatesList([]);
     setCertificatesLoading(true);
-    fetchCertificates({ recipientId: studentId }).finally(() =>
+    fetchCertificates({ recipientId: studentId, source: 'profile' }).finally(() =>
       setCertificatesLoading(false),
     );
   }, [user?.uniID, isOwnProfile, fetchCertificates]);
