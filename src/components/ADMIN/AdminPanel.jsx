@@ -267,14 +267,19 @@ export default function AdminPanel() {
                         <div className="flex items-center gap-3">
                           {member.avatar ? (
                             <img
-                              src={member.avatar}
+                              src={member.avatar || "/assets/avatar/default-avatar.png"}
+                              alt=""
+                              className="h-10 w-10 rounded-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "/assets/avatar/default-avatar.png";
+                              }}
+                            />
+                          ) : (
+                            <img
+                              src="/assets/avatar/default-avatar.png"
                               alt=""
                               className="h-10 w-10 rounded-full object-cover"
                             />
-                          ) : (
-                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-950">
-                              {getInitials(member.fullName)}
-                            </span>
                           )}
                           <span>
                             <strong className="block">{member.fullName}</strong>

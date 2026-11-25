@@ -47,6 +47,9 @@ export function ProfileHero({ member, isOwner, editMode, onEditToggle, jobPipeli
                   height={144}
                   priority
                   className="size-28 rounded-xl border-4 border-card bg-white object-contain object-center shadow-md md:size-40"
+                  onError={(e) => {
+                    e.currentTarget.src = defaultAvatar;
+                  }}
                 />
                 {isOwner && editMode && (
                   <button
