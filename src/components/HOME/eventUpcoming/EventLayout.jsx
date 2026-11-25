@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faAngleLeft } from "@fortawesome/free-solid-svg-icons";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import UpComingEventCard from "@/components/Global/UpComingEventCard.jsx";
 import "./Event.css";
 import cn from "@/lib/cn.js";
@@ -12,41 +11,37 @@ import { useGetPublicContentQuery } from "@/features/content/contentApi";
 import { chooseLiveItems, toPublicEvent } from "@/lib/public-content";
 
 const EventLayout = ({ clName }) => {
-  const { data: eventsResponse, isLoading, isError } = useGetPublicContentQuery("events");
+  const { data: eventsResponse, isLoading, isError } =
+    useGetPublicContentQuery("events");
 
   if (isLoading || isError || !eventsResponse) {
     return (
-      <div className={cn("text-white bg-header relative z-30 p-5 md:p-10 lg:p-12", clName)}>
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
-          <div className="flex flex-col gap-4 flex-1">
-            <Skeleton className="h-6 w-3/4 bg-white/20" />
-            <Skeleton className="h-4 w-full bg-white/20" />
-            <Skeleton className="h-4 w-2/3 bg-white/20" />
-            <div className="flex gap-2 mt-2">
-              <Skeleton className="h-10 w-32 bg-white/20" />
-              <Skeleton className="h-10 w-32 bg-white/20" />
-            </div>
-          </div>
-          <div className="flex flex-col gap-2 lg:w-1/3">
-            <Skeleton className="h-5 w-1/2 bg-white/20" />
-            <Skeleton className="h-4 w-full bg-white/20" />
-            <Skeleton className="h-4 w-4/5 bg-white/20" />
-            <Skeleton className="h-4 w-3/5 bg-white/20" />
+      <div
+        className={cn(
+          "home-event-card relative z-30 p-5 sm:p-6 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl border border-blue-500/20 bg-gradient-to-br from-[#0c1838]/95 via-[#0f224f]/90 to-[#081229]/95 shadow-2xl backdrop-blur-xl text-white",
+          clName
+        )}
+      >
+        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-white/10">
+          <Skeleton className="h-7 w-36 rounded-full bg-white/10" />
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-8 rounded-full bg-white/10" />
+            <Skeleton className="h-8 w-8 rounded-full bg-white/10" />
           </div>
         </div>
-        <section className="absolute bottom-2 right-2 flex gap-1">
-          <div className="flex items-center justify-center px-5 py-2 bg-header-hover">
-            <FontAwesomeIcon className="h-6" icon={faAngleLeft} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          <Skeleton className="lg:col-span-4 xl:col-span-3 aspect-[16/10] sm:aspect-[4/3] lg:h-[22rem] w-full rounded-2xl bg-white/10" />
+          <div className="flex flex-col gap-4 lg:col-span-5 xl:col-span-5">
+            <Skeleton className="h-6 w-32 rounded-full bg-white/10" />
+            <Skeleton className="h-8 w-3/4 rounded-lg bg-white/10" />
+            <Skeleton className="h-4 w-full rounded bg-white/10" />
+            <Skeleton className="h-4 w-2/3 rounded bg-white/10" />
+            <Skeleton className="h-16 w-full rounded-xl bg-white/10 mt-2" />
+            <Skeleton className="h-11 w-44 rounded-xl bg-white/10 mt-2" />
           </div>
-          <div className="flex items-center justify-center px-5 py-2 bg-header-hover">
-            <FontAwesomeIcon className=" rotate-180 h-6" icon={faAngleLeft} />
-          </div>
-        </section>
-        <section className="absolute -top-12 lg:-top-8 left-0 right-0 flex items-center justify-center lg:justify-end">
-          <div className="text-2xl md:text-3xl font-bold text-gray-900 bg-white px-8 py-3 lg:mr-12 shadow-xl">
-            Upcoming Event
-          </div>
-        </section>
+          <Skeleton className="lg:col-span-3 xl:col-span-4 h-56 rounded-2xl bg-white/10" />
+        </div>
       </div>
     );
   }
@@ -57,116 +52,161 @@ const EventLayout = ({ clName }) => {
 function EventLayoutContent({ eventsResponse, clName }) {
   const slider = useRef(null);
   const [slidePx, setSlidePx] = useState(0);
-  const allEvents = chooseLiveItems(eventsResponse, fallbackData, toPublicEvent, false, false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const allEvents = chooseLiveItems(
+    eventsResponse,
+    fallbackData,
+    toPublicEvent,
+    false,
+    false
+  );
 
-  // ⚠️ THE HACKATHON IS NOT AN EVENT CARD — SAME DECISION AS `NoticeSection`.
-  //
-  // `GET /content/events` is type-blind: the hackathon is an ordinary Event
-  // document with `type: 'hackathon'`, so it arrives in this carousel like any
-  // other event. `UpComingEventCard` is phase-blind — no notion of
-  // upcoming/live/ended — so a FINISHED hackathon keeps rendering its
-  // "Register" button and its free-text `rules4` status line forever, and a
-  // hackathon the admin switched off keeps showing up on the HOMEPAGE with a
-  // live register link. The homepage is the highest-traffic surface on the
-  // site, so leaving this unfiltered would defeat the master toggle exactly
-  // where it matters most. The hackathon has its own phase-aware page at
-  // `/hackathon`; this carousel is not that page.
-  //
-  // The decision is made ONCE, in `toPublicEvent` (`public-content.js`), which
-  // sets `isHackathon`. This file obeys that one flag rather than re-deriving
-  // `type === 'hackathon'`, so the homepage and `/event` cannot drift apart
-  // again — the same single-decision principle `NoticeSection` already
-  // follows. It was not applied here in the first pass, which is how the
-  // toggle came to be bypassed on the homepage.
-  //
-  // This is deliberately a no-op if the server later excludes
-  // `type: 'hackathon'` from `listPublicContent('events')` (the more thorough
-  // fix): the rows would simply never arrive, `isHackathon` would be absent
-  // everywhere, and this filter would change nothing. The filter is not a
-  // second, competing rule — it is the client half of the same decision, so
-  // that either side being fixed independently leaves the behaviour identical.
-  //
-  // The static fallback (`data/upcomingEvent.json`) carries no `type` field,
-  // so it passes through untouched — `!undefined` is true, i.e. kept.
-  // All events (including hackathons) are shown, sorted newest first
-  const events = [...allEvents].sort((a, b) => new Date(b.startAt || 0) - new Date(a.startAt || 0));
+  // All events sorted newest first
+  const events = [...allEvents].sort(
+    (a, b) => new Date(b.startAt || 0) - new Date(a.startAt || 0)
+  );
 
-  // Derived from the FILTERED list on purpose: the label ("Upcoming" vs
-  // "Recent") describes what the carousel is actually showing, so it must not
-  // be decided by a hackathon row that is about to be filtered out.
-  const firstEventStart = events[0]?.startAt ? new Date(events[0].startAt).getTime() : 0;
-  const sectionLabel = firstEventStart && firstEventStart > Date.now() ? "Upcoming Event" : "Recent Event";
+  const firstEventStart = events[0]?.startAt
+    ? new Date(events[0].startAt).getTime()
+    : 0;
+  const sectionLabel =
+    firstEventStart && firstEventStart > Date.now()
+      ? "Upcoming Event"
+      : "Recent Event";
 
-  const goLeft = () => {
-    if (slider.current) {
-      slider.current.scrollLeft -= slidePx;
-    }
-  };
-
-  const goRight = () => {
-    if (slider.current) {
-      slider.current.scrollLeft += slidePx;
-    }
-  };
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (events.length && slider.current) {
-        setSlidePx(slider.current.scrollWidth / events.length);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [events.length]);
-
-  useEffect(() => {
+  const calculateSlidePx = useCallback(() => {
     if (events.length && slider.current) {
       setSlidePx(slider.current.scrollWidth / events.length);
     }
   }, [events.length]);
 
+  const updateIndexFromScroll = useCallback(() => {
+    if (!slider.current || !events.length) return;
+    const width = slider.current.clientWidth || 1;
+    const scrollLeft = slider.current.scrollLeft;
+    const index = Math.round(scrollLeft / width);
+    setCurrentIndex(Math.min(Math.max(index, 0), events.length - 1));
+  }, [events.length]);
+
+  const goLeft = () => {
+    if (slider.current) {
+      slider.current.scrollBy({ left: -slider.current.clientWidth, behavior: "smooth" });
+    }
+  };
+
+  const goRight = () => {
+    if (slider.current) {
+      slider.current.scrollBy({ left: slider.current.clientWidth, behavior: "smooth" });
+    }
+  };
+
+  const goToSlide = (index) => {
+    if (slider.current) {
+      slider.current.scrollTo({
+        left: index * slider.current.clientWidth,
+        behavior: "smooth",
+      });
+      setCurrentIndex(index);
+    }
+  };
+
+  useEffect(() => {
+    calculateSlidePx();
+    window.addEventListener("resize", calculateSlidePx);
+    return () => window.removeEventListener("resize", calculateSlidePx);
+  }, [calculateSlidePx]);
+
+  useEffect(() => {
+    const el = slider.current;
+    if (!el) return;
+    let timeout;
+    const onScroll = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(updateIndexFromScroll, 60);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      clearTimeout(timeout);
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, [updateIndexFromScroll]);
+
   return events.length ? (
     <div
       className={cn(
-        "text-white bg-header relative z-30 p-4 sm:p-5 md:p-10 lg:p-12 pb-16 md:pb-12",
+        "home-event-card relative z-30 p-5 sm:p-6 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl border border-blue-500/25 bg-gradient-to-br from-[#0c1838]/95 via-[#0f224f]/90 to-[#081229]/95 shadow-2xl shadow-blue-950/60 backdrop-blur-xl overflow-hidden text-white",
         clName
       )}
     >
+      {/* Subtle tech background glows */}
+      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Top Header Row with Section Label & Controls */}
+      <div className="relative z-10 flex items-center justify-between gap-4 mb-6 pb-4 border-b border-white/10">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-300 font-mono text-xs uppercase tracking-wider backdrop-blur-md">
+          <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+          <span>{sectionLabel}</span>
+        </div>
+
+        {events.length > 1 && (
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-mono text-slate-400 select-none">
+              {currentIndex + 1} / {events.length}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={goLeft}
+                type="button"
+                aria-label="Previous event"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/[0.08] hover:bg-white/[0.18] border border-white/15 flex items-center justify-center text-slate-200 hover:text-white transition-all active:scale-95 cursor-pointer backdrop-blur-sm"
+              >
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+              <button
+                onClick={goRight}
+                type="button"
+                aria-label="Next event"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/[0.08] hover:bg-white/[0.18] border border-white/15 flex items-center justify-center text-slate-200 hover:text-white transition-all active:scale-95 cursor-pointer backdrop-blur-sm"
+              >
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Carousel Track */}
       <section
         ref={slider}
-        className="flex overflow-x-auto EventScroll scroll-smooth snap-mandatory snap-x"
+        className="relative z-10 flex overflow-x-auto EventScroll scroll-smooth snap-mandatory snap-x"
       >
         {events.map((item, index) => (
-          <div key={index} className="w-full shrink-0 snap-center">
+          <div key={item.id || index} className="w-full shrink-0 snap-center">
             <UpComingEventCard data={item} />
           </div>
         ))}
       </section>
 
-      <section className="absolute bottom-2 right-2 flex gap-1">
-        <button
-          onClick={goLeft}
-          className="hover:bg-white flex items-center justify-center px-5 py-2 trans font-bold hover:text-gray-900 bg-header-hover"
-        >
-          <FontAwesomeIcon className="h-6" icon={faAngleLeft} />
-        </button>
-        <button
-          onClick={goRight}
-          className="hover:bg-white flex items-center justify-center px-5 py-2 trans font-bold hover:text-gray-900 bg-header-hover"
-        >
-          <FontAwesomeIcon className=" rotate-180 h-6" icon={faAngleLeft} />
-        </button>
-      </section>
-
-      <section className="absolute -top-12 lg:-top-8 left-0 right-0 flex items-center justify-center lg:justify-end">
-        <div className="text-2xl md:text-3xl font-bold text-gray-900 bg-white px-8 py-3 lg:mr-12 shadow-xl">
-          {sectionLabel}
+      {/* Dot Indicators */}
+      {events.length > 1 && (
+        <div className="relative z-10 flex justify-center items-center gap-1.5 mt-6 pt-2">
+          {events.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => goToSlide(idx)}
+              type="button"
+              aria-label={`Go to event slide ${idx + 1}`}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                idx === currentIndex
+                  ? "w-6 bg-blue-500 shadow-sm shadow-blue-500/50"
+                  : "w-1.5 bg-white/20 hover:bg-white/40"
+              )}
+            />
+          ))}
         </div>
-      </section>
+      )}
     </div>
   ) : null;
 }

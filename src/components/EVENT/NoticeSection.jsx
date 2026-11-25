@@ -28,24 +28,19 @@ export default function NoticeSection() {
           {Array.from({ length: 2 }).map((_, i) => (
             <section
               key={i}
-              className="bg-header text-white p-5 md:p-8 lg:p-12 my-5 md:my-8 lg:my-12"
+              className="rounded-2xl md:rounded-3xl border border-blue-500/25 bg-gradient-to-br from-[#0c1838]/95 via-[#0f224f]/90 to-[#081229]/95 shadow-xl shadow-blue-950/40 backdrop-blur-xl text-white p-5 sm:p-6 md:p-8 lg:p-10 my-6 md:my-8"
             >
-              <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
-                <div className="flex flex-col gap-4 flex-1">
-                  <Skeleton className="h-6 w-3/4 bg-white/20" />
-                  <Skeleton className="h-4 w-full bg-white/20" />
-                  <Skeleton className="h-4 w-2/3 bg-white/20" />
-                  <div className="flex gap-2 mt-2">
-                    <Skeleton className="h-10 w-32 bg-white/20" />
-                    <Skeleton className="h-10 w-32 bg-white/20" />
-                  </div>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+                <Skeleton className="lg:col-span-4 xl:col-span-3 aspect-[16/10] sm:aspect-[4/3] lg:h-[22rem] w-full rounded-2xl bg-white/10" />
+                <div className="flex flex-col gap-4 lg:col-span-5 xl:col-span-5">
+                  <Skeleton className="h-6 w-32 rounded-full bg-white/10" />
+                  <Skeleton className="h-8 w-3/4 rounded-lg bg-white/10" />
+                  <Skeleton className="h-4 w-full rounded bg-white/10" />
+                  <Skeleton className="h-4 w-2/3 rounded bg-white/10" />
+                  <Skeleton className="h-16 w-full rounded-xl bg-white/10 mt-2" />
+                  <Skeleton className="h-11 w-44 rounded-xl bg-white/10 mt-2" />
                 </div>
-                <div className="flex flex-col gap-2 lg:w-1/3">
-                  <Skeleton className="h-5 w-1/2 bg-white/20" />
-                  <Skeleton className="h-4 w-full bg-white/20" />
-                  <Skeleton className="h-4 w-4/5 bg-white/20" />
-                  <Skeleton className="h-4 w-3/5 bg-white/20" />
-                </div>
+                <Skeleton className="lg:col-span-3 xl:col-span-4 h-56 rounded-2xl bg-white/10" />
               </div>
             </section>
           ))}
@@ -107,8 +102,8 @@ function NoticeSectionContent({ eventsResponse }) {
       >
         {rows.map((item, index) => (
           <section
-            key={index}
-            className="bg-header text-white p-5 md:p-8 lg:p-12 my-5 md:my-8 lg:my-12"
+            key={item.id || index}
+            className="rounded-2xl md:rounded-3xl border border-blue-500/25 bg-gradient-to-br from-[#0c1838]/95 via-[#0f224f]/90 to-[#081229]/95 shadow-xl shadow-blue-950/40 backdrop-blur-xl text-white p-5 sm:p-6 md:p-8 lg:p-10 my-6 md:my-8"
           >
             <UpComingEventCard data={item} />
           </section>
