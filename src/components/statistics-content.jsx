@@ -1,5 +1,5 @@
 'use client';
-import { Users, Image, Calendar, Eye, FileCheck, Trophy, BarChart3, Info, RefreshCw, ShieldCheck, FileText, Layers } from 'lucide-react';
+import { Users, Image, Calendar, Eye, FileCheck, Trophy, BarChart3, Info, RefreshCw, ShieldCheck, FileText, Layers, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +18,7 @@ const statConfigs = [
     { key: 'totalParticipants', label: 'Total Participants', icon: Users, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
     { key: 'projects', label: 'Member Projects', icon: Layers, color: 'text-violet-500', bgColor: 'bg-violet-500/10' },
     { key: 'posts', label: 'Posts & Articles', icon: FileText, color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
-    { key: 'hackathons', label: 'Hackathons', icon: Trophy, color: 'text-rose-500', bgColor: 'bg-rose-500/10' },
+    { key: 'certificatesDownloaded', label: 'Certificates Downloaded', icon: Download, color: 'text-rose-500', bgColor: 'bg-rose-500/10' },
 ];
 export function StatisticsContent() {
     const { data: statisticsResponse, isLoading, isError, refetch, isFetching } = useGetAdminStatisticsQuery();
