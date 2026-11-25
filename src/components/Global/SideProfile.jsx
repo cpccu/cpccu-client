@@ -49,9 +49,12 @@ export default function SideProfile() {
         } h-20 bg-white items-center justify-center gap-3 px-5 shadow-custom`}
       >
         <img
-          className="h-12 w-12 ring rounded-full"
-          src="https://i.ibb.co/t3x1BtD/Screenshot-2024-05-15-025744.png"
+          className="h-12 w-12 ring rounded-full object-cover"
+          src={Data?.avatar || "/assets/avatar/default-avatar.png"}
           alt="profileIMG"
+          onError={(e) => {
+            e.currentTarget.src = "/assets/avatar/default-avatar.png";
+          }}
         />
         <h1
           onClick={goProfile}

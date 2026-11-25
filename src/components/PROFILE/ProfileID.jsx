@@ -19,6 +19,9 @@ export default function ProfileID({ user, isOwnProfile }) {
             src={user?.avatar || defaultAvatar} 
             alt="profile" 
             className="w-full h-full object-cover rounded-full border-4 border-white"
+            onError={(e) => {
+              e.currentTarget.src = defaultAvatar;
+            }}
           />
         </div>
         <div className="text-center lg:text-left pb-4">

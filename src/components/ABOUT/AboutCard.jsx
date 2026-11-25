@@ -11,9 +11,12 @@ export default function AboutCard({ Data }) {
           height={400}
           width={400}
           className="h-full w-full object-cover group-hover:scale-105 trans"
-	          src={Data?.avatar || Data?.img || DefaultAvater}
-	          alt={Data?.fullName || Data?.name || "Profile Picture"}
-	        />
+          src={Data?.avatar || Data?.img || DefaultAvater}
+          alt={Data?.fullName || Data?.name || "Profile Picture"}
+          onError={(e) => {
+            e.currentTarget.src = DefaultAvater;
+          }}
+        />
 	      </section>
       <section className="flex flex-col items-center text-center justify-center gap-1 w-full min-w-0 px-2">
         <h1 className="text-xl sm:text-2xl font-semibold capitalize text-p-text break-words max-w-full">

@@ -19,6 +19,9 @@ export default function JobPipelineCard({ data }) {
             loading="lazy"
             alt={`${name}'s profile`}
             className="w-full h-full object-cover hover:scale-110 duration-300 transition-transform"
+            onError={(e) => {
+              e.currentTarget.src = "/assets/avatar/default-avatar.png";
+            }}
           />
         </figure>
         

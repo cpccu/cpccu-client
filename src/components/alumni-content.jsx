@@ -217,7 +217,14 @@ export function AlumniContent() {
                       <div className="flex items-center gap-3">
                         <div className="size-9 overflow-hidden rounded-full border bg-muted">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={item.img || item.avatar || '/assets/avatar/default-avatar.png'} alt={item.name} className="size-full object-cover" />
+                          <img
+                            src={item.img || item.avatar || '/assets/avatar/default-avatar.png'}
+                            alt={item.name}
+                            className="size-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = '/assets/avatar/default-avatar.png';
+                            }}
+                          />
                         </div>
                         <p className="font-medium">{item.name}</p>
                       </div>

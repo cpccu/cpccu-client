@@ -26,7 +26,14 @@ function BlogWrite({ user, isOwnProfile }) {
     <>
       <main className="bg-white mx-5 px-5 py-4 lg:mx-0 rounded-xl shadow-sm border border-gray-100 flex gap-4 items-center">
         <div className="h-10 w-10 rounded-full shrink-0 overflow-hidden border border-gray-100">
-          <img src={user?.avatar || defaultAvatar} alt="Profile" className="w-full h-full object-cover" />
+          <img
+            src={user?.avatar || defaultAvatar}
+            alt="Profile"
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = defaultAvatar;
+            }}
+          />
         </div>
         <button
           onClick={OpenBlogWriter}

@@ -155,7 +155,14 @@ export function JobsContent() {
               <div className="flex gap-5">
                 <div className="size-28 shrink-0 overflow-hidden rounded-xl border-2 border-border">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={detailProfile.photoUrl} alt={detailProfile.name} className="size-full object-cover"/>
+                  <img
+                    src={detailProfile.photoUrl || '/assets/avatar/default-avatar.png'}
+                    alt={detailProfile.name}
+                    className="size-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = '/assets/avatar/default-avatar.png';
+                    }}
+                  />
                 </div>
                 <div className="flex flex-1 flex-col justify-center gap-1.5">
                   <div className="flex items-center gap-2">
@@ -253,7 +260,14 @@ function ProfileCard({ profile, onApprove, onReject, onRevert, onRemove, onViewD
       <div className="flex gap-4 p-5">
         <button onClick={() => onViewDetail(profile)} className="size-24 shrink-0 overflow-hidden rounded-xl border-2 border-border cursor-pointer hover:border-primary/50 transition-colors" aria-label={`View ${profile.name}'s profile`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={profile.photoUrl} alt={profile.name} className="size-full object-cover"/>
+          <img
+            src={profile.photoUrl || '/assets/avatar/default-avatar.png'}
+            alt={profile.name}
+            className="size-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = '/assets/avatar/default-avatar.png';
+            }}
+          />
         </button>
         <div className="flex flex-1 flex-col gap-1 min-w-0">
           <div className="flex items-start justify-between gap-2">

@@ -298,13 +298,11 @@ function CarouselCard({ donator }) {
         {/* Avatar */}
         <div className="w-40 h-40 rounded-full overflow-hidden ring-4 ring-header/10 group-hover:ring-header/40 transition-all duration-500 mt-1">
           <img
-            src={donator?.avatar}
+            src={donator?.avatar || "/assets/avatar/default-avatar.png"}
             alt={donator?.name}
             className="w-full h-full object-cover"
             onError={(e) => {
-              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                donator?.name
-              )}&background=3b60c9&color=fff&size=128`;
+              e.currentTarget.src = "/assets/avatar/default-avatar.png";
             }}
           />
         </div>

@@ -82,13 +82,11 @@ export default function PreviousCommittee({ data = PreviousCommitteeData }) {
                             {/* Avatar */}
                             <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden ring-4 ring-header/10 group-hover:ring-header/40 transition-all duration-500 shadow-inner shrink-0">
                               <img
-                                src={member?.avatar}
-                                alt={member?.fullName}
+                                src={member?.avatar || member?.img || "/assets/avatar/default-avatar.png"}
+                                alt={member?.fullName || member?.name || "Committee Member"}
                                 className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
                                 onError={(e) => {
-                                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                    member?.fullName
-                                  )}&background=3b60c9&color=fff&size=256`;
+                                  e.currentTarget.src = "/assets/avatar/default-avatar.png";
                                 }}
                               />
                             </div>
