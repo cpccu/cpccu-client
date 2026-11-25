@@ -1,67 +1,84 @@
 "use client";
 
 import { useContext } from "react";
+import Link from "next/link";
+import { ArrowDown, ArrowRight, Code2, Terminal } from "lucide-react";
 import Hero from "@/data/home/Hero.json";
 import OurMissionScroll from "@/Context/OurMessionScroll/OurMessionScroll";
 import { Link as ScrollMission } from "react-scroll";
-import { useRouter } from "next/navigation";
 
 export default function HeroSection() {
   const { target } = useContext(OurMissionScroll);
-  const router = useRouter();
-
-  const heroContext = Hero?.context;
-
-  const goToAbout = () => {
-    router.push("/history");
-  };
 
   return (
     <main
-      style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(${Hero?.bgURL})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
-      className="padding text-white flex flex-col justify-center items-center md:items-start py-[3rem] gap-10 lg:gap-8 md:pb-[7rem] lg:pb-[16rem] cursor-default h-[calc(100svh-50px)] md:h-full"
+      className="home-hero"
+      style={{ "--hero-image": `url(${Hero?.bgURL})` }}
     >
-      <section className="flex flex-col items-center md:items-start italic max-w-full">
-        <h1 className="font-extrabold capitalize text-3xl sm:text-4xl md:text-[4rem] text-center md:text-left leading-tight break-words">
-          {Hero?.header}
-        </h1>
-        <h3 className="text-xl sm:text-2xl text-center md:text-[1.9rem] md:text-left text-amber-300 mt-2 break-words">
-          {Hero?.secondheader}
-        </h3>
-      </section>
-      <section className="conText text-center md:text-left max-w-3xl">
-        <p className="text-white/75 text-sm sm:text-base">{Hero?.context1}</p>
-        <p className="text-white/75 text-sm sm:text-base">{Hero?.context2}</p>
-        <p className="text-white/75 text-sm sm:text-base">{Hero?.context3}</p>
-        <p className="italic font-semibold text-white/80 mt-2 text-sm sm:text-base">
-          {Hero?.contextWriter}
-        </p>
-      </section>
-      <div className="flex flex-wrap gap-3 sm:gap-5 justify-center md:justify-start">
-        <ScrollMission
-          to={target || ""}
-          spy={true}
-          smooth={true}
-          offset={-10}
-          duration={900}
-          animate={{ duration: 900, easing: "easeInOutCubic" }}
-        >
-          <button className="uppercase text-sm sm:text-base md:text-[1.2rem] lg:text-[1.3rem] font-semibold px-4 sm:px-6 py-2.5 sm:py-3 bg-header hover:bg-white hover:text-black trans shadow-md">
-            {Hero?.btn1Text}
-          </button>
-        </ScrollMission>
+      <div className="home-hero-grid" aria-hidden="true" />
+      <div className="home-hero-inner">
+        <section className="home-hero-copy">
+          <p className="home-eyebrow">
+            <span className="home-live-dot" aria-hidden="true" />
+            CITY UNIVERSITY <span>/</span> CSE COMMUNITY
+          </p>
+          <h1>
+            Think deeper.
+            <br />
+            <span>Solve harder.</span>
+          </h1>
+          <p className="home-hero-description">
+            {Hero?.secondheader} is where curious minds learn to turn tough
+            problems into elegant solutions — together.
+          </p>
+          <div className="home-hero-actions">
+            <ScrollMission
+              to={target || "ourMission"}
+              spy
+              smooth
+              offset={-24}
+              duration={650}
+            >
+              <span className="home-button home-button-primary">
+                Explore our mission <ArrowDown size={17} aria-hidden="true" />
+              </span>
+            </ScrollMission>
+            <Link href="/history" className="home-button home-button-quiet">
+              Our story <ArrowRight size={17} aria-hidden="true" />
+            </Link>
+          </div>
+          <div className="home-hero-note">
+            <Code2 size={17} aria-hidden="true" />
+            <span>Learn the craft. Find your people. Keep solving.</span>
+          </div>
+        </section>
 
-        <button
-          onClick={goToAbout}
-          className="uppercase text-sm sm:text-base md:text-[1.2rem] lg:text-[1.3rem] font-semibold px-4 sm:px-6 py-2.5 sm:py-3 bg-white text-black hover:bg-header hover:text-white trans shadow-md"
-        >
-          {Hero?.btn2Text}
-        </button>
+        <aside className="home-code-card" aria-label="The CPCCU mindset">
+          <div className="home-code-topbar">
+            <div className="home-window-dots" aria-hidden="true">
+              <i /> <i /> <i />
+            </div>
+            <span><Terminal size={14} aria-hidden="true" /> cpccu.cpp</span>
+            <span className="home-code-language">C++</span>
+          </div>
+          <div className="home-code-body" aria-hidden="true">
+            <p><span>01</span> <b className="code-purple">while</b> (!accepted) &#123;</p>
+            <p><span>02</span> &nbsp;&nbsp;practice();</p>
+            <p><span>03</span> &nbsp;&nbsp;learn_from_others();</p>
+            <p><span>04</span> &nbsp;&nbsp;try_a_better_approach();</p>
+            <p><span>05</span> &#125;</p>
+            <p className="code-comment"><span>06</span> // progress, one problem at a time</p>
+          </div>
+          <div className="home-code-footer">
+            <span className="home-terminal-mark"><span /> READY TO COMPILE</span>
+            <span>City University</span>
+          </div>
+          <div className="home-code-stamp" aria-hidden="true">THINK<br />·<br />BUILD<br />·<br />COMPETE</div>
+        </aside>
+      </div>
+      <div className="home-hero-bottom" aria-hidden="true">
+        <span>COMPETITIVE PROGRAMMING CAMP</span>
+        <span>BUILT TO LEARN. READY TO COMPETE.</span>
       </div>
     </main>
   );

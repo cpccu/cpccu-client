@@ -16,7 +16,7 @@ const EventLayout = ({ clName }) => {
 
   if (isLoading || isError || !eventsResponse) {
     return (
-      <div className={cn("text-white bg-header relative z-30 p-5 md:p-10 lg:p-12", clName)}>
+      <div className={cn("home-event-card text-white bg-header relative z-30 p-5 md:p-10 lg:p-12", clName)}>
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
           <div className="flex flex-col gap-4 flex-1">
             <Skeleton className="h-6 w-3/4 bg-white/20" />
@@ -34,15 +34,15 @@ const EventLayout = ({ clName }) => {
             <Skeleton className="h-4 w-3/5 bg-white/20" />
           </div>
         </div>
-        <section className="absolute bottom-2 right-2 flex gap-1">
-          <div className="flex items-center justify-center px-5 py-2 bg-header-hover">
+        <section className="home-event-controls absolute bottom-2 right-2 flex gap-1">
+        <div className="flex items-center justify-center px-5 py-2 bg-header-hover">
             <FontAwesomeIcon className="h-6" icon={faAngleLeft} />
           </div>
           <div className="flex items-center justify-center px-5 py-2 bg-header-hover">
             <FontAwesomeIcon className=" rotate-180 h-6" icon={faAngleLeft} />
           </div>
         </section>
-        <section className="absolute -top-12 lg:-top-8 left-0 right-0 flex items-center justify-center lg:justify-end">
+        <section className="home-event-label absolute -top-12 lg:-top-8 left-0 right-0 flex items-center justify-center lg:justify-end">
           <div className="text-2xl md:text-3xl font-bold text-gray-900 bg-white px-8 py-3 lg:mr-12 shadow-xl">
             Upcoming Event
           </div>
@@ -132,7 +132,7 @@ function EventLayoutContent({ eventsResponse, clName }) {
   return events.length ? (
     <div
       className={cn(
-        "text-white bg-header relative z-30 p-4 sm:p-5 md:p-10 lg:p-12 pb-16 md:pb-12",
+        "home-event-card text-white bg-header relative z-30 p-4 sm:p-5 md:p-10 lg:p-12 pb-16 md:pb-12",
         clName
       )}
     >
@@ -147,7 +147,7 @@ function EventLayoutContent({ eventsResponse, clName }) {
         ))}
       </section>
 
-      <section className="absolute bottom-2 right-2 flex gap-1">
+      <section className="home-event-controls absolute bottom-2 right-2 flex gap-1">
         <button
           onClick={goLeft}
           className="hover:bg-white flex items-center justify-center px-5 py-2 trans font-bold hover:text-gray-900 bg-header-hover"
@@ -162,7 +162,7 @@ function EventLayoutContent({ eventsResponse, clName }) {
         </button>
       </section>
 
-      <section className="absolute -top-12 lg:-top-8 left-0 right-0 flex items-center justify-center lg:justify-end">
+      <section className="home-event-label absolute -top-12 lg:-top-8 left-0 right-0 flex items-center justify-center lg:justify-end">
         <div className="text-2xl md:text-3xl font-bold text-gray-900 bg-white px-8 py-3 lg:mr-12 shadow-xl">
           {sectionLabel}
         </div>
